@@ -638,96 +638,102 @@
     <script>
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
 
-        const CURRENT_USER = 'ashley'; // logged-in user (stub)
+        const _sess      = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+        const CURRENT_EMAIL = _sess.email || '';
+        const CURRENT_NAME  = _sess.name  || CURRENT_EMAIL;
 
-        // ── Mock Thread Data ──────────────────────────────────
-        const MOCK_THREADS = [
-            { threadId: 'T001', contact: 'carlos',       label: 'Carlos M.',    type: 'direct', unread: 2, lastTime: '10:32 AM', lastMsg: 'Can you follow up with Maria Lopez today?' },
-            { threadId: 'T002', contact: 'elena',        label: 'Elena V.',     type: 'direct', unread: 0, lastTime: 'Yesterday', lastMsg: 'Angela Kim was discharged this morning.' },
-            { threadId: 'T003', contact: 'marcus',       label: 'Marcus D.',    type: 'direct', unread: 1, lastTime: 'Yesterday', lastMsg: 'The employment referral for Torres is still pending.' },
-            { threadId: 'T004', contact: 'housing-team', label: 'Housing Team', type: 'group',  unread: 3, lastTime: 'Mon',       lastMsg: 'Shelter capacity update — 6 beds available.' },
-            { threadId: 'T005', contact: 'supervisor',   label: 'Supervisor',   type: 'direct', unread: 0, lastTime: 'Last week', lastMsg: 'Please send weekly stats by Friday.' },
-        ];
-
-        // ── Mock Conversations ────────────────────────────────
-        const MOCK_CONVERSATIONS = {
-            T001: [
-                { from: 'carlos', sent: false, text: 'Hey, did you get a chance to review the Maria Lopez file?', time: '10:14 AM' },
-                { from: 'ashley', sent: true,  text: 'Yes, I looked it over this morning. She needs emergency shelter ASAP.', time: '10:18 AM' },
-                { from: 'carlos', sent: false, text: 'Agreed. Street Outreach flagged her as high urgency last week.', time: '10:21 AM' },
-                { from: 'ashley', sent: true,  text: 'I\'ve submitted the referral to Emergency Shelter already. Waiting on confirmation.', time: '10:25 AM' },
-                { from: 'carlos', sent: false, text: 'Can you follow up with Maria Lopez today?', time: '10:32 AM' },
-            ],
-            T002: [
-                { from: 'ashley', sent: true,  text: 'Good morning! Any update on Angela Kim?', time: 'Yesterday 9:05 AM' },
-                { from: 'elena',  sent: false, text: 'She had her intake appointment at Medical Outreach last Thursday.', time: 'Yesterday 9:12 AM' },
-                { from: 'ashley', sent: true,  text: 'Great. Did she need any follow-up services?', time: 'Yesterday 9:15 AM' },
-                { from: 'elena',  sent: false, text: 'Angela Kim was discharged this morning. She\'s stable and doing well.', time: 'Yesterday 9:41 AM' },
-            ],
-            T003: [
-                { from: 'marcus', sent: false, text: 'Hi Ashley, I\'m following up on the David Torres employment referral.', time: 'Yesterday 2:03 PM' },
-                { from: 'ashley', sent: true,  text: 'I saw that — it\'s been sitting in pending for a few days. Anything blocking?', time: 'Yesterday 2:10 PM' },
-                { from: 'marcus', sent: false, text: 'The employment services coordinator is out this week. Trying to reach the backup contact.', time: 'Yesterday 2:15 PM' },
-                { from: 'marcus', sent: false, text: 'The employment referral for Torres is still pending. I\'ll escalate tomorrow.', time: 'Yesterday 3:48 PM' },
-            ],
-            T004: [
-                { from: 'carlos',       sent: false, text: 'Team update: we received 4 new shelter referrals from Street Outreach this morning.', time: 'Mon 8:30 AM' },
-                { from: 'elena',        sent: false, text: 'Good to know. Drop-In Center is at capacity through Wednesday.', time: 'Mon 8:45 AM' },
-                { from: 'ashley',       sent: true,  text: 'I can check with Rapid Rehousing — they might have overflow beds.', time: 'Mon 9:01 AM' },
-                { from: 'marcus',       sent: false, text: 'Confirmed — 3 beds opened at Rapid Rehousing as of yesterday.', time: 'Mon 9:14 AM' },
-                { from: 'housing-team', sent: false, text: 'Shelter capacity update — 6 beds available across all programs.', time: 'Mon 11:20 AM' },
-            ],
-            T005: [
-                { from: 'supervisor', sent: false, text: 'Hi Ashley, just a reminder that weekly referral stats are due by Friday EOD.', time: 'Last week Thu 4:00 PM' },
-                { from: 'ashley',     sent: true,  text: 'Got it! I\'ll have them submitted by Thursday to give some buffer.', time: 'Last week Thu 4:15 PM' },
-                { from: 'supervisor', sent: false, text: 'Please send weekly stats by Friday.', time: 'Last week Thu 4:20 PM' },
-            ],
-        };
-
-        let allThreads       = [...MOCK_THREADS];
+        let allThreads       = [];
         let activeThreadId   = null;
         let activeThreadData = null;
 
         // ── Helpers ───────────────────────────────────────────
-        function initials(name) {
-            const p = name.trim().split(' ');
-            return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
+        function initials(str) {
+            if (!str) return '?';
+            // If it's an email, use the part before @
+            const name = str.includes('@') ? str.split('@')[0] : str;
+            const p = name.trim().split(/[\s._-]+/);
+            return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
         }
 
-        function contactInitials(contactId) {
-            const labels = {
-                ashley:       'AR', carlos: 'CM', elena: 'EV', marcus: 'MD',
-                supervisor:   'SV', 'housing-team': 'HT'
+        // Get the other person in a thread
+        function contactEmail(thread) {
+            return thread.from === CURRENT_EMAIL ? thread.to : thread.from;
+        }
+
+        function contactLabel(thread) {
+            const email = contactEmail(thread);
+            return email || 'Unknown';
+        }
+
+        function formatTime(isoStr) {
+            if (!isoStr) return '';
+            try {
+                const d   = new Date(isoStr);
+                const now = new Date();
+                const diff = (now - d) / 1000;
+                if (diff < 60)        return 'Just now';
+                if (diff < 3600)      return Math.floor(diff / 60) + 'm ago';
+                if (diff < 86400)     return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                if (diff < 604800)    return d.toLocaleDateString('en-US', { weekday: 'short' });
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            } catch(e) { return ''; }
+        }
+
+        // ── Load Threads from GAS ─────────────────────────────
+        function loadThreads() {
+            const list = document.getElementById('threadList');
+            list.innerHTML = '<div style="padding:2rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">Loading…</div>';
+
+            const script = document.createElement('script');
+            script.src = GOOGLE_SCRIPT_URL +
+                '?action=getThreads' +
+                '&user=' + encodeURIComponent(CURRENT_EMAIL) +
+                '&callback=onThreadsLoaded';
+            script.onerror = function() {
+                list.innerHTML = '<div style="padding:2rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">Could not load messages.</div>';
             };
-            return labels[contactId] || contactId.slice(0, 2).toUpperCase();
+            setTimeout(function() {
+                if (allThreads.length === 0) {
+                    list.innerHTML = '<div style="padding:2rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">No conversations yet.</div>';
+                }
+            }, 8000);
+            document.head.appendChild(script);
+        }
+
+        function onThreadsLoaded(data) {
+            if (data && data.success && Array.isArray(data.threads)) {
+                allThreads = data.threads;
+                renderThreadList(allThreads);
+            } else {
+                document.getElementById('threadList').innerHTML =
+                    '<div style="padding:2rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">No conversations yet.</div>';
+            }
         }
 
         // ── Render Thread List ─────────────────────────────────
         function renderThreadList(threads) {
             const list = document.getElementById('threadList');
-            if (threads.length === 0) {
-                list.innerHTML = '<div style="padding:2rem 1.25rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">No conversations found.</div>';
+            if (!threads || threads.length === 0) {
+                list.innerHTML = '<div style="padding:2rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">No conversations yet. Click New Message to start one.</div>';
                 return;
             }
 
             list.innerHTML = threads.map(t => {
-                const isGroup   = t.type === 'group';
-                const isActive  = t.threadId === activeThreadId;
-                const avClass   = isGroup ? 'thread-avatar group' : 'thread-avatar';
-                const avText    = isGroup ? '👥' : contactInitials(t.contact);
-                const unreadBadge = t.unread > 0
-                    ? `<span class="unread-badge">${t.unread}</span>` : '';
+                const contact     = contactEmail(t);
+                const label       = contactLabel(t);
+                const isActive    = t.threadId === activeThreadId;
+                const unread      = t.unreadCount || 0;
+                const unreadBadge = unread > 0 ? `<span class="unread-badge">${unread}</span>` : '';
 
                 return `
-                    <div class="thread-item${isActive ? ' active' : ''}"
-                         onclick="selectThread('${t.threadId}')">
-                        <div class="${avClass}" ${isGroup ? 'style="font-size:1rem;"' : ''}>${isGroup ? '👥' : avText}</div>
+                    <div class="thread-item${isActive ? ' active' : ''}" onclick="selectThread('${t.threadId}')">
+                        <div class="thread-avatar">${initials(label)}</div>
                         <div class="thread-info">
-                            <div class="thread-name">${t.label}</div>
-                            <div class="thread-preview">${t.lastMsg}</div>
+                            <div class="thread-name">${escapeHtml(label)}</div>
+                            <div class="thread-preview">${escapeHtml(t.lastMessage || '')}</div>
                         </div>
                         <div class="thread-meta">
-                            <span class="thread-time">${t.lastTime}</span>
+                            <span class="thread-time">${formatTime(t.lastTimestamp)}</span>
                             ${unreadBadge}
                         </div>
                     </div>`;
@@ -736,103 +742,90 @@
 
         // ── Filter threads ─────────────────────────────────────
         function filterThreads(query) {
-            if (!query.trim()) {
-                renderThreadList(allThreads);
-                return;
-            }
+            if (!query.trim()) { renderThreadList(allThreads); return; }
             const lower = query.toLowerCase();
-            const filtered = allThreads.filter(t =>
-                t.label.toLowerCase().includes(lower) ||
-                t.lastMsg.toLowerCase().includes(lower)
-            );
-            renderThreadList(filtered);
+            renderThreadList(allThreads.filter(t =>
+                contactLabel(t).toLowerCase().includes(lower) ||
+                (t.lastMessage || '').toLowerCase().includes(lower)
+            ));
         }
 
         // ── Select Thread ──────────────────────────────────────
         function selectThread(threadId) {
             activeThreadId   = threadId;
             activeThreadData = allThreads.find(t => t.threadId === threadId);
-
-            // Clear unread
-            if (activeThreadData) activeThreadData.unread = 0;
-
-            // Re-render thread list to update active/unread state
+            if (activeThreadData) activeThreadData.unreadCount = 0;
             renderThreadList(allThreads);
 
-            // Show conversation view
-            document.getElementById('conversationEmpty').style.display  = 'none';
-            const convView = document.getElementById('conversationView');
-            convView.style.display = 'flex';
+            document.getElementById('conversationEmpty').style.display = 'none';
+            document.getElementById('conversationView').style.display  = 'flex';
 
-            // Update header
-            const isGroup  = activeThreadData.type === 'group';
-            const avatar   = document.getElementById('convAvatar');
-            avatar.className = 'conversation-header-avatar' + (isGroup ? ' group' : '');
-            avatar.innerHTML = (isGroup ? '👥' : contactInitials(activeThreadData.contact))
-                + '<div class="online-dot"></div>';
-            document.getElementById('convName').textContent = activeThreadData.label;
+            const label  = activeThreadData ? contactLabel(activeThreadData) : '';
+            const avatar = document.getElementById('convAvatar');
+            avatar.className = 'conversation-header-avatar';
+            avatar.innerHTML = initials(label) + '<div class="online-dot"></div>';
+            document.getElementById('convName').textContent = label;
 
-            // Load messages
             loadMessages(threadId);
-
-            // Focus composer
             document.getElementById('composerInput').focus();
         }
 
         // ── Load Messages ──────────────────────────────────────
         function loadMessages(threadId) {
-            // Try JSONP from Google Sheets, fall back to mock
-            const mockData = MOCK_CONVERSATIONS[threadId] || [];
-            renderMessages(mockData, activeThreadData);
+            document.getElementById('messagesArea').innerHTML =
+                '<div style="margin:auto;text-align:center;color:#aeaeb2;font-size:0.875rem;">Loading…</div>';
 
-            // JSONP attempt (fire and forget; mock will already be shown)
             const script = document.createElement('script');
-            script.src = GOOGLE_SCRIPT_URL + '?action=getMessages&thread=' + encodeURIComponent(threadId) + '&callback=onMessagesLoaded';
-            script.onerror = () => script.remove();
-            document.body.appendChild(script);
+            script.src = GOOGLE_SCRIPT_URL +
+                '?action=getMessages' +
+                '&thread=' + encodeURIComponent(threadId) +
+                '&callback=onMessagesLoaded';
+            script.onerror = function() {
+                document.getElementById('messagesArea').innerHTML =
+                    '<div style="margin:auto;text-align:center;color:#aeaeb2;font-size:0.875rem;">Could not load messages.</div>';
+            };
+            document.head.appendChild(script);
         }
 
-        // JSONP callback
         function onMessagesLoaded(data) {
-            if (data && data.success && Array.isArray(data.messages) && data.messages.length > 0) {
+            if (data && data.success && Array.isArray(data.messages)) {
                 const mapped = data.messages.map(m => ({
                     from: m.from,
-                    sent: m.from === CURRENT_USER,
+                    sent: m.from === CURRENT_EMAIL,
                     text: m.message,
-                    time: new Date(m.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                    time: formatTime(m.timestamp)
                 }));
-                renderMessages(mapped, activeThreadData);
+                renderMessages(mapped);
+            } else {
+                document.getElementById('messagesArea').innerHTML =
+                    '<div style="margin:auto;text-align:center;color:#aeaeb2;font-size:0.875rem;">No messages yet. Say hello!</div>';
             }
         }
 
         // ── Render Messages ────────────────────────────────────
-        function renderMessages(messages, thread) {
+        function renderMessages(messages) {
             const area = document.getElementById('messagesArea');
             if (!messages || messages.length === 0) {
                 area.innerHTML = '<div style="margin:auto;text-align:center;color:#aeaeb2;font-size:0.875rem;">No messages yet. Say hello!</div>';
                 return;
             }
 
-            let html = '<div class="date-separator"><span>Today</span></div>';
-
-            messages.forEach(msg => {
-                const wrapClass = msg.sent ? 'message-bubble-wrap sent' : 'message-bubble-wrap';
+            area.innerHTML = messages.map(msg => {
+                const wrapClass   = msg.sent ? 'message-bubble-wrap sent' : 'message-bubble-wrap';
                 const bubbleClass = msg.sent ? 'message-bubble sent' : 'message-bubble received';
-                const avClass    = msg.sent ? 'bubble-avatar sent-av' : 'bubble-avatar';
-                const avText     = msg.sent ? contactInitials(CURRENT_USER) : contactInitials(msg.from);
-                const timeAlign  = msg.sent ? 'text-align:right;' : '';
+                const avClass     = msg.sent ? 'bubble-avatar sent-av' : 'bubble-avatar';
+                const timeAlign   = msg.sent ? 'text-align:right;' : '';
 
-                html += `
+                return `
                     <div class="${wrapClass}">
-                        <div class="${avClass}">${avText}</div>
+                        <div class="${avClass}">${initials(msg.from)}</div>
                         <div>
                             <div class="${bubbleClass}">${escapeHtml(msg.text)}</div>
                             <div class="bubble-time" style="${timeAlign}">${msg.time}</div>
                         </div>
                     </div>`;
-            });
+            }).join('');
 
-            area.innerHTML = html;
             area.scrollTop = area.scrollHeight;
         }
 
@@ -842,13 +835,12 @@
             const text  = input.value.trim();
             if (!text || !activeThreadId) return;
 
-            // Optimistic UI update
-            const area = document.getElementById('messagesArea');
             const now  = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            const area = document.getElementById('messagesArea');
             const bubble = document.createElement('div');
             bubble.className = 'message-bubble-wrap sent';
             bubble.innerHTML = `
-                <div class="bubble-avatar sent-av">${contactInitials(CURRENT_USER)}</div>
+                <div class="bubble-avatar sent-av">${initials(CURRENT_EMAIL)}</div>
                 <div>
                     <div class="message-bubble sent">${escapeHtml(text)}</div>
                     <div class="bubble-time" style="text-align:right;">${now}</div>
@@ -856,43 +848,29 @@
             area.appendChild(bubble);
             area.scrollTop = area.scrollHeight;
 
-            // Update thread preview
             if (activeThreadData) {
-                activeThreadData.lastMsg  = text;
-                activeThreadData.lastTime = 'Just now';
+                activeThreadData.lastMessage  = text;
+                activeThreadData.lastTimestamp = new Date().toISOString();
                 renderThreadList(allThreads);
             }
 
-            // Clear input
             input.value = '';
             input.style.height = '';
 
-            // Simulate typing response after short delay (for demo)
-            simulateTyping();
+            const toEmail = activeThreadData ? contactEmail(activeThreadData) : '';
 
-            // POST to Google Sheets (fire-and-forget, no-cors)
             fetch(GOOGLE_SCRIPT_URL, {
-                method:  'POST',
-                mode:    'no-cors',
+                method: 'POST',
+                mode:   'no-cors',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body:    new URLSearchParams({
+                body: new URLSearchParams({
                     action:   'newMessage',
                     threadId: activeThreadId,
-                    from:     CURRENT_USER,
-                    to:       activeThreadData ? activeThreadData.contact : '',
+                    from:     CURRENT_EMAIL,
+                    to:       toEmail,
                     message:  text
                 }).toString()
-            }).catch(() => {}); // Ignore CORS errors — fire and forget
-        }
-
-        // ── Simulate typing indicator (demo) ──────────────────
-        function simulateTyping() {
-            if (!activeThreadData || activeThreadData.type === 'group') return;
-            const indicator = document.getElementById('typingIndicator');
-            const avEl      = document.getElementById('typingAvatar');
-            avEl.textContent = contactInitials(activeThreadData.contact);
-            indicator.classList.add('visible');
-            setTimeout(() => indicator.classList.remove('visible'), 2200);
+            }).catch(() => {});
         }
 
         // ── Composer keyboard handler ──────────────────────────
@@ -908,14 +886,35 @@
             el.style.height = Math.min(el.scrollHeight, 140) + 'px';
         }
 
-        // ── Start new message (stub) ───────────────────────────
+        // ── New Message — prompt for recipient email ───────────
         function startNewMessage() {
-            alert('Select a contact from the list to start a conversation.');
+            const to = prompt('Enter the email address of the person you want to message:');
+            if (!to || !to.includes('@')) return;
+
+            const threadId = 'DIRECT_' + [CURRENT_EMAIL, to].sort().join('_');
+            const existing = allThreads.find(t => t.threadId === threadId);
+
+            if (existing) {
+                selectThread(existing.threadId);
+            } else {
+                const newThread = {
+                    threadId:      threadId,
+                    threadType:    'direct',
+                    from:          CURRENT_EMAIL,
+                    to:            to,
+                    lastMessage:   '',
+                    lastTimestamp: new Date().toISOString(),
+                    unreadCount:   0
+                };
+                allThreads.unshift(newThread);
+                renderThreadList(allThreads);
+                selectThread(threadId);
+            }
         }
 
         // ── Utility ───────────────────────────────────────────
         function escapeHtml(text) {
-            return text
+            return String(text)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
@@ -924,13 +923,15 @@
         }
 
         // ── Init ──────────────────────────────────────────────
-        renderThreadList(allThreads);
-
-        // Show admin link if user is admin
-        const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
         if (_sess.role === 'admin') {
             const al = document.getElementById('adminLink');
             if (al) al.style.display = 'flex';
+        }
+
+        if (!CURRENT_EMAIL) {
+            window.location.replace('login.html');
+        } else {
+            loadThreads();
         }
     </script>
 </body>

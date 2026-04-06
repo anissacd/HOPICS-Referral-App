@@ -568,14 +568,7 @@
             readonly:     'ua-gray'
         };
 
-        let users = [
-            { id: 1, name: 'Ashley Rivera',   email: 'ashley.r@hopics.org',  role: 'admin',        status: true,  lastLogin: 'Apr 6, 2026, 9:02 AM' },
-            { id: 2, name: 'Carlos Mendoza',  email: 'carlos.m@hopics.org',  role: 'supervisor',   status: true,  lastLogin: 'Apr 5, 2026, 4:17 PM' },
-            { id: 3, name: 'Elena Vasquez',   email: 'elena.v@hopics.org',   role: 'case_manager', status: true,  lastLogin: 'Apr 6, 2026, 8:45 AM' },
-            { id: 4, name: 'Marcus Davis',    email: 'marcus.d@hopics.org',  role: 'case_manager', status: true,  lastLogin: 'Apr 4, 2026, 3:30 PM' },
-            { id: 5, name: 'Jordan Kim',      email: 'jordan.k@hopics.org',  role: 'intake',       status: true,  lastLogin: 'Apr 3, 2026, 11:20 AM' },
-            { id: 6, name: 'Sam Thompson',    email: 'sam.t@hopics.org',     role: 'outreach',     status: false, lastLogin: 'Mar 28, 2026, 2:00 PM' }
-        ];
+        let users = [];
 
         let programs = [
             { name: 'Street Outreach',             type: 'Outreach',        active: true,  referrals: 47 },
@@ -850,8 +843,41 @@
             }
         });
 
+        // ── Load users from Google Sheets ─────────────────────────────
+        function loadUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:#aeaeb2;">Loading users…</td></tr>';
+
+            const script = document.createElement('script');
+            script.src = GAS_URL + '?action=listUsers&callback=onUsersLoaded';
+            script.onerror = function() {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:#aeaeb2;">Could not load users.</td></tr>';
+            };
+            setTimeout(function() {
+                if (users.length === 0) renderUsers([]);
+            }, 10000);
+            document.head.appendChild(script);
+        }
+
+        function onUsersLoaded(data) {
+            if (data && data.success && Array.isArray(data.users)) {
+                users = data.users.map(function(u, i) {
+                    return {
+                        id:        i + 1,
+                        name:      u.name      || '',
+                        email:     u.email     || '',
+                        role:      u.role      || 'case_manager',
+                        status:    String(u.status).toLowerCase() === 'active',
+                        lastLogin: u.lastLogin || 'Never'
+                    };
+                });
+                renderUsers(users);
+                updateAdminStats();
+            }
+        }
+
         // ── Init ──────────────────────────────────────────────────────
-        renderUsers(users);
+        loadUsers();
         renderPrograms();
         renderActivity(activityLog);
     </script>

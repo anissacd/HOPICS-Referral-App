@@ -201,7 +201,6 @@
             .login-card { padding: 2rem 1.5rem; margin: 1rem; }
         }
     </style>
-    <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body class="login-page">
     <div class="login-bg"></div>
@@ -221,13 +220,16 @@
         <div class="login-loading" id="loginLoading">Verifying your account, please wait...</div>
         <div class="login-error" id="loginError"></div>
 
-        <!-- Google Sign-In Button (rendered by Google) -->
-        <div id="g_id_onload"
-             data-client_id="80449522850-jaku4cijq636ttpmj95moe9s3obhv30b.apps.googleusercontent.com"
-             data-callback="handleCredentialResponse"
-             data-auto_prompt="false">
-        </div>
-        <div id="googleBtnContainer" style="width:100%; display:flex; justify-content:center; margin-bottom:1.5rem;"></div>
+        <!-- Google Sign-In Button -->
+        <button class="btn-google-sso" id="googleSignInBtn" type="button" onclick="triggerGoogleSignIn()">
+            <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            Sign in with Google
+        </button>
 
         <!-- Support -->
         <p class="login-support">Having trouble signing in? Contact your administrator.</p>
@@ -239,50 +241,77 @@
     </div>
 
     <script>
+        const CLIENT_ID = '80449522850-jaku4cijq636ttpmj95moe9s3obhv30b.apps.googleusercontent.com';
+        const REDIRECT_URI = 'https://hopicsreferrals.netlify.app/login.html';
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
 
-        // ── Render the official Google Sign-In button ───────────────
-        window.onload = function () {
-            if (typeof google !== 'undefined') {
-                google.accounts.id.initialize({
-                    client_id: '80449522850-jaku4cijq636ttpmj95moe9s3obhv30b.apps.googleusercontent.com',
-                    callback: handleCredentialResponse
-                });
-                google.accounts.id.renderButton(
-                    document.getElementById('googleBtnContainer'),
-                    {
-                        type: 'standard',
-                        theme: 'outline',
-                        size: 'large',
-                        text: 'sign_in_with',
-                        shape: 'rectangular',
-                        width: 360
-                    }
-                );
+        // ── On page load: check if returning from Google OAuth ──────
+        (function () {
+            // Already signed in — skip to dashboard
+            const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+            if (sess.role && sess.role !== 'pending') {
+                window.location.replace('dashboard.html');
+                return;
             }
-        };
 
-        // ── Handle credential (ID token) from Google ────────────────
-        function handleCredentialResponse(response) {
+            // Returning from Google with access token in URL hash
+            const hash = window.location.hash;
+            if (hash && hash.includes('access_token=')) {
+                const params = new URLSearchParams(hash.replace('#', '?'));
+                const token  = params.get('access_token');
+                if (token) {
+                    // Clear hash from URL
+                    history.replaceState(null, '', window.location.pathname);
+                    showLoading();
+                    fetchUserInfo(token);
+                }
+            }
+
+            // Error returned from Google
+            if (hash && hash.includes('error=')) {
+                const params = new URLSearchParams(hash.replace('#', '?'));
+                showError('Sign-in failed: ' + (params.get('error_description') || params.get('error')));
+            }
+        })();
+
+        // ── Button click: redirect to Google OAuth ──────────────────
+        function triggerGoogleSignIn() {
+            const state = Math.random().toString(36).substring(2);
+            sessionStorage.setItem('oauth_state', state);
+
+            const url = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+                'client_id='    + encodeURIComponent(CLIENT_ID) +
+                '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
+                '&response_type=token' +
+                '&scope='        + encodeURIComponent('openid email profile') +
+                '&prompt=select_account' +
+                '&state='        + state;
+
+            window.location.href = url;
+        }
+
+        // ── Fetch user info from Google using access token ──────────
+        async function fetchUserInfo(token) {
             try {
-                const parts   = response.credential.split('.');
-                const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: 'Bearer ' + token }
+                });
+                if (!resp.ok) throw new Error('userinfo failed');
 
-                const email   = payload.email   || '';
-                const name    = payload.name    || '';
-                const picture = payload.picture || '';
+                const user    = await resp.json();
+                const email   = user.email   || '';
+                const name    = user.name    || '';
+                const picture = user.picture || '';
 
                 sessionStorage.setItem('hopics_user', JSON.stringify({
                     email, name, picture, role: 'pending'
                 }));
 
-                showLoading();
-                hideError();
                 verifyAccess(email, name, picture);
 
             } catch (err) {
-                showError('Authentication error. Please try again.');
-                console.error('credential error:', err);
+                hideLoading();
+                showError('Could not get account info. Please try again.');
             }
         }
 
@@ -290,13 +319,11 @@
         function verifyAccess(email, name, picture) {
             window._pendingAuth = { email, name, picture };
 
-            const script = document.createElement('script');
-            const src = GAS_URL +
+            const script  = document.createElement('script');
+            script.src    = GAS_URL +
                 '?action=verifyUser' +
-                '&email=' + encodeURIComponent(email) +
+                '&email='    + encodeURIComponent(email) +
                 '&callback=onUserVerified';
-
-            script.src = src;
             script.onerror = function () { fallbackVerify(email, name, picture); };
 
             const timeout = setTimeout(function () {
@@ -314,9 +341,7 @@
 
             if (data && data.authorized) {
                 sessionStorage.setItem('hopics_user', JSON.stringify({
-                    email,
-                    name: data.name || name,
-                    picture,
+                    email, name: data.name || name, picture,
                     role: data.role || 'case_manager'
                 }));
                 window.location.href = 'dashboard.html';
@@ -329,9 +354,8 @@
         // ── Fallback when GAS is unreachable ────────────────────────
         function fallbackVerify(email, name, picture) {
             clearTimeout(window._authTimeout);
-            const isAuthorized = email.endsWith('@hopics.org') || email.endsWith('@gmail.com');
-
-            if (isAuthorized) {
+            const ok = email.endsWith('@hopics.org') || email.endsWith('@gmail.com');
+            if (ok) {
                 sessionStorage.setItem('hopics_user', JSON.stringify({
                     email, name, picture, role: 'case_manager'
                 }));
@@ -345,14 +369,12 @@
         // ── UI helpers ──────────────────────────────────────────────
         function showLoading() {
             document.getElementById('loginLoading').classList.add('visible');
-            document.getElementById('googleBtnContainer').style.opacity = '0.5';
-            document.getElementById('googleBtnContainer').style.pointerEvents = 'none';
+            document.getElementById('googleSignInBtn').disabled = true;
         }
 
         function hideLoading() {
             document.getElementById('loginLoading').classList.remove('visible');
-            document.getElementById('googleBtnContainer').style.opacity = '1';
-            document.getElementById('googleBtnContainer').style.pointerEvents = 'auto';
+            document.getElementById('googleSignInBtn').disabled = false;
         }
 
         function showError(msg) {
@@ -364,14 +386,6 @@
         function hideError() {
             document.getElementById('loginError').classList.remove('visible');
         }
-
-        // ── Skip login if already authenticated ─────────────────────
-        (function () {
-            const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
-            if (sess.role && sess.role !== 'pending') {
-                window.location.replace('dashboard.html');
-            }
-        })();
     </script>
 </body>
 </html>

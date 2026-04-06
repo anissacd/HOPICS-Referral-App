@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPICS — New Referral</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ── Client Search Combobox ── */
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-input-row {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            border: 1px solid #d2d2d7;
+            border-radius: 12px;
+            background: #f5f5f7;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            overflow: hidden;
+        }
+
+        .search-input-row:focus-within {
+            border-color: #ffd700;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
+        }
+
+        .search-icon {
+            padding: 0 0.875rem;
+            color: #aeaeb2;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .search-field {
+            flex: 1;
+            padding: 0.875rem 0.875rem 0.875rem 0;
+            border: none;
+            background: transparent;
+            font-size: 0.95rem;
+            color: #1d1d1f;
+            outline: none;
+        }
+
+        .search-field::placeholder { color: #aeaeb2; }
+
+        .search-clear {
+            padding: 0 0.875rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #aeaeb2;
+            display: none;
+            align-items: center;
+            transition: color 0.2s ease;
+        }
+
+        .search-clear:hover { color: #1d1d1f; }
+        .search-clear.visible { display: flex; }
+
+        /* Dropdown */
+        .search-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #e5e5ea;
+            border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            z-index: 50;
+            overflow: hidden;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .search-dropdown.open { display: block; }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.875rem 1rem;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            border-bottom: 1px solid #f5f5f7;
+        }
+
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:hover, .dropdown-item.focused { background: #f5f5f7; }
+
+        .dropdown-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700 0%, #f59e0b 100%);
+            display: grid;
+            place-items: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #111111;
+            flex-shrink: 0;
+        }
+
+        .dropdown-avatar.new-client {
+            background: #f5f5f7;
+            color: #6e6e73;
+        }
+
+        .dropdown-info { flex: 1; min-width: 0; }
+
+        .dropdown-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1d1d1f;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-name mark {
+            background: #fff8e1;
+            color: #b45309;
+            border-radius: 3px;
+            padding: 0 1px;
+        }
+
+        .dropdown-sub {
+            font-size: 0.775rem;
+            color: #aeaeb2;
+            margin-top: 0.15rem;
+        }
+
+        .dropdown-hmis {
+            font-size: 0.775rem;
+            font-weight: 600;
+            color: #6e6e73;
+            background: #f5f5f7;
+            border-radius: 6px;
+            padding: 0.2rem 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .dropdown-empty {
+            padding: 1.5rem 1rem;
+            text-align: center;
+            color: #aeaeb2;
+            font-size: 0.875rem;
+        }
+
+        /* ── Selected Client Card ── */
+        .selected-client {
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 12px;
+            margin-top: 0.875rem;
+        }
+
+        .selected-client.visible { display: flex; }
+
+        .selected-client-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700 0%, #f59e0b 100%);
+            display: grid;
+            place-items: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #111111;
+            flex-shrink: 0;
+        }
+
+        .selected-client-info { flex: 1; }
+
+        .selected-client-name {
+            font-size: 0.925rem;
+            font-weight: 700;
+            color: #166534;
+        }
+
+        .selected-client-meta {
+            font-size: 0.8rem;
+            color: #6e6e73;
+            margin-top: 0.15rem;
+        }
+
+        .selected-client-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            flex-shrink: 0;
+        }
+
+        .view-profile-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #166534;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            transition: color 0.2s ease;
+        }
+
+        .view-profile-link:hover { color: #14532d; }
+
+        .change-client-btn {
+            background: none;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #166534;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .change-client-btn:hover { background: #dcfce7; }
+
+        /* ── Locked field ── */
+        .input-field[readonly] {
+            background: #f5f5f7;
+            color: #6e6e73;
+            cursor: default;
+        }
+
+        /* ── Section label ── */
+        .form-section-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #aeaeb2;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding-bottom: 0.875rem;
+            border-bottom: 1px solid #f5f5f7;
+            margin-bottom: 1.25rem;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-mark">H</div>
+                <h2>HOPICS</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="clients.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="referral.html" class="active">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    <span>New Referral</span>
+                </a>
+                <a href="my-referrals.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h.01"/><path d="M16 20h.01"/><path d="M8 4h.01"/><path d="M8 20h.01"/>
+                        <path d="M12 4h.01"/><path d="M12 20h.01"/><path d="M4 8h.01"/><path d="M4 12h.01"/>
+                        <path d="M4 16h.01"/><path d="M20 8h.01"/><path d="M20 12h.01"/><path d="M20 16h.01"/>
+                    </svg>
+                    <span>My Referrals</span>
+                </a>
+                <a href="messages.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Messages</span>
+                </a>
+                <a href="index.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Sign Out</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section">
+                <div class="card">
+                    <div class="card-title">Form Guidance</div>
+                    <p>Search for an existing client by name or HMIS ID, or fill in details to create a new profile.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="app-main">
+            <section class="referral-header">
+                <div>
+                    <h1>New Referral</h1>
+                    <p>Add a new client referral and begin the support workflow.</p>
+                </div>
+                <a class="btn btn-secondary" href="dashboard.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"/>
+                        <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                    Back to Dashboard
+                </a>
+            </section>
+
+            <section class="referral-form">
+                <div class="form-heading">
+                    <h2>Client Information</h2>
+                    <p>Search for an existing client or enter details for a new one.</p>
+                </div>
+
+                <form action="https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec" method="POST" novalidate>
+                    <input type="hidden" id="hmisId" name="hmisId">
+                    <input type="hidden" id="isExistingClient" name="isExistingClient" value="false">
+
+                    <!-- Client Search -->
+                    <div class="input-group" style="margin-bottom:0.5rem;">
+                        <label class="input-label" for="clientSearch">Search Client by Name or HMIS ID</label>
+                        <div class="search-wrapper">
+                            <div class="search-input-row">
+                                <span class="search-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                    </svg>
+                                </span>
+                                <input type="text" id="clientSearch" class="search-field"
+                                       placeholder="Type name or HMIS ID (e.g. Maria or HTX-2024-…)"
+                                       autocomplete="off" oninput="onSearchInput(this.value)">
+                                <button type="button" class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Clear">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="search-dropdown" id="searchDropdown"></div>
+                        </div>
+
+                        <!-- Selected client card -->
+                        <div class="selected-client" id="selectedClientCard">
+                            <div class="selected-client-avatar" id="selectedAvatar"></div>
+                            <div class="selected-client-info">
+                                <div class="selected-client-name" id="selectedName"></div>
+                                <div class="selected-client-meta" id="selectedMeta"></div>
+                            </div>
+                            <div class="selected-client-actions">
+                                <a class="view-profile-link" id="viewProfileLink" href="client-profile.html">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                                    </svg>
+                                    View Profile
+                                </a>
+                                <button type="button" class="change-client-btn" onclick="clearSearch()">Change</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Client Details -->
+                    <div class="form-section-label">Client Details</div>
+
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label class="input-label" for="clientName">Client Name</label>
+                            <input class="input-field" type="text" id="clientName" name="clientName"
+                                   placeholder="Full name" autocomplete="off" required>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label" for="clientDOB">Date of Birth</label>
+                            <input class="input-field" type="date" id="clientDOB" name="clientDOB" required>
+                        </div>
+                    </div>
+
+                    <!-- Referral Details -->
+                    <div class="form-section-label">Program Flow</div>
+
+                    <div class="form-row" style="align-items:end;">
+                        <div class="input-group">
+                            <label class="input-label" for="fromProgram">Referring From Program</label>
+                            <select class="input-field" id="fromProgram" name="fromProgram" required>
+                                <option value="" disabled selected>Select sending program</option>
+                                <option>Street Outreach</option>
+                                <option>Emergency Shelter</option>
+                                <option>Drop-In Center</option>
+                                <option>Transitional Housing</option>
+                                <option>Rapid Rehousing</option>
+                                <option>Permanent Supportive Housing</option>
+                                <option>Mental Health Services</option>
+                                <option>Substance Abuse Recovery</option>
+                                <option>Employment Services</option>
+                                <option>Medical Outreach</option>
+                                <option>External / Community Partner</option>
+                            </select>
+                        </div>
+
+                        <!-- Arrow between selects -->
+                        <div style="display:flex;align-items:center;justify-content:center;padding-bottom:0.2rem;color:#aeaeb2;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                <polyline points="12 5 19 12 12 19"/>
+                            </svg>
+                        </div>
+
+                        <div class="input-group">
+                            <label class="input-label" for="toProgram">Referring To Program</label>
+                            <select class="input-field" id="toProgram" name="toProgram" required>
+                                <option value="" disabled selected>Select receiving program</option>
+                                <option>Street Outreach</option>
+                                <option>Emergency Shelter</option>
+                                <option>Drop-In Center</option>
+                                <option>Transitional Housing</option>
+                                <option>Rapid Rehousing</option>
+                                <option>Permanent Supportive Housing</option>
+                                <option>Mental Health Services</option>
+                                <option>Substance Abuse Recovery</option>
+                                <option>Employment Services</option>
+                                <option>Medical Outreach</option>
+                                <option>External / Community Partner</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-section-label" style="margin-top:0.5rem;">Referral Details</div>
+
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label class="input-label" for="serviceCategory">Service Category</label>
+                            <select class="input-field" id="serviceCategory" name="serviceCategory" required>
+                                <option value="" disabled selected>Select category</option>
+                                <option value="housing">Housing</option>
+                                <option value="medical">Medical</option>
+                                <option value="mental-health">Mental Health</option>
+                                <option value="substance-abuse">Substance Abuse</option>
+                                <option value="employment">Employment</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label" for="referralSource">How Client Was Found</label>
+                            <select class="input-field" id="referralSource" name="referralSource" required>
+                                <option value="" disabled selected>Select source</option>
+                                <option value="street">Street Outreach</option>
+                                <option value="shelter">Shelter</option>
+                                <option value="hospital">Hospital</option>
+                                <option value="self">Self-Referral</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label class="input-label" for="urgency">Urgency Level</label>
+                            <select class="input-field" id="urgency" name="urgency" required>
+                                <option value="" disabled selected>Select urgency</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label" for="assignedTo">Assigned To</label>
+                            <select class="input-field" id="assignedTo" name="assignedTo">
+                                <option value="" disabled selected>Select staff member</option>
+                                <option value="ashley">Ashley R.</option>
+                                <option value="carlos">Carlos M.</option>
+                                <option value="elena">Elena V.</option>
+                                <option value="marcus">Marcus D.</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom:1.25rem;">
+                        <label class="input-label" for="assessmentNotes">Assessment Notes</label>
+                        <textarea class="input-field" id="assessmentNotes" name="assessmentNotes"
+                                  rows="5" placeholder="Enter assessment details, client background, and any relevant context..."></textarea>
+                    </div>
+
+                    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                        <a class="btn btn-secondary" href="dashboard.html">Cancel</a>
+                        <button class="btn btn-primary" type="submit" id="submitBtn">Save Referral</button>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <iframe id="submissionFrame" name="submissionFrame" style="display:none;"></iframe>
+
+    <script>
+        /* ── Client Database (mock — replace with real API/Sheets data) ── */
+        const CLIENTS = [
+            { id: 'HTX-2024-00471', name: 'Maria Lopez',  dob: '1985-03-15', housing: 'Literally Homeless',  program: 'Emergency Housing' },
+            { id: 'HTX-2024-00382', name: 'Jason White',  dob: '1990-07-22', housing: 'Transitional Housing', program: 'Mental Health Services' },
+            { id: 'HTX-2024-00291', name: 'Angela Kim',   dob: '1978-11-04', housing: 'Shelter',              program: 'Medical Outreach' },
+            { id: 'HTX-2024-00184', name: 'David Torres', dob: '1995-02-18', housing: 'At Risk',              program: 'Employment Services' },
+            { id: 'HTX-2024-00103', name: 'Priya Patel',  dob: '1988-09-30', housing: 'Literally Homeless',  program: 'Substance Abuse Recovery' },
+        ];
+
+        let selectedClient = null;
+
+        function initials(name) {
+            const p = name.trim().split(' ');
+            return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
+        }
+
+        function fmtDOB(d) {
+            return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function highlight(text, query) {
+            if (!query) return text;
+            const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(re, '<mark>$1</mark>');
+        }
+
+        /* ── Search ── */
+        function onSearchInput(q) {
+            const clear = document.getElementById('searchClear');
+            const dropdown = document.getElementById('searchDropdown');
+            clear.classList.toggle('visible', q.length > 0);
+
+            if (q.trim().length === 0) {
+                dropdown.classList.remove('open');
+                return;
+            }
+
+            const lower = q.toLowerCase();
+            const matches = CLIENTS.filter(c =>
+                c.name.toLowerCase().includes(lower) || c.id.toLowerCase().includes(lower)
+            );
+
+            renderDropdown(matches, q);
+            dropdown.classList.add('open');
+        }
+
+        function renderDropdown(matches, q) {
+            const dropdown = document.getElementById('searchDropdown');
+
+            if (matches.length === 0) {
+                dropdown.innerHTML = `
+                    <div class="dropdown-empty">No existing clients found — a new profile will be created.</div>
+                    <div class="dropdown-item" onclick="selectNewClient()">
+                        <div class="dropdown-avatar new-client">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                        </div>
+                        <div class="dropdown-info">
+                            <div class="dropdown-name">Create new client profile</div>
+                            <div class="dropdown-sub">Fill in details below</div>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            dropdown.innerHTML = matches.map(c => `
+                <div class="dropdown-item" onclick="selectClient('${c.id}')">
+                    <div class="dropdown-avatar">${initials(c.name)}</div>
+                    <div class="dropdown-info">
+                        <div class="dropdown-name">${highlight(c.name, q)}</div>
+                        <div class="dropdown-sub">DOB ${fmtDOB(c.dob)} · ${c.housing}</div>
+                    </div>
+                    <div class="dropdown-hmis">${highlight(c.id, q)}</div>
+                </div>`).join('');
+        }
+
+        /* ── Select existing client ── */
+        function selectClient(id) {
+            const client = CLIENTS.find(c => c.id === id);
+            if (!client) return;
+            selectedClient = client;
+
+            // Fill hidden fields
+            document.getElementById('hmisId').value = client.id;
+            document.getElementById('isExistingClient').value = 'true';
+
+            // Fill visible fields
+            document.getElementById('clientName').value = client.name;
+            document.getElementById('clientDOB').value  = client.dob;
+            document.getElementById('clientName').setAttribute('readonly', true);
+            document.getElementById('clientDOB').setAttribute('readonly', true);
+
+            // Fill search box
+            document.getElementById('clientSearch').value = client.name + '  ·  ' + client.id;
+            document.getElementById('searchClear').classList.add('visible');
+
+            // Show selected card
+            const card = document.getElementById('selectedClientCard');
+            document.getElementById('selectedAvatar').textContent = initials(client.name);
+            document.getElementById('selectedName').textContent   = client.name;
+            document.getElementById('selectedMeta').textContent   = client.id + '  ·  ' + client.program + '  ·  DOB ' + fmtDOB(client.dob);
+            document.getElementById('viewProfileLink').href       = 'client-profile.html?name=' + encodeURIComponent(client.name) + '&hmis=' + encodeURIComponent(client.id);
+            card.classList.add('visible');
+
+            closeDropdown();
+        }
+
+        /* ── Select new client ── */
+        function selectNewClient() {
+            document.getElementById('clientName').removeAttribute('readonly');
+            document.getElementById('clientDOB').removeAttribute('readonly');
+            document.getElementById('isExistingClient').value = 'false';
+            document.getElementById('hmisId').value = '';
+            closeDropdown();
+            document.getElementById('clientSearch').value = '';
+            document.getElementById('searchClear').classList.remove('visible');
+            document.getElementById('clientName').focus();
+        }
+
+        /* ── Clear / reset ── */
+        function clearSearch() {
+            selectedClient = null;
+            document.getElementById('clientSearch').value = '';
+            document.getElementById('searchClear').classList.remove('visible');
+            document.getElementById('searchDropdown').classList.remove('open');
+            document.getElementById('selectedClientCard').classList.remove('visible');
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientDOB').value  = '';
+            document.getElementById('hmisId').value     = '';
+            document.getElementById('isExistingClient').value = 'false';
+            document.getElementById('clientName').removeAttribute('readonly');
+            document.getElementById('clientDOB').removeAttribute('readonly');
+            document.getElementById('clientSearch').focus();
+        }
+
+        function closeDropdown() {
+            document.getElementById('searchDropdown').classList.remove('open');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-wrapper')) closeDropdown();
+        });
+
+        /* ── Form Submit ── */
+        const form  = document.querySelector('form');
+        const frame = document.getElementById('submissionFrame');
+        form.target = 'submissionFrame';
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const btn = document.getElementById('submitBtn');
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+
+            const name        = document.getElementById('clientName').value.trim();
+            const category    = document.getElementById('serviceCategory').value;
+            const source      = document.getElementById('referralSource').value;
+            const assigned    = document.getElementById('assignedTo').value;
+            const hmis        = document.getElementById('hmisId').value;
+            const fromProgram = document.getElementById('fromProgram').value;
+            const toProgram   = document.getElementById('toProgram').value;
+
+            const handleLoad = function() {
+                frame.removeEventListener('load', handleLoad);
+                window.location.href = 'client-profile.html?' + new URLSearchParams({
+                    submitted:   'true',
+                    name:        name || 'New Client',
+                    category:    category,
+                    source:      source,
+                    assigned:    assigned,
+                    hmis:        hmis,
+                    fromProgram: fromProgram,
+                    toProgram:   toProgram,
+                }).toString();
+            };
+
+            frame.addEventListener('load', handleLoad);
+            this.submit();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPICS — Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ── Program Flow Table ── */
+        .flow-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 120px;
+        }
+
+        .flow-bar-track {
+            flex: 1;
+            height: 6px;
+            background: #f5f5f7;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .flow-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.4s ease;
+        }
+
+        .flow-bar-fill.sent     { background: #ffd700; }
+        .flow-bar-fill.received { background: #22c55e; }
+
+        .flow-num {
+            font-size: 0.875rem;
+            font-weight: 700;
+            min-width: 28px;
+            text-align: right;
+        }
+
+        .flow-num.sent     { color: #b45309; }
+        .flow-num.received { color: #166534; }
+
+        .flow-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.625rem;
+            border-radius: 99px;
+        }
+
+        .flow-badge.net-out { background: #fff8e1; color: #b45309; }
+        .flow-badge.net-in  { background: #dcfce7; color: #166534; }
+        .flow-badge.balanced { background: #f5f5f7; color: #6e6e73; }
+
+        /* ── Program legend ── */
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            color: #6e6e73;
+            font-weight: 500;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ── Flow summary cards ── */
+        .flow-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .flow-card {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .flow-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+
+        .flow-card-icon.yellow { background: #fff8e1; color: #b45309; }
+        .flow-card-icon.green  { background: #dcfce7; color: #166534; }
+        .flow-card-icon.blue   { background: #e0f2fe; color: #0369a1; }
+
+        .flow-card-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #aeaeb2;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .flow-card-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        /* ── Recent referrals arrow ── */
+        .prog-flow-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.875rem;
+            flex-wrap: wrap;
+        }
+
+        .prog-tag {
+            font-size: 0.775rem;
+            font-weight: 500;
+            color: #1d1d1f;
+            background: #f5f5f7;
+            border-radius: 6px;
+            padding: 0.2rem 0.5rem;
+            white-space: nowrap;
+        }
+
+        .prog-arrow {
+            color: #aeaeb2;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 1024px) {
+            .flow-summary { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .flow-summary { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-mark">H</div>
+                <h2>HOPICS</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="active">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="clients.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="referral.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    <span>New Referral</span>
+                </a>
+                <a href="my-referrals.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h.01"/><path d="M16 20h.01"/><path d="M8 4h.01"/><path d="M8 20h.01"/>
+                        <path d="M12 4h.01"/><path d="M12 20h.01"/><path d="M4 8h.01"/><path d="M4 12h.01"/>
+                        <path d="M4 16h.01"/><path d="M20 8h.01"/><path d="M20 12h.01"/><path d="M20 16h.01"/>
+                    </svg>
+                    <span>My Referrals</span>
+                </a>
+                <a href="messages.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Messages</span>
+                </a>
+                <a href="index.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Sign Out</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section">
+                <div class="card">
+                    <div class="card-title">Welcome back</div>
+                    <p>Review referral activity and track program flow across the agency.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="app-main">
+            <section class="dashboard-header">
+                <div>
+                    <h1>Referral Dashboard</h1>
+                    <p>Track referrals sent and received across all programs.</p>
+                </div>
+                <div class="quick-actions">
+                    <a class="btn btn-secondary" href="referral.html">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        New Referral
+                    </a>
+                    <a class="btn btn-primary" href="#">View Reports</a>
+                </div>
+            </section>
+
+            <!-- Overall stats -->
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Referrals</h3>
+                    <p class="card-value">184</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Pending</h3>
+                    <p class="card-value">42</p>
+                </div>
+                <div class="stat-card">
+                    <h3>In Progress</h3>
+                    <p class="card-value">78</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Completed</h3>
+                    <p class="card-value">54</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Closed</h3>
+                    <p class="card-value">10</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Avg. Pending Time</h3>
+                    <p class="card-value">2.8d</p>
+                </div>
+            </section>
+
+            <!-- Program Flow Summary -->
+            <div class="flow-summary">
+                <div class="flow-card">
+                    <div class="flow-card-icon yellow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flow-card-label">Referrals Sent Out</div>
+                        <div class="flow-card-value">97</div>
+                    </div>
+                </div>
+                <div class="flow-card">
+                    <div class="flow-card-icon green">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"/>
+                            <polyline points="12 19 5 12 12 5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flow-card-label">Referrals Received</div>
+                        <div class="flow-card-value">87</div>
+                    </div>
+                </div>
+                <div class="flow-card">
+                    <div class="flow-card-icon blue">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flow-card-label">Programs Active</div>
+                        <div class="flow-card-value">8</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Program Flow Breakdown -->
+            <section class="card" style="margin-bottom:1.25rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+                    <div>
+                        <div class="card-title">Program Referral Flow</div>
+                        <div style="font-size:0.825rem;color:#aeaeb2;margin-top:0.2rem;">Referrals sent and received by each program</div>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:#ffd700;"></div> Sent Out
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background:#22c55e;"></div> Received
+                        </div>
+                    </div>
+                </div>
+                <div class="table-wrapper" style="margin-top:0;">
+                    <table class="table" id="programFlowTable">
+                        <thead>
+                            <tr>
+                                <th>Program</th>
+                                <th>Sent Out</th>
+                                <th>Received</th>
+                                <th>Net Flow</th>
+                                <th style="min-width:100px;">Pending</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Recent Referrals -->
+            <section class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+                    <div class="card-title">Recent Referrals</div>
+                    <a class="btn btn-secondary" href="my-referrals.html" style="font-size:0.8rem;padding:0.45rem 0.9rem;">See all</a>
+                </div>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Program Flow</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th>Assigned To</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Maria Lopez</strong></td>
+                                <td>
+                                    <div class="prog-flow-cell">
+                                        <span class="prog-tag">Street Outreach</span>
+                                        <svg class="prog-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                        <span class="prog-tag">Emergency Shelter</span>
+                                    </div>
+                                </td>
+                                <td>Housing</td>
+                                <td><span class="status-pill status-pending">Pending</span></td>
+                                <td>Ashley R.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Jason White</strong></td>
+                                <td>
+                                    <div class="prog-flow-cell">
+                                        <span class="prog-tag">Emergency Shelter</span>
+                                        <svg class="prog-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                        <span class="prog-tag">Mental Health Services</span>
+                                    </div>
+                                </td>
+                                <td>Mental Health</td>
+                                <td><span class="status-pill status-progress">In Progress</span></td>
+                                <td>Carlos M.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Angela Kim</strong></td>
+                                <td>
+                                    <div class="prog-flow-cell">
+                                        <span class="prog-tag">Drop-In Center</span>
+                                        <svg class="prog-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                        <span class="prog-tag">Medical Outreach</span>
+                                    </div>
+                                </td>
+                                <td>Medical</td>
+                                <td><span class="status-pill status-completed">Completed</span></td>
+                                <td>Elena V.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>David Torres</strong></td>
+                                <td>
+                                    <div class="prog-flow-cell">
+                                        <span class="prog-tag">Rapid Rehousing</span>
+                                        <svg class="prog-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                        <span class="prog-tag">Employment Services</span>
+                                    </div>
+                                </td>
+                                <td>Employment</td>
+                                <td><span class="status-pill status-progress">In Progress</span></td>
+                                <td>Marcus D.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Priya Patel</strong></td>
+                                <td>
+                                    <div class="prog-flow-cell">
+                                        <span class="prog-tag">Emergency Shelter</span>
+                                        <svg class="prog-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                        <span class="prog-tag">Substance Abuse Recovery</span>
+                                    </div>
+                                </td>
+                                <td>Substance Abuse</td>
+                                <td><span class="status-pill status-closed">Closed</span></td>
+                                <td>Ashley R.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const programData = [
+            { name: 'Street Outreach',              sent: 32, received:  2, pending:  8 },
+            { name: 'Emergency Shelter',             sent: 18, received: 22, pending: 14 },
+            { name: 'Drop-In Center',                sent: 12, received:  6, pending:  4 },
+            { name: 'Rapid Rehousing',               sent:  8, received: 28, pending: 10 },
+            { name: 'Permanent Supportive Housing',  sent:  3, received: 19, pending:  6 },
+            { name: 'Mental Health Services',        sent:  6, received: 14, pending:  5 },
+            { name: 'Substance Abuse Recovery',      sent:  4, received:  9, pending:  3 },
+            { name: 'Employment Services',           sent:  4, received: 11, pending:  4 },
+        ];
+
+        const maxVal = Math.max(...programData.flatMap(p => [p.sent, p.received]));
+
+        const tbody = document.querySelector('#programFlowTable tbody');
+        tbody.innerHTML = programData.map(p => {
+            const net    = p.received - p.sent;
+            const netLabel = net > 0 ? `+${net} in` : net < 0 ? `${net} out` : 'Balanced';
+            const netClass = net > 0 ? 'net-in' : net < 0 ? 'net-out' : 'balanced';
+            const sentPct  = Math.round((p.sent / maxVal) * 100);
+            const recvPct  = Math.round((p.received / maxVal) * 100);
+            return `<tr>
+                <td><strong>${p.name}</strong></td>
+                <td>
+                    <div class="flow-bar-wrap">
+                        <span class="flow-num sent">${p.sent}</span>
+                        <div class="flow-bar-track">
+                            <div class="flow-bar-fill sent" style="width:${sentPct}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="flow-bar-wrap">
+                        <span class="flow-num received">${p.received}</span>
+                        <div class="flow-bar-track">
+                            <div class="flow-bar-fill received" style="width:${recvPct}%"></div>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="flow-badge ${netClass}">${netLabel}</span></td>
+                <td><span class="status-pill status-pending">${p.pending}</span></td>
+            </tr>`;
+        }).join('');
+    </script>
+</body>
+</html>

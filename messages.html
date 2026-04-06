@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPICS — Messages</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ── Override app-main padding for messages layout ── */
+        .app-main.messages-main {
+            padding: 0;
+            display: flex;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* ── Thread List Panel ── */
+        .thread-panel {
+            width: 320px;
+            flex-shrink: 0;
+            border-right: 1px solid #e5e5ea;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .thread-panel-header {
+            padding: 1.5rem 1.25rem 1rem;
+            border-bottom: 1px solid #f5f5f7;
+            flex-shrink: 0;
+        }
+
+        .thread-panel-header h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin-bottom: 0.875rem;
+        }
+
+        .thread-search {
+            position: relative;
+        }
+
+        .thread-search svg {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aeaeb2;
+            pointer-events: none;
+        }
+
+        .thread-search input {
+            width: 100%;
+            padding: 0.6rem 0.875rem 0.6rem 2.25rem;
+            border-radius: 10px;
+            border: 1px solid #d2d2d7;
+            background: #f5f5f7;
+            font-size: 0.875rem;
+            color: #1d1d1f;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .thread-search input::placeholder { color: #aeaeb2; }
+
+        .thread-search input:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
+        }
+
+        .thread-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .thread-item {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.875rem 1.25rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f7;
+            transition: background 0.15s ease;
+            position: relative;
+        }
+
+        .thread-item:hover { background: #f5f5f7; }
+
+        .thread-item.active {
+            background: #fff8e1;
+            border-left: 3px solid #ffd700;
+        }
+
+        .thread-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700 0%, #f59e0b 100%);
+            display: grid;
+            place-items: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #111111;
+            flex-shrink: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .thread-avatar.group {
+            background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+            color: #ffffff;
+        }
+
+        .thread-info { flex: 1; min-width: 0; }
+
+        .thread-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1d1d1f;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .thread-preview {
+            font-size: 0.8rem;
+            color: #aeaeb2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 0.2rem;
+        }
+
+        .thread-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.3rem;
+            flex-shrink: 0;
+        }
+
+        .thread-time {
+            font-size: 0.75rem;
+            color: #aeaeb2;
+            white-space: nowrap;
+        }
+
+        .unread-badge {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffd700;
+            color: #111111;
+            font-size: 0.65rem;
+            font-weight: 800;
+            display: grid;
+            place-items: center;
+        }
+
+        /* ── Conversation Panel ── */
+        .conversation-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: #f5f5f7;
+            min-width: 0;
+        }
+
+        .conversation-header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e5ea;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+
+        .conversation-header-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700 0%, #f59e0b 100%);
+            display: grid;
+            place-items: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #111111;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .conversation-header-avatar.group {
+            background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+            color: #ffffff;
+        }
+
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            border: 2px solid #ffffff;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+
+        .conversation-header-info h3 {
+            font-size: 0.975rem;
+            font-weight: 700;
+            color: #1d1d1f;
+        }
+
+        .conversation-header-info p {
+            font-size: 0.775rem;
+            color: #22c55e;
+            font-weight: 500;
+        }
+
+        .conversation-header-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* ── Messages Area ── */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .message-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .message-bubble-wrap {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+
+        .message-bubble-wrap.sent {
+            flex-direction: row-reverse;
+        }
+
+        .bubble-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e5e5ea 0%, #d2d2d7 100%);
+            display: grid;
+            place-items: center;
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #6e6e73;
+            flex-shrink: 0;
+        }
+
+        .bubble-avatar.sent-av {
+            background: linear-gradient(135deg, #ffd700 0%, #f59e0b 100%);
+            color: #111111;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            position: relative;
+            word-break: break-word;
+        }
+
+        .message-bubble.received {
+            background: #ffffff;
+            color: #1d1d1f;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        .message-bubble.sent {
+            background: #ffd700;
+            color: #111111;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bubble-time {
+            font-size: 0.7rem;
+            color: #aeaeb2;
+            margin-top: 0.2rem;
+            padding: 0 0.25rem;
+        }
+
+        .message-bubble-wrap.sent .bubble-time {
+            text-align: right;
+        }
+
+        /* ── Date separator ── */
+        .date-separator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0.75rem 0;
+        }
+
+        .date-separator span {
+            font-size: 0.75rem;
+            color: #aeaeb2;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .date-separator::before,
+        .date-separator::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e5ea;
+        }
+
+        /* ── Typing indicator ── */
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0 0.5rem;
+        }
+
+        .typing-indicator.visible { display: flex; }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            padding: 0.75rem 1rem;
+            background: #ffffff;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        .typing-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #aeaeb2;
+            animation: typingBounce 1.2s ease-in-out infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30%           { transform: translateY(-6px); }
+        }
+
+        /* ── Composer ── */
+        .composer {
+            background: #ffffff;
+            border-top: 1px solid #e5e5ea;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: flex-end;
+            gap: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .composer-textarea {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 22px;
+            border: 1px solid #d2d2d7;
+            background: #f5f5f7;
+            font-size: 0.9rem;
+            color: #1d1d1f;
+            resize: none;
+            min-height: 44px;
+            max-height: 140px;
+            line-height: 1.5;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            overflow-y: auto;
+        }
+
+        .composer-textarea::placeholder { color: #aeaeb2; }
+
+        .composer-textarea:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #ffd700;
+            border: none;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            color: #111111;
+            flex-shrink: 0;
+            transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+        }
+
+        .send-btn:hover {
+            background: #f5cc00;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(245, 204, 0, 0.4);
+        }
+
+        .send-btn:active { transform: scale(0.97); }
+
+        /* ── Empty conversation placeholder ── */
+        .conversation-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            color: #aeaeb2;
+        }
+
+        .conversation-empty svg { opacity: 0.35; }
+
+        .conversation-empty h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #6e6e73;
+        }
+
+        .conversation-empty p { font-size: 0.875rem; }
+
+        /* ── New message button in panel ── */
+        .new-msg-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            width: 100%;
+            padding: 0.65rem 1rem;
+            border-radius: 10px;
+            background: #ffd700;
+            color: #111111;
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.75rem;
+            transition: background 0.2s ease;
+        }
+
+        .new-msg-btn:hover { background: #f5cc00; }
+
+        @media (max-width: 768px) {
+            .thread-panel { width: 260px; }
+        }
+
+        @media (max-width: 640px) {
+            .app-main.messages-main { flex-direction: column; }
+            .thread-panel { width: 100%; height: 240px; border-right: none; border-bottom: 1px solid #e5e5ea; }
+            .message-bubble { max-width: 85%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-mark">H</div>
+                <h2>HOPICS</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="clients.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="referral.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    <span>New Referral</span>
+                </a>
+                <a href="my-referrals.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h.01"/><path d="M16 20h.01"/><path d="M8 4h.01"/><path d="M8 20h.01"/>
+                        <path d="M12 4h.01"/><path d="M12 20h.01"/><path d="M4 8h.01"/><path d="M4 12h.01"/>
+                        <path d="M4 16h.01"/><path d="M20 8h.01"/><path d="M20 12h.01"/><path d="M20 16h.01"/>
+                    </svg>
+                    <span>My Referrals</span>
+                </a>
+                <a href="messages.html" class="active">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Messages</span>
+                </a>
+                <a href="index.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Sign Out</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section">
+                <div class="card">
+                    <div class="card-title">Messaging</div>
+                    <p>Communicate with your team directly. Messages are logged internally.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="app-main messages-main">
+
+            <!-- Thread List Panel -->
+            <div class="thread-panel">
+                <div class="thread-panel-header">
+                    <h2>Messages</h2>
+                    <div class="thread-search">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="threadSearch" placeholder="Search conversations…"
+                               oninput="filterThreads(this.value)">
+                    </div>
+                    <button class="new-msg-btn" onclick="startNewMessage()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        New Message
+                    </button>
+                </div>
+                <div class="thread-list" id="threadList"></div>
+            </div>
+
+            <!-- Conversation Panel -->
+            <div class="conversation-panel" id="conversationPanel">
+                <div class="conversation-empty" id="conversationEmpty">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24"
+                         fill="none" stroke="#aeaeb2" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <h3>Select a conversation</h3>
+                    <p>Choose a thread from the left to view messages.</p>
+                </div>
+
+                <!-- Conversation view (hidden until thread selected) -->
+                <div id="conversationView" style="display:none;flex-direction:column;height:100%;">
+                    <div class="conversation-header">
+                        <div class="conversation-header-avatar" id="convAvatar">
+                            <div class="online-dot"></div>
+                        </div>
+                        <div class="conversation-header-info">
+                            <h3 id="convName"></h3>
+                            <p>Online</p>
+                        </div>
+                        <div class="conversation-header-actions">
+                            <button class="btn btn-secondary" style="font-size:0.775rem;padding:0.4rem 0.875rem;">
+                                View Profile
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="messages-area" id="messagesArea"></div>
+
+                    <div class="typing-indicator" id="typingIndicator">
+                        <div class="bubble-avatar" id="typingAvatar"></div>
+                        <div class="typing-dots">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+
+                    <div class="composer">
+                        <textarea class="composer-textarea" id="composerInput"
+                                  placeholder="Message…" rows="1"
+                                  onkeydown="handleComposerKey(event)"
+                                  oninput="autoResizeTextarea(this)"></textarea>
+                        <button class="send-btn" onclick="sendMessage()" aria-label="Send">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+
+        const CURRENT_USER = 'ashley'; // logged-in user (stub)
+
+        // ── Mock Thread Data ──────────────────────────────────
+        const MOCK_THREADS = [
+            { threadId: 'T001', contact: 'carlos',       label: 'Carlos M.',    type: 'direct', unread: 2, lastTime: '10:32 AM', lastMsg: 'Can you follow up with Maria Lopez today?' },
+            { threadId: 'T002', contact: 'elena',        label: 'Elena V.',     type: 'direct', unread: 0, lastTime: 'Yesterday', lastMsg: 'Angela Kim was discharged this morning.' },
+            { threadId: 'T003', contact: 'marcus',       label: 'Marcus D.',    type: 'direct', unread: 1, lastTime: 'Yesterday', lastMsg: 'The employment referral for Torres is still pending.' },
+            { threadId: 'T004', contact: 'housing-team', label: 'Housing Team', type: 'group',  unread: 3, lastTime: 'Mon',       lastMsg: 'Shelter capacity update — 6 beds available.' },
+            { threadId: 'T005', contact: 'supervisor',   label: 'Supervisor',   type: 'direct', unread: 0, lastTime: 'Last week', lastMsg: 'Please send weekly stats by Friday.' },
+        ];
+
+        // ── Mock Conversations ────────────────────────────────
+        const MOCK_CONVERSATIONS = {
+            T001: [
+                { from: 'carlos', sent: false, text: 'Hey, did you get a chance to review the Maria Lopez file?', time: '10:14 AM' },
+                { from: 'ashley', sent: true,  text: 'Yes, I looked it over this morning. She needs emergency shelter ASAP.', time: '10:18 AM' },
+                { from: 'carlos', sent: false, text: 'Agreed. Street Outreach flagged her as high urgency last week.', time: '10:21 AM' },
+                { from: 'ashley', sent: true,  text: 'I\'ve submitted the referral to Emergency Shelter already. Waiting on confirmation.', time: '10:25 AM' },
+                { from: 'carlos', sent: false, text: 'Can you follow up with Maria Lopez today?', time: '10:32 AM' },
+            ],
+            T002: [
+                { from: 'ashley', sent: true,  text: 'Good morning! Any update on Angela Kim?', time: 'Yesterday 9:05 AM' },
+                { from: 'elena',  sent: false, text: 'She had her intake appointment at Medical Outreach last Thursday.', time: 'Yesterday 9:12 AM' },
+                { from: 'ashley', sent: true,  text: 'Great. Did she need any follow-up services?', time: 'Yesterday 9:15 AM' },
+                { from: 'elena',  sent: false, text: 'Angela Kim was discharged this morning. She\'s stable and doing well.', time: 'Yesterday 9:41 AM' },
+            ],
+            T003: [
+                { from: 'marcus', sent: false, text: 'Hi Ashley, I\'m following up on the David Torres employment referral.', time: 'Yesterday 2:03 PM' },
+                { from: 'ashley', sent: true,  text: 'I saw that — it\'s been sitting in pending for a few days. Anything blocking?', time: 'Yesterday 2:10 PM' },
+                { from: 'marcus', sent: false, text: 'The employment services coordinator is out this week. Trying to reach the backup contact.', time: 'Yesterday 2:15 PM' },
+                { from: 'marcus', sent: false, text: 'The employment referral for Torres is still pending. I\'ll escalate tomorrow.', time: 'Yesterday 3:48 PM' },
+            ],
+            T004: [
+                { from: 'carlos',       sent: false, text: 'Team update: we received 4 new shelter referrals from Street Outreach this morning.', time: 'Mon 8:30 AM' },
+                { from: 'elena',        sent: false, text: 'Good to know. Drop-In Center is at capacity through Wednesday.', time: 'Mon 8:45 AM' },
+                { from: 'ashley',       sent: true,  text: 'I can check with Rapid Rehousing — they might have overflow beds.', time: 'Mon 9:01 AM' },
+                { from: 'marcus',       sent: false, text: 'Confirmed — 3 beds opened at Rapid Rehousing as of yesterday.', time: 'Mon 9:14 AM' },
+                { from: 'housing-team', sent: false, text: 'Shelter capacity update — 6 beds available across all programs.', time: 'Mon 11:20 AM' },
+            ],
+            T005: [
+                { from: 'supervisor', sent: false, text: 'Hi Ashley, just a reminder that weekly referral stats are due by Friday EOD.', time: 'Last week Thu 4:00 PM' },
+                { from: 'ashley',     sent: true,  text: 'Got it! I\'ll have them submitted by Thursday to give some buffer.', time: 'Last week Thu 4:15 PM' },
+                { from: 'supervisor', sent: false, text: 'Please send weekly stats by Friday.', time: 'Last week Thu 4:20 PM' },
+            ],
+        };
+
+        let allThreads       = [...MOCK_THREADS];
+        let activeThreadId   = null;
+        let activeThreadData = null;
+
+        // ── Helpers ───────────────────────────────────────────
+        function initials(name) {
+            const p = name.trim().split(' ');
+            return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
+        }
+
+        function contactInitials(contactId) {
+            const labels = {
+                ashley:       'AR', carlos: 'CM', elena: 'EV', marcus: 'MD',
+                supervisor:   'SV', 'housing-team': 'HT'
+            };
+            return labels[contactId] || contactId.slice(0, 2).toUpperCase();
+        }
+
+        // ── Render Thread List ─────────────────────────────────
+        function renderThreadList(threads) {
+            const list = document.getElementById('threadList');
+            if (threads.length === 0) {
+                list.innerHTML = '<div style="padding:2rem 1.25rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">No conversations found.</div>';
+                return;
+            }
+
+            list.innerHTML = threads.map(t => {
+                const isGroup   = t.type === 'group';
+                const isActive  = t.threadId === activeThreadId;
+                const avClass   = isGroup ? 'thread-avatar group' : 'thread-avatar';
+                const avText    = isGroup ? '👥' : contactInitials(t.contact);
+                const unreadBadge = t.unread > 0
+                    ? `<span class="unread-badge">${t.unread}</span>` : '';
+
+                return `
+                    <div class="thread-item${isActive ? ' active' : ''}"
+                         onclick="selectThread('${t.threadId}')">
+                        <div class="${avClass}" ${isGroup ? 'style="font-size:1rem;"' : ''}>${isGroup ? '👥' : avText}</div>
+                        <div class="thread-info">
+                            <div class="thread-name">${t.label}</div>
+                            <div class="thread-preview">${t.lastMsg}</div>
+                        </div>
+                        <div class="thread-meta">
+                            <span class="thread-time">${t.lastTime}</span>
+                            ${unreadBadge}
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        // ── Filter threads ─────────────────────────────────────
+        function filterThreads(query) {
+            if (!query.trim()) {
+                renderThreadList(allThreads);
+                return;
+            }
+            const lower = query.toLowerCase();
+            const filtered = allThreads.filter(t =>
+                t.label.toLowerCase().includes(lower) ||
+                t.lastMsg.toLowerCase().includes(lower)
+            );
+            renderThreadList(filtered);
+        }
+
+        // ── Select Thread ──────────────────────────────────────
+        function selectThread(threadId) {
+            activeThreadId   = threadId;
+            activeThreadData = allThreads.find(t => t.threadId === threadId);
+
+            // Clear unread
+            if (activeThreadData) activeThreadData.unread = 0;
+
+            // Re-render thread list to update active/unread state
+            renderThreadList(allThreads);
+
+            // Show conversation view
+            document.getElementById('conversationEmpty').style.display  = 'none';
+            const convView = document.getElementById('conversationView');
+            convView.style.display = 'flex';
+
+            // Update header
+            const isGroup  = activeThreadData.type === 'group';
+            const avatar   = document.getElementById('convAvatar');
+            avatar.className = 'conversation-header-avatar' + (isGroup ? ' group' : '');
+            avatar.innerHTML = (isGroup ? '👥' : contactInitials(activeThreadData.contact))
+                + '<div class="online-dot"></div>';
+            document.getElementById('convName').textContent = activeThreadData.label;
+
+            // Load messages
+            loadMessages(threadId);
+
+            // Focus composer
+            document.getElementById('composerInput').focus();
+        }
+
+        // ── Load Messages ──────────────────────────────────────
+        function loadMessages(threadId) {
+            // Try JSONP from Google Sheets, fall back to mock
+            const mockData = MOCK_CONVERSATIONS[threadId] || [];
+            renderMessages(mockData, activeThreadData);
+
+            // JSONP attempt (fire and forget; mock will already be shown)
+            const script = document.createElement('script');
+            script.src = GOOGLE_SCRIPT_URL + '?action=getMessages&thread=' + encodeURIComponent(threadId) + '&callback=onMessagesLoaded';
+            script.onerror = () => script.remove();
+            document.body.appendChild(script);
+        }
+
+        // JSONP callback
+        function onMessagesLoaded(data) {
+            if (data && data.success && Array.isArray(data.messages) && data.messages.length > 0) {
+                const mapped = data.messages.map(m => ({
+                    from: m.from,
+                    sent: m.from === CURRENT_USER,
+                    text: m.message,
+                    time: new Date(m.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                }));
+                renderMessages(mapped, activeThreadData);
+            }
+        }
+
+        // ── Render Messages ────────────────────────────────────
+        function renderMessages(messages, thread) {
+            const area = document.getElementById('messagesArea');
+            if (!messages || messages.length === 0) {
+                area.innerHTML = '<div style="margin:auto;text-align:center;color:#aeaeb2;font-size:0.875rem;">No messages yet. Say hello!</div>';
+                return;
+            }
+
+            let html = '<div class="date-separator"><span>Today</span></div>';
+
+            messages.forEach(msg => {
+                const wrapClass = msg.sent ? 'message-bubble-wrap sent' : 'message-bubble-wrap';
+                const bubbleClass = msg.sent ? 'message-bubble sent' : 'message-bubble received';
+                const avClass    = msg.sent ? 'bubble-avatar sent-av' : 'bubble-avatar';
+                const avText     = msg.sent ? contactInitials(CURRENT_USER) : contactInitials(msg.from);
+                const timeAlign  = msg.sent ? 'text-align:right;' : '';
+
+                html += `
+                    <div class="${wrapClass}">
+                        <div class="${avClass}">${avText}</div>
+                        <div>
+                            <div class="${bubbleClass}">${escapeHtml(msg.text)}</div>
+                            <div class="bubble-time" style="${timeAlign}">${msg.time}</div>
+                        </div>
+                    </div>`;
+            });
+
+            area.innerHTML = html;
+            area.scrollTop = area.scrollHeight;
+        }
+
+        // ── Send Message ───────────────────────────────────────
+        function sendMessage() {
+            const input = document.getElementById('composerInput');
+            const text  = input.value.trim();
+            if (!text || !activeThreadId) return;
+
+            // Optimistic UI update
+            const area = document.getElementById('messagesArea');
+            const now  = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble-wrap sent';
+            bubble.innerHTML = `
+                <div class="bubble-avatar sent-av">${contactInitials(CURRENT_USER)}</div>
+                <div>
+                    <div class="message-bubble sent">${escapeHtml(text)}</div>
+                    <div class="bubble-time" style="text-align:right;">${now}</div>
+                </div>`;
+            area.appendChild(bubble);
+            area.scrollTop = area.scrollHeight;
+
+            // Update thread preview
+            if (activeThreadData) {
+                activeThreadData.lastMsg  = text;
+                activeThreadData.lastTime = 'Just now';
+                renderThreadList(allThreads);
+            }
+
+            // Clear input
+            input.value = '';
+            input.style.height = '';
+
+            // Simulate typing response after short delay (for demo)
+            simulateTyping();
+
+            // POST to Google Sheets (fire-and-forget, no-cors)
+            fetch(GOOGLE_SCRIPT_URL, {
+                method:  'POST',
+                mode:    'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body:    new URLSearchParams({
+                    action:   'newMessage',
+                    threadId: activeThreadId,
+                    from:     CURRENT_USER,
+                    to:       activeThreadData ? activeThreadData.contact : '',
+                    message:  text
+                }).toString()
+            }).catch(() => {}); // Ignore CORS errors — fire and forget
+        }
+
+        // ── Simulate typing indicator (demo) ──────────────────
+        function simulateTyping() {
+            if (!activeThreadData || activeThreadData.type === 'group') return;
+            const indicator = document.getElementById('typingIndicator');
+            const avEl      = document.getElementById('typingAvatar');
+            avEl.textContent = contactInitials(activeThreadData.contact);
+            indicator.classList.add('visible');
+            setTimeout(() => indicator.classList.remove('visible'), 2200);
+        }
+
+        // ── Composer keyboard handler ──────────────────────────
+        function handleComposerKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function autoResizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+        }
+
+        // ── Start new message (stub) ───────────────────────────
+        function startNewMessage() {
+            alert('Select a contact from the list to start a conversation.');
+        }
+
+        // ── Utility ───────────────────────────────────────────
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // ── Init ──────────────────────────────────────────────
+        renderThreadList(allThreads);
+    </script>
+</body>
+</html>

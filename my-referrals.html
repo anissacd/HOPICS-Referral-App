@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPICS — My Referrals</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ── Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .modal-box {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 580px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+            animation: scaleIn 0.2s ease;
+        }
+
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.96); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.75rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1d1d1f;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: #f5f5f7;
+            color: #6e6e73;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .modal-close:hover { background: #e5e5ea; color: #1d1d1f; }
+
+        .modal-form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1.75rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid #f5f5f7;
+        }
+
+        /* ── Filter bar ── */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .filter-bar label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #6e6e73;
+            white-space: nowrap;
+        }
+
+        .filter-select {
+            padding: 0.6rem 2.25rem 0.6rem 0.875rem;
+            border-radius: 10px;
+            border: 1px solid #d2d2d7;
+            background: #ffffff;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1d1d1f;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23aeaeb2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
+        }
+
+        .empty-state {
+            padding: 3rem 1rem;
+            text-align: center;
+        }
+
+        .empty-state p { color: #aeaeb2; font-size: 0.9rem; }
+
+        .table-action {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #1d1d1f;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            transition: color 0.2s ease;
+        }
+
+        .table-action:hover { color: #b45309; }
+
+        @media (max-width: 640px) {
+            .modal-form-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-mark">H</div>
+                <h2>HOPICS</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="clients.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="referral.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    <span>New Referral</span>
+                </a>
+                <a href="my-referrals.html" class="active">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h.01"/><path d="M16 20h.01"/><path d="M8 4h.01"/><path d="M8 20h.01"/>
+                        <path d="M12 4h.01"/><path d="M12 20h.01"/><path d="M4 8h.01"/><path d="M4 12h.01"/>
+                        <path d="M4 16h.01"/><path d="M20 8h.01"/><path d="M20 12h.01"/><path d="M20 16h.01"/>
+                    </svg>
+                    <span>My Referrals</span>
+                </a>
+                <a href="messages.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Messages</span>
+                </a>
+                <a href="index.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Sign Out</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section">
+                <div class="card">
+                    <div class="card-title">My Assignments</div>
+                    <p>View and manage referrals assigned to you.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="app-main">
+            <section class="dashboard-header">
+                <div>
+                    <h1>My Referrals</h1>
+                    <p>Referrals assigned to you for follow-up and management.</p>
+                </div>
+                <div class="quick-actions">
+                    <div class="filter-bar">
+                        <label for="userFilter">Viewing:</label>
+                        <select class="filter-select" id="userFilter">
+                            <option value="ashley">Ashley R.</option>
+                            <option value="carlos">Carlos M.</option>
+                            <option value="elena">Elena V.</option>
+                            <option value="marcus">Marcus D.</option>
+                        </select>
+                    </div>
+                    <a class="btn btn-primary" href="referral.html">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        New Referral
+                    </a>
+                </div>
+            </section>
+
+            <section class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+                    <div class="card-title">Assigned Referrals</div>
+                    <span id="referralCount" style="font-size:0.825rem;color:#aeaeb2;"></span>
+                </div>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Category</th>
+                                <th>Source</th>
+                                <th>Urgency</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="referralsTable"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="editModal" onclick="handleOverlayClick(event)">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2>Edit Referral</h2>
+                <button class="modal-close" onclick="closeModal()" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="editForm" action="https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec" method="POST">
+                <input type="hidden" id="editId" name="id">
+
+                <div class="modal-form-row">
+                    <div class="input-group">
+                        <label class="input-label" for="editClientName">Client Name</label>
+                        <input class="input-field" type="text" id="editClientName" name="clientName" required>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label" for="editClientDOB">Date of Birth</label>
+                        <input class="input-field" type="date" id="editClientDOB" name="clientDOB" required>
+                    </div>
+                </div>
+
+                <div class="modal-form-row">
+                    <div class="input-group">
+                        <label class="input-label" for="editReferralSource">Referral Source</label>
+                        <select class="input-field" id="editReferralSource" name="referralSource" required>
+                            <option value="street">Street Outreach</option>
+                            <option value="shelter">Shelter</option>
+                            <option value="hospital">Hospital</option>
+                            <option value="self">Self-Referral</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label" for="editServiceCategory">Service Category</label>
+                        <select class="input-field" id="editServiceCategory" name="serviceCategory" required>
+                            <option value="housing">Housing</option>
+                            <option value="medical">Medical</option>
+                            <option value="mental-health">Mental Health</option>
+                            <option value="substance-abuse">Substance Abuse</option>
+                            <option value="employment">Employment</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-form-row">
+                    <div class="input-group">
+                        <label class="input-label" for="editUrgency">Urgency</label>
+                        <select class="input-field" id="editUrgency" name="urgency">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label" for="editStatus">Status</label>
+                        <select class="input-field" id="editStatus" name="status">
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label" for="editAssignedTo">Assigned To</label>
+                    <select class="input-field" id="editAssignedTo" name="assignedTo">
+                        <option value="ashley">Ashley R.</option>
+                        <option value="carlos">Carlos M.</option>
+                        <option value="elena">Elena V.</option>
+                        <option value="marcus">Marcus D.</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="margin-top:1.25rem;">
+                    <label class="input-label" for="editAssessmentNotes">Assessment Notes</label>
+                    <textarea class="input-field" id="editAssessmentNotes" name="assessmentNotes" rows="4"
+                              placeholder="Notes about the client or referral..."></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="editSaveBtn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+        let referralsData = [];
+        let currentUser = 'ashley';
+
+        const mockReferrals = [
+            { id: '1', clientName: 'Maria Lopez',  clientDOB: '1985-03-15', referralSource: 'street',  serviceCategory: 'housing',         urgency: 'high',   assignedTo: 'ashley', assessmentNotes: 'Homeless for 2 months, needs emergency shelter.', status: 'pending',     created: '2024-04-06' },
+            { id: '2', clientName: 'Jason White',  clientDOB: '1990-07-22', referralSource: 'hospital', serviceCategory: 'medical',         urgency: 'medium', assignedTo: 'ashley', assessmentNotes: 'Follow-up care needed after discharge.',          status: 'in-progress', created: '2024-03-28' },
+            { id: '3', clientName: 'Angela Kim',   clientDOB: '1978-11-04', referralSource: 'shelter',  serviceCategory: 'mental-health',   urgency: 'low',    assignedTo: 'carlos', assessmentNotes: 'Weekly counseling sessions recommended.',          status: 'completed',   created: '2024-03-19' },
+            { id: '4', clientName: 'David Torres', clientDOB: '1995-02-18', referralSource: 'self',     serviceCategory: 'employment',      urgency: 'medium', assignedTo: 'elena',  assessmentNotes: 'Looking for job placement support.',              status: 'in-progress', created: '2024-03-12' },
+            { id: '5', clientName: 'Priya Patel',  clientDOB: '1988-09-30', referralSource: 'hospital', serviceCategory: 'substance-abuse', urgency: 'high',   assignedTo: 'marcus', assessmentNotes: 'Referred from ER visit.',                          status: 'closed',      created: '2024-03-01' },
+        ];
+
+        const urgencyStyles = {
+            low:      { bg: '#fff8e1', color: '#b45309' },
+            medium:   { bg: '#e0f2fe', color: '#0369a1' },
+            high:     { bg: '#fee2e2', color: '#991b1b' },
+            critical: { bg: '#fdf2f8', color: '#86198f' },
+        };
+
+        const statusClass = {
+            'pending':     'status-pending',
+            'in-progress': 'status-progress',
+            'completed':   'status-completed',
+            'closed':      'status-closed',
+        };
+
+        const statusLabel = {
+            'pending':     'Pending',
+            'in-progress': 'In Progress',
+            'completed':   'Completed',
+            'closed':      'Closed',
+        };
+
+        function fmtDate(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function toTitle(s) {
+            return s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function renderReferralTable() {
+            const tbody = document.getElementById('referralsTable');
+            const count = document.getElementById('referralCount');
+            const list = referralsData.filter(r => r.assignedTo === currentUser);
+            count.textContent = `${list.length} referral${list.length !== 1 ? 's' : ''}`;
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>No referrals assigned to this staff member.</p></div></td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(r => {
+                const urg = urgencyStyles[r.urgency] || urgencyStyles.medium;
+                return `<tr>
+                    <td><strong>${r.clientName}</strong></td>
+                    <td>${toTitle(r.serviceCategory)}</td>
+                    <td>${toTitle(r.referralSource)}</td>
+                    <td><span class="status-pill" style="background:${urg.bg};color:${urg.color};">${toTitle(r.urgency)}</span></td>
+                    <td><span class="status-pill ${statusClass[r.status] || 'status-pending'}">${statusLabel[r.status] || toTitle(r.status)}</span></td>
+                    <td>${fmtDate(r.timestamp || r.created)}</td>
+                    <td><button class="table-action" onclick="openEdit('${r.id}')">Edit</button></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderReferrals(data) {
+            if (data && data.success && Array.isArray(data.referrals)) {
+                referralsData = data.referrals;
+            } else {
+                referralsData = [];
+                console.warn('Failed to load referrals from sheet:', data);
+            }
+            renderReferralTable();
+        }
+
+        function loadReferrals(user) {
+            currentUser = user;
+            const existing = document.getElementById('referralJsonp');
+            if (existing) existing.remove();
+
+            const script = document.createElement('script');
+            script.id = 'referralJsonp';
+            script.src = `${GOOGLE_SCRIPT_URL}?action=listReferrals&assignedTo=${encodeURIComponent(user)}&callback=renderReferrals`;
+            document.body.appendChild(script);
+        }
+
+        function openEdit(id) {
+            const r = referralsData.find(x => x.id === id);
+            if (!r) return;
+            document.getElementById('editId').value              = r.id;
+            document.getElementById('editClientName').value      = r.clientName;
+            document.getElementById('editClientDOB').value       = r.clientDOB;
+            document.getElementById('editReferralSource').value  = r.referralSource;
+            document.getElementById('editServiceCategory').value = r.serviceCategory;
+            document.getElementById('editUrgency').value         = r.urgency;
+            document.getElementById('editStatus').value          = r.status;
+            document.getElementById('editAssignedTo').value      = r.assignedTo;
+            document.getElementById('editAssessmentNotes').value = r.assessmentNotes;
+            document.getElementById('editModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function handleOverlayClick(e) {
+            if (e.target === document.getElementById('editModal')) closeModal();
+        }
+
+        document.getElementById('userFilter').addEventListener('change', function() {
+            loadReferrals(this.value);
+        });
+
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('editSaveBtn');
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+
+            const iframe = document.getElementById('submissionFrame');
+            document.getElementById('editForm').target = 'submissionFrame';
+
+            const handleLoad = function() {
+                iframe.removeEventListener('load', handleLoad);
+                closeModal();
+                loadReferrals(document.getElementById('userFilter').value);
+                btn.textContent = 'Save Changes';
+                btn.disabled = false;
+            };
+
+            iframe.addEventListener('load', handleLoad);
+            this.submit();
+        });
+
+        loadReferrals('ashley');
+    </script>
+    <iframe id="submissionFrame" name="submissionFrame" style="display:none;"></iframe>
+</body>
+</html>

@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPICS — Clients</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ── HMIS ID Badge ── */
+        .hmis-badge {
+            font-family: 'SF Mono', 'Fira Mono', 'Menlo', monospace;
+            background: #f5f5f7;
+            border: 1px solid #e5e5ea;
+            border-radius: 6px;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+            color: #6e6e73;
+            white-space: nowrap;
+        }
+
+        /* ── Referral count badge ── */
+        .ref-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 24px;
+            padding: 0 0.4rem;
+            border-radius: 99px;
+            background: #ffd700;
+            color: #111111;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* ── Page header ── */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.75rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            color: #1d1d1f;
+        }
+
+        .page-header p {
+            color: #6e6e73;
+            margin-top: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── Toolbar ── */
+        .clients-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.25rem;
+        }
+
+        .clients-toolbar .search-box {
+            flex: 1;
+            min-width: 200px;
+            max-width: 340px;
+            position: relative;
+        }
+
+        .clients-toolbar .search-box svg {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aeaeb2;
+            pointer-events: none;
+        }
+
+        .clients-toolbar .search-input {
+            width: 100%;
+            padding: 0.65rem 1rem 0.65rem 2.5rem;
+            border-radius: 10px;
+            border: 1px solid #d2d2d7;
+            background: #ffffff;
+            font-size: 0.875rem;
+            color: #1d1d1f;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .clients-toolbar .search-input::placeholder { color: #aeaeb2; }
+
+        .clients-toolbar .search-input:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
+        }
+
+        .filter-select {
+            padding: 0.65rem 2.25rem 0.65rem 0.875rem;
+            border-radius: 10px;
+            border: 1px solid #d2d2d7;
+            background: #ffffff;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1d1d1f;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23aeaeb2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
+        }
+
+        /* ── Stats row ── */
+        .clients-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .clients-stats .stat-card h3 {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #aeaeb2;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.6rem;
+        }
+
+        /* ── Client name link ── */
+        .client-name-link {
+            font-weight: 700;
+            color: #1d1d1f;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .client-name-link:hover { color: #b45309; text-decoration: underline; }
+
+        /* ── Housing status pill ── */
+        .housing-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.65rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .housing-active       { background: #dcfce7; color: #166534; }
+        .housing-at-risk      { background: #fff8e1; color: #b45309; }
+        .housing-transitional { background: #e0f2fe; color: #0369a1; }
+        .housing-housed       { background: #f0fdf4; color: #166534; }
+        .housing-homeless     { background: #fee2e2; color: #991b1b; }
+        .housing-inactive     { background: #f5f5f7; color: #6e6e73; }
+
+        /* ── Empty state ── */
+        .empty-state {
+            padding: 3.5rem 1rem;
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: #f5f5f7;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 1rem;
+            color: #aeaeb2;
+        }
+
+        .empty-state h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin-bottom: 0.4rem;
+        }
+
+        .empty-state p { color: #aeaeb2; font-size: 0.875rem; }
+
+        @media (max-width: 1024px) {
+            .clients-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .clients-stats { grid-template-columns: 1fr; }
+            .clients-toolbar { flex-direction: column; align-items: stretch; }
+            .clients-toolbar .search-box { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-mark">H</div>
+                <h2>HOPICS</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="clients.html" class="active">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="referral.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    <span>New Referral</span>
+                </a>
+                <a href="my-referrals.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h.01"/><path d="M16 20h.01"/><path d="M8 4h.01"/><path d="M8 20h.01"/>
+                        <path d="M12 4h.01"/><path d="M12 20h.01"/><path d="M4 8h.01"/><path d="M4 12h.01"/>
+                        <path d="M4 16h.01"/><path d="M20 8h.01"/><path d="M20 12h.01"/><path d="M20 16h.01"/>
+                    </svg>
+                    <span>My Referrals</span>
+                </a>
+                <a href="messages.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Messages</span>
+                </a>
+                <a href="index.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Sign Out</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section">
+                <div class="card">
+                    <div class="card-title">Client Roster</div>
+                    <p>Browse all clients with active HMIS profiles. Click a name to view the full profile.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="app-main">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h1>Clients</h1>
+                    <p>All clients with HMIS profiles</p>
+                </div>
+                <div class="quick-actions">
+                    <button class="btn btn-secondary" onclick="exportClients()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Export
+                    </button>
+                    <a class="btn btn-primary" href="referral.html">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add Client
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="clients-stats">
+                <div class="stat-card">
+                    <h3>Total Clients</h3>
+                    <p class="card-value" id="statTotal">—</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Active</h3>
+                    <p class="card-value" id="statActive">—</p>
+                </div>
+                <div class="stat-card">
+                    <h3>New This Month</h3>
+                    <p class="card-value" id="statNew">—</p>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="clients-toolbar">
+                <div class="search-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="text" class="search-input" id="clientSearch"
+                           placeholder="Search by name or HMIS ID…"
+                           oninput="filterClients()">
+                </div>
+                <select class="filter-select" id="statusFilter" onchange="filterClients()">
+                    <option value="">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Transitional">Transitional</option>
+                    <option value="Housed">Housed</option>
+                </select>
+                <select class="filter-select" id="caseManagerFilter" onchange="filterClients()">
+                    <option value="">All Case Managers</option>
+                    <option value="ashley">Ashley R.</option>
+                    <option value="carlos">Carlos M.</option>
+                    <option value="elena">Elena V.</option>
+                    <option value="marcus">Marcus D.</option>
+                </select>
+            </div>
+
+            <!-- Client Table -->
+            <section class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">
+                    <div class="card-title">Client Roster</div>
+                    <span id="resultCount" style="font-size:0.825rem;color:#aeaeb2;"></span>
+                </div>
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>HMIS ID</th>
+                                <th>Client Name</th>
+                                <th>DOB</th>
+                                <th>Housing Status</th>
+                                <th>Case Manager</th>
+                                <th>Referrals</th>
+                                <th>Last Activity</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTable"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+
+        // Mock data (10 clients)
+        const MOCK_CLIENTS = [
+            { hmisId: 'HTX-2024-00471', name: 'Maria Lopez',     dob: '1985-03-15', dateAdded: '2024-01-08', status: 'Active',        caseManager: 'ashley', totalReferrals: 3, lastActivity: '2024-04-01' },
+            { hmisId: 'HTX-2024-00382', name: 'Jason White',     dob: '1990-07-22', dateAdded: '2024-01-15', status: 'Transitional',   caseManager: 'carlos', totalReferrals: 2, lastActivity: '2024-03-28' },
+            { hmisId: 'HTX-2024-00291', name: 'Angela Kim',      dob: '1978-11-04', dateAdded: '2024-01-22', status: 'Housed',         caseManager: 'elena',  totalReferrals: 4, lastActivity: '2024-03-20' },
+            { hmisId: 'HTX-2024-00184', name: 'David Torres',    dob: '1995-02-18', dateAdded: '2024-02-03', status: 'Active',         caseManager: 'marcus', totalReferrals: 1, lastActivity: '2024-03-15' },
+            { hmisId: 'HTX-2024-00103', name: 'Priya Patel',     dob: '1988-09-30', dateAdded: '2024-02-11', status: 'Inactive',       caseManager: 'ashley', totalReferrals: 2, lastActivity: '2024-03-01' },
+            { hmisId: 'HTX-2024-00512', name: 'Carlos Rivera',   dob: '1982-06-14', dateAdded: '2024-02-19', status: 'Active',         caseManager: 'carlos', totalReferrals: 5, lastActivity: '2024-04-03' },
+            { hmisId: 'HTX-2024-00539', name: 'Tasha Williams',  dob: '1993-12-01', dateAdded: '2024-02-28', status: 'Transitional',   caseManager: 'elena',  totalReferrals: 2, lastActivity: '2024-03-25' },
+            { hmisId: 'HTX-2024-00601', name: 'Elijah Brown',    dob: '1975-08-22', dateAdded: '2024-03-05', status: 'Active',         caseManager: 'marcus', totalReferrals: 3, lastActivity: '2024-04-02' },
+            { hmisId: 'HTX-2024-00643', name: 'Nguyen Anh',      dob: '2000-04-09', dateAdded: '2024-03-12', status: 'Active',         caseManager: 'ashley', totalReferrals: 1, lastActivity: '2024-04-04' },
+            { hmisId: 'HTX-2024-00688', name: 'Sandra Morales',  dob: '1967-01-30', dateAdded: '2024-03-20', status: 'Housed',         caseManager: 'carlos', totalReferrals: 6, lastActivity: '2024-03-30' },
+        ];
+
+        let allClients = [];
+
+        const caseManagerLabel = {
+            ashley: 'Ashley R.',
+            carlos: 'Carlos M.',
+            elena:  'Elena V.',
+            marcus: 'Marcus D.'
+        };
+
+        const housingClass = {
+            'Active':       'housing-active',
+            'Inactive':     'housing-inactive',
+            'Transitional': 'housing-transitional',
+            'Housed':       'housing-housed',
+            'At Risk':      'housing-at-risk',
+            'Homeless':     'housing-homeless'
+        };
+
+        function fmtDate(d) {
+            if (!d) return '—';
+            const date = new Date(d + (d.length === 10 ? 'T00:00:00' : ''));
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function initials(name) {
+            const p = name.trim().split(' ');
+            return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
+        }
+
+        function computeStats(clients) {
+            const now = new Date();
+            const thisMonth = now.getMonth();
+            const thisYear  = now.getFullYear();
+
+            document.getElementById('statTotal').textContent  = clients.length;
+            document.getElementById('statActive').textContent = clients.filter(c => c.status === 'Active').length;
+            document.getElementById('statNew').textContent    = clients.filter(c => {
+                if (!c.dateAdded) return false;
+                const d = new Date(c.dateAdded + 'T00:00:00');
+                return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+            }).length;
+        }
+
+        function renderClients(clients) {
+            const tbody  = document.getElementById('clientsTable');
+            const count  = document.getElementById('resultCount');
+            count.textContent = clients.length + ' client' + (clients.length !== 1 ? 's' : '');
+
+            if (clients.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                         fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                </div>
+                                <h3>No clients found</h3>
+                                <p>Try adjusting your search or filters.</p>
+                            </div>
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            tbody.innerHTML = clients.map(c => {
+                const hClass = housingClass[c.status] || 'housing-inactive';
+                const cmLabel = caseManagerLabel[c.caseManager] || c.caseManager || '—';
+                const profileUrl = 'client-profile.html?name=' + encodeURIComponent(c.name) + '&hmis=' + encodeURIComponent(c.hmisId);
+                return `<tr>
+                    <td><span class="hmis-badge">${c.hmisId}</span></td>
+                    <td>
+                        <a class="client-name-link" href="${profileUrl}">${c.name}</a>
+                    </td>
+                    <td style="color:#6e6e73;font-size:0.875rem;">${fmtDate(c.dob)}</td>
+                    <td><span class="housing-pill ${hClass}">${c.status}</span></td>
+                    <td style="font-size:0.875rem;">${cmLabel}</td>
+                    <td><span class="ref-badge">${c.totalReferrals || 0}</span></td>
+                    <td style="color:#6e6e73;font-size:0.875rem;">${fmtDate(c.lastActivity)}</td>
+                    <td>
+                        <a class="btn btn-secondary" href="${profileUrl}"
+                           style="font-size:0.775rem;padding:0.35rem 0.75rem;">View Profile</a>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function filterClients() {
+            const query  = document.getElementById('clientSearch').value.toLowerCase().trim();
+            const status = document.getElementById('statusFilter').value;
+            const cm     = document.getElementById('caseManagerFilter').value;
+
+            const filtered = allClients.filter(c => {
+                const matchSearch = !query ||
+                    c.name.toLowerCase().includes(query) ||
+                    c.hmisId.toLowerCase().includes(query);
+                const matchStatus = !status || c.status === status;
+                const matchCm     = !cm     || c.caseManager === cm;
+                return matchSearch && matchStatus && matchCm;
+            });
+
+            renderClients(filtered);
+        }
+
+        function exportClients() {
+            // Stub — alert for now; a real implementation would generate a CSV
+            alert('Export feature coming soon. Data will be exported as a CSV file.');
+        }
+
+        // JSONP callback from Google Sheets
+        function loadClientsCallback(data) {
+            if (data && data.success && Array.isArray(data.clients) && data.clients.length > 0) {
+                allClients = data.clients;
+            } else {
+                allClients = MOCK_CLIENTS;
+            }
+            computeStats(allClients);
+            renderClients(allClients);
+        }
+
+        function loadClients() {
+            // Try JSONP first; fall back to mock on error/timeout
+            const script  = document.createElement('script');
+            const timeout = setTimeout(() => {
+                script.remove();
+                allClients = MOCK_CLIENTS;
+                computeStats(allClients);
+                renderClients(allClients);
+            }, 5000);
+
+            script.src = GOOGLE_SCRIPT_URL + '?action=listClients&callback=loadClientsCallback';
+            script.onerror = function() {
+                clearTimeout(timeout);
+                script.remove();
+                allClients = MOCK_CLIENTS;
+                computeStats(allClients);
+                renderClients(allClients);
+            };
+
+            // Wrap callback to clear timeout
+            const origCallback = window.loadClientsCallback;
+            window.loadClientsCallback = function(data) {
+                clearTimeout(timeout);
+                origCallback(data);
+                window.loadClientsCallback = origCallback;
+            };
+
+            document.body.appendChild(script);
+        }
+
+        loadClients();
+    </script>
+</body>
+</html>

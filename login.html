@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPICS — Sign In</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ── Immersive Login ── */
+        body.login-page {
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-bg {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 30%, rgba(255,215,0,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 80% 70%, rgba(180,100,0,0.06) 0%, transparent 60%),
+                #0a0a0a;
+            animation: bgShift 12s ease-in-out infinite alternate;
+            z-index: 0;
+        }
+
+        @keyframes bgShift {
+            0%   { background-position: 0% 0%, 100% 100%; }
+            33%  { background-position: 30% 20%, 70% 80%; }
+            66%  { background-position: 60% 40%, 40% 60%; }
+            100% { background-position: 20% 80%, 80% 20%; }
+        }
+
+        .login-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px;
+            margin: 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            animation: cardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Brand */
+        .login-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-brand-mark {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #ffd700;
+            display: grid;
+            place-items: center;
+            font-weight: 800;
+            font-size: 1.3rem;
+            color: #111111;
+            flex-shrink: 0;
+            box-shadow: 0 0 24px rgba(255, 215, 0, 0.35);
+        }
+
+        .login-brand-text {
+            font-size: 1.25rem;
+            letter-spacing: 0.28em;
+            color: #ffd700;
+            font-weight: 700;
+        }
+
+        .login-tagline {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-align: center;
+            letter-spacing: -0.01em;
+            line-height: 1.4;
+            margin-bottom: 0.625rem;
+        }
+
+        .login-subtitle {
+            font-size: 0.8rem;
+            color: #6e6e73;
+            text-align: center;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            max-width: 320px;
+        }
+
+        /* Google Button */
+        .btn-google-sso {
+            width: 100%;
+            padding: 0.9rem 1.25rem;
+            border-radius: 14px;
+            border: none;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.875rem;
+            font-weight: 700;
+            font-size: 0.975rem;
+            color: #1d1d1f;
+            cursor: pointer;
+            transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-google-sso:hover {
+            background: #f5f5f7;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-google-sso:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-google-sso:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Error message */
+        .login-error {
+            display: none;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            font-size: 0.825rem;
+            color: #fca5a5;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .login-error.visible { display: block; }
+
+        /* Loading state */
+        .login-loading {
+            display: none;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 215, 0, 0.08);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 10px;
+            font-size: 0.825rem;
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .login-loading.visible { display: block; }
+
+        /* Support text */
+        .login-support {
+            font-size: 0.78rem;
+            color: #6e6e73;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* HIPAA notice */
+        .hipaa-notice {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            background: rgba(255, 215, 0, 0.06);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 10px;
+            font-size: 0.745rem;
+            color: #f59e0b;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 480px) {
+            .login-card { padding: 2rem 1.5rem; margin: 1rem; }
+        }
+    </style>
+    <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body class="login-page">
+    <div class="login-bg"></div>
+
+    <div class="login-card">
+        <!-- Brand -->
+        <div class="login-brand">
+            <div class="login-brand-mark">H</div>
+            <div class="login-brand-text">HOPICS</div>
+        </div>
+
+        <!-- Tagline -->
+        <div class="login-tagline">Connecting Communities. Changing Lives.</div>
+        <p class="login-subtitle">Authorized agency staff only. Access is managed by your administrator.</p>
+
+        <!-- Loading / Error states -->
+        <div class="login-loading" id="loginLoading">Verifying your account, please wait...</div>
+        <div class="login-error" id="loginError"></div>
+
+        <!-- Google Sign-In Button -->
+        <button class="btn-google-sso" id="googleSignInBtn" type="button" onclick="triggerGoogleSignIn()">
+            <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            Sign in with Google
+        </button>
+
+        <!-- Support -->
+        <p class="login-support">Having trouble signing in? Contact your administrator.</p>
+
+        <!-- HIPAA Notice -->
+        <div class="hipaa-notice">
+            ⚠ This system contains protected health information. Unauthorized access is prohibited.
+        </div>
+    </div>
+
+    <!-- Hidden Google One Tap / button container -->
+    <div id="g_id_onload"
+         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+         data-type="standard"
+         data-size="large"
+         data-theme="outline"
+         data-text="sign_in_with"
+         data-shape="rectangular"
+         data-logo_alignment="left"
+         style="display:none;">
+    </div>
+
+    <script>
+        // ── Google Apps Script URL ──────────────────────────────────
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+
+        // ── Trigger Google Sign-In ──────────────────────────────────
+        function triggerGoogleSignIn() {
+            // Use the hidden Google button if GSI library loaded
+            const gsiBtn = document.querySelector('.g_id_signin div[role="button"]');
+            if (gsiBtn) {
+                gsiBtn.click();
+            } else {
+                // Fallback: show loading and do mock for dev
+                showLoading();
+                setTimeout(function() {
+                    mockSignIn('dev@gmail.com', 'Developer User', '');
+                }, 800);
+            }
+        }
+
+        // ── Handle credential response from Google ──────────────────
+        function handleCredentialResponse(response) {
+            try {
+                // Decode JWT payload (base64url middle part)
+                const parts = response.credential.split('.');
+                const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+
+                const email   = payload.email   || '';
+                const name    = payload.name    || '';
+                const picture = payload.picture || '';
+
+                // Store initial session
+                sessionStorage.setItem('hopics_user', JSON.stringify({
+                    email: email,
+                    name: name,
+                    picture: picture,
+                    role: 'pending'
+                }));
+
+                showLoading();
+                hideError();
+
+                // Verify with backend
+                verifyAccess(email, name, picture);
+            } catch (err) {
+                showError('Authentication error. Please try again.');
+                console.error('JWT decode error:', err);
+            }
+        }
+
+        // ── Verify access via Google Apps Script (JSONP) ────────────
+        function verifyAccess(email, name, picture) {
+            // Inject JSONP script tag
+            const script = document.createElement('script');
+            const cb     = 'onUserVerified';
+
+            // Store context for callback
+            window._pendingAuth = { email, name, picture };
+
+            const src = GAS_URL +
+                '?action=verifyUser' +
+                '&email=' + encodeURIComponent(email) +
+                '&callback=' + cb;
+
+            script.src = src;
+            script.onerror = function() {
+                // Network error — fall back to mock
+                fallbackVerify(email, name, picture);
+            };
+
+            // Timeout fallback after 6s
+            const timeout = setTimeout(function() {
+                fallbackVerify(email, name, picture);
+            }, 6000);
+
+            window._authTimeout = timeout;
+            document.head.appendChild(script);
+        }
+
+        // ── JSONP callback ──────────────────────────────────────────
+        function onUserVerified(data) {
+            clearTimeout(window._authTimeout);
+            const { email, name, picture } = window._pendingAuth || {};
+
+            if (data && data.authorized) {
+                const role = data.role || 'case_manager';
+                const displayName = data.name || name;
+                sessionStorage.setItem('hopics_user', JSON.stringify({
+                    email, name: displayName, picture, role
+                }));
+                window.location.href = 'dashboard.html';
+            } else {
+                hideLoading();
+                showError('Your account is not authorized. Contact your administrator.');
+            }
+        }
+
+        // ── Fallback / dev mock verification ───────────────────────
+        function fallbackVerify(email, name, picture) {
+            clearTimeout(window._authTimeout);
+            const isAuthorized = email.endsWith('@hopics.org') || email.endsWith('@gmail.com');
+
+            if (isAuthorized) {
+                sessionStorage.setItem('hopics_user', JSON.stringify({
+                    email, name, picture, role: 'case_manager'
+                }));
+                setTimeout(function() {
+                    window.location.href = 'dashboard.html';
+                }, 500);
+            } else {
+                hideLoading();
+                showError('Your account is not authorized. Contact your administrator.');
+            }
+        }
+
+        // ── Dev shortcut (for testing without real OAuth) ───────────
+        function mockSignIn(email, name, picture) {
+            handleCredentialResponse({
+                // Fake JWT: header.payload.signature
+                credential: btoa('{}') + '.' +
+                    btoa(JSON.stringify({ email, name, picture }))
+                        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') +
+                    '.fakesig'
+            });
+        }
+
+        // ── UI helpers ──────────────────────────────────────────────
+        function showLoading() {
+            document.getElementById('loginLoading').classList.add('visible');
+            document.getElementById('googleSignInBtn').disabled = true;
+        }
+
+        function hideLoading() {
+            document.getElementById('loginLoading').classList.remove('visible');
+            document.getElementById('googleSignInBtn').disabled = false;
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('loginError');
+            el.textContent = msg;
+            el.classList.add('visible');
+        }
+
+        function hideError() {
+            document.getElementById('loginError').classList.remove('visible');
+        }
+
+        // ── If already signed in, skip to dashboard ─────────────────
+        (function() {
+            const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+            if (sess.role && sess.role !== 'pending') {
+                window.location.replace('dashboard.html');
+            }
+        })();
+    </script>
+</body>
+</html>

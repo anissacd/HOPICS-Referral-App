@@ -9,7 +9,7 @@
 //   5. To enable daily overdue emails: run setupDailyTrigger() once
 // ============================================================
 
-var SUPERVISOR_EMAIL = 'supervisor@hopics.org';
+var SUPERVISOR_EMAIL = 'anissacd@gmail.com';
 
 // ── Sheet Column Definitions ─────────────────────────────────
 // Referrals: ID | Timestamp | HMIS ID | Client Name | DOB | Is Existing Client |

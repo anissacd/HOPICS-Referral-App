@@ -201,7 +201,7 @@
             .login-card { padding: 2rem 1.5rem; margin: 1rem; }
         }
     </style>
-    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body class="login-page">
     <div class="login-bg"></div>
@@ -221,16 +221,13 @@
         <div class="login-loading" id="loginLoading">Verifying your account, please wait...</div>
         <div class="login-error" id="loginError"></div>
 
-        <!-- Google Sign-In Button -->
-        <button class="btn-google-sso" id="googleSignInBtn" type="button" onclick="triggerGoogleSignIn()">
-            <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            Sign in with Google
-        </button>
+        <!-- Google Sign-In Button (rendered by Google) -->
+        <div id="g_id_onload"
+             data-client_id="80449522850-dqttmmpg9c9vua9dij4bptkci53qq0gq.apps.googleusercontent.com"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div id="googleBtnContainer" style="width:100%; display:flex; justify-content:center; margin-bottom:1.5rem;"></div>
 
         <!-- Support -->
         <p class="login-support">Having trouble signing in? Contact your administrator.</p>
@@ -242,70 +239,50 @@
     </div>
 
     <script>
-        // ── Google OAuth 2.0 (Auth Platform token flow) ─────────────
-        const GOOGLE_CLIENT_ID = '80449522850-dqttmmpg9c9vua9dij4bptkci53qq0gq.apps.googleusercontent.com';
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
 
-        let tokenClient;
-
-        // Initialize OAuth2 token client once the GSI library is ready
-        window.addEventListener('load', function () {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: GOOGLE_CLIENT_ID,
-                scope: 'openid email profile',
-                callback: handleTokenResponse,
-                error_callback: function (err) {
-                    hideLoading();
-                    if (err.type !== 'popup_closed') {
-                        showError('Sign-in was cancelled or failed. Please try again.');
-                    }
-                }
-            });
-        });
-
-        // ── Button click ────────────────────────────────────────────
-        function triggerGoogleSignIn() {
-            hideError();
-            if (tokenClient) {
-                tokenClient.requestAccessToken({ prompt: 'select_account' });
-            } else {
-                showError('Auth library not loaded yet. Please refresh and try again.');
-            }
-        }
-
-        // ── Token received — fetch user info from Google ────────────
-        async function handleTokenResponse(tokenResponse) {
-            if (tokenResponse.error) {
-                showError('Sign-in failed: ' + tokenResponse.error);
-                return;
-            }
-
-            showLoading();
-
-            try {
-                const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: { Authorization: 'Bearer ' + tokenResponse.access_token }
+        // ── Render the official Google Sign-In button ───────────────
+        window.onload = function () {
+            if (typeof google !== 'undefined') {
+                google.accounts.id.initialize({
+                    client_id: '80449522850-dqttmmpg9c9vua9dij4bptkci53qq0gq.apps.googleusercontent.com',
+                    callback: handleCredentialResponse
                 });
+                google.accounts.id.renderButton(
+                    document.getElementById('googleBtnContainer'),
+                    {
+                        type: 'standard',
+                        theme: 'outline',
+                        size: 'large',
+                        text: 'sign_in_with',
+                        shape: 'rectangular',
+                        width: 360
+                    }
+                );
+            }
+        };
 
-                if (!resp.ok) throw new Error('userinfo fetch failed');
+        // ── Handle credential (ID token) from Google ────────────────
+        function handleCredentialResponse(response) {
+            try {
+                const parts   = response.credential.split('.');
+                const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
 
-                const user    = await resp.json();
-                const email   = user.email   || '';
-                const name    = user.name    || '';
-                const picture = user.picture || '';
+                const email   = payload.email   || '';
+                const name    = payload.name    || '';
+                const picture = payload.picture || '';
 
-                // Store pending session
                 sessionStorage.setItem('hopics_user', JSON.stringify({
                     email, name, picture, role: 'pending'
                 }));
 
-                // Verify authorization with backend
+                showLoading();
+                hideError();
                 verifyAccess(email, name, picture);
 
             } catch (err) {
-                hideLoading();
-                showError('Could not retrieve account info. Please try again.');
-                console.error('userinfo error:', err);
+                showError('Authentication error. Please try again.');
+                console.error('credential error:', err);
             }
         }
 
@@ -368,12 +345,14 @@
         // ── UI helpers ──────────────────────────────────────────────
         function showLoading() {
             document.getElementById('loginLoading').classList.add('visible');
-            document.getElementById('googleSignInBtn').disabled = true;
+            document.getElementById('googleBtnContainer').style.opacity = '0.5';
+            document.getElementById('googleBtnContainer').style.pointerEvents = 'none';
         }
 
         function hideLoading() {
             document.getElementById('loginLoading').classList.remove('visible');
-            document.getElementById('googleSignInBtn').disabled = false;
+            document.getElementById('googleBtnContainer').style.opacity = '1';
+            document.getElementById('googleBtnContainer').style.pointerEvents = 'auto';
         }
 
         function showError(msg) {

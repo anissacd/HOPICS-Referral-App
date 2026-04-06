@@ -9,14 +9,6 @@
 //   5. To enable daily overdue emails: run setupDailyTrigger() once
 // ============================================================
 
-// ── Staff Email Map ──────────────────────────────────────────
-var STAFF_EMAILS = {
-  ashley: 'ashley.r@hopics.org',
-  carlos: 'carlos.m@hopics.org',
-  elena:  'elena.v@hopics.org',
-  marcus: 'marcus.d@hopics.org'
-};
-
 var SUPERVISOR_EMAIL = 'supervisor@hopics.org';
 
 // ── Sheet Column Definitions ─────────────────────────────────
@@ -43,6 +35,11 @@ var MESSAGE_HEADERS = [
   'From', 'To', 'Message', 'Is Read'
 ];
 
+// Users: Email | Name | Role | Status | Date Added | Last Login | Added By
+var USER_HEADERS = [
+  'Email', 'Name', 'Role', 'Status', 'Date Added', 'Last Login', 'Added By'
+];
+
 // ── Sheet Initialisation ─────────────────────────────────────
 function initializeSheets() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -50,7 +47,8 @@ function initializeSheets() {
   var sheetsConfig = [
     { name: 'Referrals', headers: REFERRAL_HEADERS },
     { name: 'Clients',   headers: CLIENT_HEADERS   },
-    { name: 'Messages',  headers: MESSAGE_HEADERS  }
+    { name: 'Messages',  headers: MESSAGE_HEADERS  },
+    { name: 'Users',     headers: USER_HEADERS     }
   ];
 
   sheetsConfig.forEach(function(cfg) {
@@ -63,24 +61,7 @@ function initializeSheets() {
   });
 }
 
-// ── HMIS ID Generator ────────────────────────────────────────
-function generateHmisId() {
-  var year  = new Date().getFullYear();
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Clients');
-  var count = sheet ? Math.max(sheet.getLastRow() - 1, 0) : 0;
-  var seq   = String(count + 1).padStart(5, '0');
-  return 'HTX-' + year + '-' + seq;
-}
-
 // ── Helpers ──────────────────────────────────────────────────
-function getUserEmail() {
-  try {
-    return Session.getActiveUser().getEmail() || 'Web App User';
-  } catch (e) {
-    return 'Web App User';
-  }
-}
-
 function safeCallbackName(name) {
   if (!name) return null;
   return /^[a-zA-Z_$][0-9a-zA-Z_$]*$/.test(name) ? name : null;
@@ -97,10 +78,6 @@ function createJsonOutput(data, callback) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function staffEmail(assignedTo) {
-  return STAFF_EMAILS[assignedTo] || null;
-}
-
 // ── doPost ───────────────────────────────────────────────────
 function doPost(e) {
   try {
@@ -111,6 +88,10 @@ function doPost(e) {
 
     if (data.action === 'newMessage') {
       return handleNewMessage(data);
+    }
+
+    if (data.action === 'newUser') {
+      return handleNewUser(data);
     }
 
     if (data.id) {
@@ -131,6 +112,33 @@ function doGet(e) {
   var params   = e.parameter || {};
   var action   = params.action || '';
   var callback = safeCallbackName(params.callback);
+
+  // ── Verify user access ────────────────────────────────────
+  if (action === 'verifyUser') {
+    var email = params.email || '';
+    if (!email) {
+      return createJsonOutput({ authorized: false, message: 'No email provided.' }, callback);
+    }
+
+    var result = getUserRecord(email);
+    if (result && String(result.status).toLowerCase() === 'active') {
+      // Update last login timestamp
+      updateLastLogin(email);
+      return createJsonOutput({
+        authorized: true,
+        role: result.role || 'case_manager',
+        name: result.name || ''
+      }, callback);
+    }
+
+    return createJsonOutput({ authorized: false }, callback);
+  }
+
+  // ── List all users (admin) ────────────────────────────────
+  if (action === 'listUsers') {
+    var usersData = getUsersFromSheet();
+    return createJsonOutput({ success: true, users: usersData }, callback);
+  }
 
   if (action === 'listReferrals') {
     var referrals = getReferralsFromSheet();
@@ -168,21 +176,19 @@ function handleNewReferral(data) {
 
   var id        = 'REF_' + new Date().getTime();
   var now       = new Date();
-  var createdBy = getUserEmail();
 
-  // Resolve or generate HMIS ID
+  // Use staffEmail from form data (web app cannot use Session.getActiveUser())
+  var createdBy = data.staffEmail || 'Web App User';
+
+  // Use HMIS ID provided by staff (from LAHSA HMIS system)
   var hmisId = data.hmisId || '';
   var isNew  = !data.isExistingClient || data.isExistingClient === 'false';
-
-  if (isNew && !hmisId) {
-    hmisId = generateHmisId();
-  }
 
   // Append to Referrals sheet
   referralsSheet.appendRow([
     id,                          // ID
     now,                         // Timestamp
-    hmisId,                      // HMIS ID
+    hmisId,                      // HMIS ID (entered manually by staff)
     data.clientName        || '',// Client Name
     data.clientDOB         || '',// DOB
     isNew ? 'No' : 'Yes',        // Is Existing Client
@@ -209,8 +215,8 @@ function handleNewReferral(data) {
     lastActivity: now
   });
 
-  // Email assigned staff
-  var recipient = staffEmail(data.assignedTo);
+  // Email assigned staff — look up email from Users sheet
+  var recipient = getStaffEmailByName(data.assignedTo);
   if (recipient) {
     sendNewReferralEmail(recipient, {
       referralId:      id,
@@ -283,7 +289,7 @@ function handleEdit(data) {
   // Email new assignee if reassigned
   var newAssigned = updatedRow[11];
   if (data.assignedTo && data.assignedTo !== previousAssigned) {
-    var recipient = staffEmail(newAssigned);
+    var recipient = getStaffEmailByName(newAssigned);
     if (recipient) {
       sendReassignmentEmail(recipient, {
         referralId:      currentRow[0],
@@ -326,8 +332,8 @@ function handleNewMessage(data) {
     'false'            // Is Read
   ]);
 
-  // Email recipient
-  var recipient = staffEmail(data.to);
+  // Email recipient — look up by display name in Users sheet
+  var recipient = getStaffEmailByName(data.to);
   if (recipient) {
     sendMessageNotificationEmail(recipient, {
       from:    data.from    || '',
@@ -337,6 +343,128 @@ function handleNewMessage(data) {
   }
 
   return createJsonOutput({ success: true, message: 'Message sent.', messageId: messageId, threadId: threadId });
+}
+
+// ── handleNewUser ─────────────────────────────────────────────
+function handleNewUser(data) {
+  var ss         = SpreadsheetApp.getActiveSpreadsheet();
+  var usersSheet = ss.getSheetByName('Users');
+
+  if (!usersSheet) {
+    return createJsonOutput({ success: false, message: 'Users sheet not found.' });
+  }
+
+  var email    = data.email    || '';
+  var name     = data.name     || '';
+  var role     = data.role     || 'case_manager';
+  var addedBy  = data.addedBy  || 'Admin';
+  var now      = new Date();
+
+  if (!email) {
+    return createJsonOutput({ success: false, message: 'Email is required.' });
+  }
+
+  // Check if user already exists
+  var existing = getUserRecord(email);
+  if (existing) {
+    return createJsonOutput({ success: false, message: 'User already exists.' });
+  }
+
+  usersSheet.appendRow([
+    email,   // Email
+    name,    // Name
+    role,    // Role
+    'Active',// Status
+    now,     // Date Added
+    '',      // Last Login (empty until they sign in)
+    addedBy  // Added By
+  ]);
+
+  // Send welcome email to new user
+  try {
+    sendWelcomeEmail(email, { name: name, role: role, addedBy: addedBy });
+  } catch (e) {
+    Logger.log('Failed to send welcome email: ' + e.toString());
+  }
+
+  Logger.log('New user added: ' + email + ' (' + role + ')');
+  return createJsonOutput({ success: true, message: 'User added successfully.', email: email });
+}
+
+// ── Users Sheet Helpers ───────────────────────────────────────
+function getUserRecord(email) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  if (!sheet) return null;
+
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).toLowerCase() === String(email).toLowerCase()) {
+      return {
+        email:    values[i][0] || '',
+        name:     values[i][1] || '',
+        role:     values[i][2] || 'case_manager',
+        status:   values[i][3] || 'Active',
+        dateAdded: values[i][4] || '',
+        lastLogin: values[i][5] || '',
+        addedBy:   values[i][6] || ''
+      };
+    }
+  }
+  return null;
+}
+
+function updateLastLogin(email) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  if (!sheet) return;
+
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).toLowerCase() === String(email).toLowerCase()) {
+      sheet.getRange(i + 1, 6).setValue(new Date()); // Column F = Last Login
+      return;
+    }
+  }
+}
+
+function getUsersFromSheet() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  if (!sheet) return [];
+
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) return [];
+
+  return values.slice(1).filter(function(row) { return row[0]; }).map(function(row) {
+    return {
+      email:    row[0] || '',
+      name:     row[1] || '',
+      role:     row[2] || '',
+      status:   row[3] || '',
+      dateAdded: row[4] instanceof Date ? row[4].toISOString().slice(0,10) : row[4] || '',
+      lastLogin: row[5] instanceof Date ? row[5].toISOString() : row[5] || '',
+      addedBy:   row[6] || ''
+    };
+  });
+}
+
+// ── Look up staff email by display name in Users sheet ────────
+function getStaffEmailByName(displayName) {
+  if (!displayName) return null;
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  if (!sheet) return null;
+
+  var values = sheet.getDataRange().getValues();
+  var lowerName = displayName.toLowerCase().trim();
+
+  for (var i = 1; i < values.length; i++) {
+    var rowName = String(values[i][1]).toLowerCase().trim();
+    // Try exact match first, then prefix match (e.g. "Ashley R." matches "Ashley Rivera")
+    if (rowName === lowerName || rowName.startsWith(lowerName.replace('.', '').trim())) {
+      return values[i][0] || null; // Column A = Email
+    }
+  }
+
+  return null;
 }
 
 // ── Sheet Readers ─────────────────────────────────────────────
@@ -497,7 +625,8 @@ function checkOverdueReferrals() {
 
     if (status === 'pending' && ageMs > threeDaysMs) {
       var assignedTo = row[11];
-      var recipient  = staffEmail(assignedTo);
+      // Look up the assigned staff's email from Users sheet by matching name
+      var recipient  = getStaffEmailByName(assignedTo);
 
       if (recipient) {
         sendOverdueEmail(recipient, {
@@ -557,7 +686,7 @@ function sendNewReferralEmail(recipient, info) {
       '',
       '--- REFERRAL DETAILS ---',
       'Referral ID:      ' + info.referralId,
-      'HMIS ID:          ' + info.hmisId,
+      'HMIS ID:          ' + (info.hmisId || '(not provided)'),
       'Client Name:      ' + info.clientName,
       'Date of Birth:    ' + info.dob,
       '',
@@ -598,7 +727,7 @@ function sendReassignmentEmail(recipient, info) {
       'A referral has been reassigned to you.',
       '',
       'Referral ID:       ' + info.referralId,
-      'HMIS ID:           ' + info.hmisId,
+      'HMIS ID:           ' + (info.hmisId || '(not provided)'),
       'Client Name:       ' + info.clientName,
       'Service Category:  ' + toTitleCase(info.serviceCategory),
       'Urgency:           ' + toTitleCase(info.urgency),
@@ -630,7 +759,7 @@ function sendOverdueEmail(recipient, info) {
       '',
       '--- OVERDUE REFERRAL ---',
       'Referral ID:      ' + info.referralId,
-      'HMIS ID:          ' + info.hmisId,
+      'HMIS ID:          ' + (info.hmisId || '(not provided)'),
       'Client Name:      ' + info.clientName,
       'Service Category: ' + toTitleCase(info.serviceCategory),
       'Urgency:          ' + toTitleCase(info.urgency),
@@ -653,7 +782,7 @@ function sendOverdueEmail(recipient, info) {
 
 function sendMessageNotificationEmail(recipient, info) {
   try {
-    var subject = 'New Message from ' + info.from + ' — HOPICS';
+    var subject = 'New Message from ' + info.from + ' \u2014 HOPICS';
     var body = [
       'Hello,',
       '',
@@ -674,8 +803,39 @@ function sendMessageNotificationEmail(recipient, info) {
   }
 }
 
+function sendWelcomeEmail(recipient, info) {
+  try {
+    var roleLabel = toTitleCase(String(info.role).replace(/_/g, ' '));
+    var subject = 'Welcome to HOPICS Referral System';
+    var body = [
+      'Hello ' + (info.name || '') + ',',
+      '',
+      'You have been granted access to the HOPICS Referral Management System.',
+      '',
+      'Role:      ' + roleLabel,
+      'Added by:  ' + (info.addedBy || 'Administrator'),
+      '',
+      'To sign in, visit the HOPICS Referral App and click "Sign in with Google" using this email address.',
+      '',
+      'IMPORTANT: This system contains protected health information (PHI).',
+      'Access must be limited to authorized, need-to-know purposes only.',
+      'Unauthorized disclosure is a violation of HIPAA.',
+      '',
+      'If you have any questions, contact your system administrator.',
+      '',
+      'Thank you,',
+      'HOPICS Referral System'
+    ].join('\n');
+
+    MailApp.sendEmail(recipient, subject, body);
+    Logger.log('Welcome email sent to ' + recipient);
+  } catch (e) {
+    Logger.log('Failed to send welcome email: ' + e.toString());
+  }
+}
+
 // ── Utility ───────────────────────────────────────────────────
 function toTitleCase(str) {
   if (!str) return '';
-  return String(str).replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+  return String(str).replace(/_/g, ' ').replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
 }

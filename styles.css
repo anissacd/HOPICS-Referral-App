@@ -740,3 +740,322 @@ select.input-field {
     .referral-form { padding: 1.5rem; }
     .sidebar-nav a span { display: none; }
 }
+
+/* ════════════════════════════════════════════════════════
+   DESIGN SYSTEM ADDITIONS
+   ════════════════════════════════════════════════════════ */
+
+/* ── Global typography ── */
+h1, h2, h3 {
+    letter-spacing: -0.02em;
+}
+
+/* ── Accessibility: Focus visible ── */
+:focus-visible {
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
+}
+
+/* ── Glassmorphism card ── */
+.glass {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-lg);
+}
+
+/* ── Gradient text ── */
+.gradient-text {
+    background: linear-gradient(135deg, #ffd700 0%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ── Badge ── */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ── Avatar ── */
+.avatar {
+    --size: 36px;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: calc(var(--size) * 0.35);
+    flex-shrink: 0;
+    color: #111;
+    user-select: none;
+}
+
+/* ── Tab bar ── */
+.tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #e5e5ea;
+    margin-bottom: 1.5rem;
+}
+
+.tab-bar button {
+    padding: 0.75rem 1.25rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6e6e73;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    white-space: nowrap;
+    margin-bottom: -1px;
+}
+
+.tab-bar button:hover {
+    color: #1d1d1f;
+}
+
+.tab-bar button.active {
+    color: #1d1d1f;
+    font-weight: 700;
+    border-bottom-color: #ffd700;
+}
+
+/* ── Tab pane ── */
+.tab-pane {
+    display: none;
+    animation: fade-up 0.25s ease both;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* ── Modal overlay / box ── */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.modal-overlay.open {
+    display: flex;
+}
+
+.modal-box {
+    background: #ffffff;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--shadow-lg);
+    animation: fade-up 0.25s ease both;
+    position: relative;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.modal-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1d1d1f;
+    letter-spacing: -0.02em;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #aeaeb2;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    transition: color 0.2s, background 0.2s;
+}
+
+.modal-close:hover {
+    color: #1d1d1f;
+    background: #f5f5f7;
+}
+
+/* ── Pulse dot ── */
+.pulse-dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+}
+
+.pulse-dot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* ── Skeleton loader ── */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease infinite;
+    border-radius: 6px;
+}
+
+/* ── Role badges ── */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.7rem;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.role-admin        { background: #fce7f3; color: #9d174d; }
+.role-supervisor   { background: #ede9fe; color: #6d28d9; }
+.role-case-manager { background: #dbeafe; color: #1e40af; }
+.role-intake       { background: #ffedd5; color: #c2410c; }
+.role-outreach     { background: #dcfce7; color: #166534; }
+.role-readonly     { background: #f5f5f7; color: #6e6e73; }
+
+/* ── Data grid (4 columns) ── */
+.data-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .data-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+    .data-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Improved card hover ── */
+.card:hover,
+.stat-card:hover {
+    border-left: 3px solid #ffd700;
+    padding-left: calc(1.5rem - 3px);
+}
+
+.card { transition: border-left 0.2s ease, padding-left 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+.stat-card { transition: border-left 0.2s ease, padding-left 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+
+/* ── Sidebar active indicator ── */
+.sidebar-nav a.active {
+    position: relative;
+}
+
+.sidebar-nav a.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    background: #ffd700;
+    border-radius: 0 3px 3px 0;
+}
+
+/* ── btn-primary scale on hover ── */
+.btn-primary:hover {
+    transform: translateY(-1px) scale(1.02);
+}
+
+/* ── Animations ── */
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+}
+
+@keyframes pulse-ring {
+    0%   { transform: scale(1);   opacity: 1; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Apply fade-up to cards on load ── */
+.card,
+.stat-card,
+.profile-card {
+    animation: fade-up 0.3s ease both;
+}
+
+/* ── Staggered delays for stat cards ── */
+.stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stat-card:nth-child(2) { animation-delay: 0.10s; }
+.stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stat-card:nth-child(4) { animation-delay: 0.20s; }
+
+/* ── Admin panel specific ── */
+.admin-table-avatar {
+    --size: 34px;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #111;
+    flex-shrink: 0;
+}
+
+.status-active-pill  { background: #dcfce7; color: #166534; }
+.status-inactive-pill { background: #f5f5f7; color: #6e6e73; }
+
+/* ── Program status pills ── */
+.prog-active   { background: #dcfce7; color: #166534; }
+.prog-inactive { background: #f5f5f7; color: #6e6e73; }
+
+/* ── Activity log action tags ── */
+.action-tag {
+    display: inline-flex;
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.action-created  { background: #dbeafe; color: #1e40af; }
+.action-edited   { background: #fef9c3; color: #854d0e; }
+.action-login    { background: #dcfce7; color: #166534; }
+.action-added    { background: #ede9fe; color: #6d28d9; }
+.action-deactivated { background: #fee2e2; color: #991b1b; }
+

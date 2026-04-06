@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPICS — Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ── Admin-specific overrides ── */
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .admin-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            color: #1d1d1f;
+        }
+
+        .admin-header p {
+            color: #6e6e73;
+            margin-top: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── User table avatar colors ── */
+        .ua-red    { background: #fce7f3; }
+        .ua-purple { background: #ede9fe; }
+        .ua-blue   { background: #dbeafe; }
+        .ua-orange { background: #ffedd5; }
+        .ua-green  { background: #dcfce7; }
+        .ua-gray   { background: #f5f5f7; }
+
+        /* ── Toggle switch ── */
+        .toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: 38px;
+            height: 22px;
+            cursor: pointer;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+
+        .toggle-track {
+            position: absolute;
+            inset: 0;
+            background: #d2d2d7;
+            border-radius: 99px;
+            transition: background 0.2s;
+        }
+
+        .toggle-thumb {
+            position: absolute;
+            left: 3px;
+            top: 3px;
+            width: 16px;
+            height: 16px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .toggle input:checked ~ .toggle-track { background: #22c55e; }
+        .toggle input:checked ~ .toggle-thumb { transform: translateX(16px); }
+
+        /* ── Filter row ── */
+        .filter-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .filter-row input,
+        .filter-row select {
+            padding: 0.5rem 0.875rem;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            background: #f5f5f7;
+            font-size: 0.875rem;
+            color: #1d1d1f;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .filter-row input:focus,
+        .filter-row select:focus {
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.18);
+            background: #fff;
+        }
+
+        .filter-row input { min-width: 200px; }
+
+        /* ── Action btn small ── */
+        .btn-xs {
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: background 0.15s, box-shadow 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-xs-secondary {
+            background: #f5f5f7;
+            color: #1d1d1f;
+            border: 1px solid #d2d2d7;
+        }
+
+        .btn-xs-secondary:hover { background: #e5e5ea; }
+
+        /* ── Programs table ── */
+        .prog-type-tag {
+            font-size: 0.775rem;
+            color: #6e6e73;
+            background: #f5f5f7;
+            border-radius: 6px;
+            padding: 0.2rem 0.55rem;
+        }
+
+        /* ── Activity icon ── */
+        .activity-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+
+        /* ── Modal form fields ── */
+        .modal-form-group {
+            display: grid;
+            gap: 0.5rem;
+            margin-bottom: 1.125rem;
+        }
+
+        .modal-label {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 0.75rem 0.875rem;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            background: #f5f5f7;
+            font-size: 0.9rem;
+            color: #1d1d1f;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        .modal-input:focus {
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.18);
+            background: #fff;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.625rem;
+            margin-top: 1.5rem;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .data-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-mark">H</div>
+                <h2>HOPICS</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="clients.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="referral.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    <span>New Referral</span>
+                </a>
+                <a href="my-referrals.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h.01"/><path d="M16 20h.01"/><path d="M8 4h.01"/><path d="M8 20h.01"/>
+                        <path d="M12 4h.01"/><path d="M12 20h.01"/><path d="M4 8h.01"/><path d="M4 12h.01"/>
+                        <path d="M4 16h.01"/><path d="M20 8h.01"/><path d="M20 12h.01"/><path d="M20 16h.01"/>
+                    </svg>
+                    <span>My Referrals</span>
+                </a>
+                <a href="messages.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Messages</span>
+                </a>
+                <a href="admin.html" id="adminLink" class="active">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <span>Admin</span>
+                </a>
+                <a href="index.html" onclick="sessionStorage.removeItem('hopics_user')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Sign Out</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section">
+                <div class="card">
+                    <div class="card-title">Admin Panel</div>
+                    <p>Manage users, programs, and review system activity logs.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="app-main">
+            <!-- Admin Header -->
+            <div class="admin-header">
+                <div>
+                    <h1>Admin Panel</h1>
+                    <p>Manage system access, programs, and monitor activity.</p>
+                </div>
+                <div class="quick-actions">
+                    <button class="btn btn-primary" onclick="openModal('addUserModal')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Add User
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="data-grid" id="adminStats">
+                <div class="stat-card">
+                    <h3>Total Users</h3>
+                    <div class="card-value">6</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active</h3>
+                    <div class="card-value" style="color:#166534;">5</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Admins</h3>
+                    <div class="card-value" style="color:#9d174d;">1</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Case Managers</h3>
+                    <div class="card-value" style="color:#1e40af;">3</div>
+                </div>
+            </div>
+
+            <!-- Tab Bar -->
+            <div class="card" style="padding:0;overflow:hidden;">
+                <div class="tab-bar" style="margin-bottom:0;padding:0 1.5rem;padding-top:0.25rem;">
+                    <button class="active" onclick="switchTab('users', this)">Users</button>
+                    <button onclick="switchTab('programs', this)">Programs</button>
+                    <button onclick="switchTab('activity', this)">Activity Log</button>
+                </div>
+
+                <div style="padding:1.5rem;">
+
+                    <!-- ── TAB: Users ── -->
+                    <div id="tab-users" class="tab-pane active">
+                        <div class="filter-row">
+                            <input type="text" placeholder="Search users..." id="userSearch" oninput="filterUsers(this.value)">
+                            <select id="roleFilter" onchange="filterUsers(document.getElementById('userSearch').value)">
+                                <option value="">All Roles</option>
+                                <option value="admin">Admin</option>
+                                <option value="supervisor">Supervisor</option>
+                                <option value="case_manager">Case Manager</option>
+                                <option value="intake">Intake Coordinator</option>
+                                <option value="outreach">Outreach Worker</option>
+                                <option value="readonly">Read Only</option>
+                            </select>
+                        </div>
+
+                        <div class="table-wrapper" style="margin-top:0;">
+                            <table class="table" id="usersTable">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Last Login</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ── TAB: Programs ── -->
+                    <div id="tab-programs" class="tab-pane">
+                        <div class="filter-row" style="justify-content:space-between;">
+                            <span style="font-size:0.875rem;color:#6e6e73;">
+                                Programs active in the HOPICS referral system
+                            </span>
+                            <button class="btn btn-secondary" onclick="openModal('addProgramModal')" style="font-size:0.825rem;padding:0.45rem 0.875rem;">
+                                + Add Program
+                            </button>
+                        </div>
+
+                        <div class="table-wrapper" style="margin-top:0;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Program Name</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Referrals</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="programsTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ── TAB: Activity Log ── -->
+                    <div id="tab-activity" class="tab-pane">
+                        <div class="filter-row">
+                            <input type="date" id="logDateFrom" title="From date">
+                            <input type="date" id="logDateTo" title="To date">
+                            <select id="logUserFilter">
+                                <option value="">All Users</option>
+                                <option>Ashley R.</option>
+                                <option>Carlos M.</option>
+                                <option>Elena V.</option>
+                                <option>Marcus D.</option>
+                                <option>Jordan K.</option>
+                                <option>Sam T.</option>
+                            </select>
+                            <button class="btn btn-secondary" style="font-size:0.825rem;padding:0.45rem 0.875rem;" onclick="filterLog()">Filter</button>
+                        </div>
+
+                        <div class="table-wrapper" style="margin-top:0;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>User</th>
+                                        <th>Action</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activityTableBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         MODALS
+    ══════════════════════════════════════════════════════ -->
+
+    <!-- Add User Modal -->
+    <div class="modal-overlay" id="addUserModal" onclick="onOverlayClick(event,'addUserModal')">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title">Add New User</span>
+                <button class="modal-close" onclick="closeModal('addUserModal')" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-form-group">
+                <label class="modal-label" for="newUserName">Full Name</label>
+                <input class="modal-input" type="text" id="newUserName" placeholder="e.g. Jordan Kim">
+            </div>
+            <div class="modal-form-group">
+                <label class="modal-label" for="newUserEmail">Google Workspace Email</label>
+                <input class="modal-input" type="email" id="newUserEmail" placeholder="user@hopics.org">
+            </div>
+            <div class="modal-form-group">
+                <label class="modal-label" for="newUserRole">Role</label>
+                <select class="modal-input" id="newUserRole">
+                    <option value="admin">Admin</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="case_manager" selected>Case Manager</option>
+                    <option value="intake">Intake Coordinator</option>
+                    <option value="outreach">Outreach Worker</option>
+                    <option value="readonly">Read Only</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addUser()">Add User</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Role Modal -->
+    <div class="modal-overlay" id="editRoleModal" onclick="onOverlayClick(event,'editRoleModal')">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title">Edit User Role</span>
+                <button class="modal-close" onclick="closeModal('editRoleModal')" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <p style="font-size:0.875rem;color:#6e6e73;margin-bottom:1.25rem;">
+                Changing the role for <strong id="editRoleUserName" style="color:#1d1d1f;"></strong>.
+            </p>
+            <div class="modal-form-group">
+                <label class="modal-label" for="editRoleSelect">New Role</label>
+                <select class="modal-input" id="editRoleSelect">
+                    <option value="admin">Admin</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="case_manager">Case Manager</option>
+                    <option value="intake">Intake Coordinator</option>
+                    <option value="outreach">Outreach Worker</option>
+                    <option value="readonly">Read Only</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('editRoleModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveRole()">Save Role</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Program Modal -->
+    <div class="modal-overlay" id="addProgramModal" onclick="onOverlayClick(event,'addProgramModal')">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title">Add Program</span>
+                <button class="modal-close" onclick="closeModal('addProgramModal')" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-form-group">
+                <label class="modal-label" for="newProgName">Program Name</label>
+                <input class="modal-input" type="text" id="newProgName" placeholder="e.g. Rapid Rehousing">
+            </div>
+            <div class="modal-form-group">
+                <label class="modal-label" for="newProgType">Type</label>
+                <select class="modal-input" id="newProgType">
+                    <option>Housing</option>
+                    <option>Medical</option>
+                    <option>Mental Health</option>
+                    <option>Substance Abuse</option>
+                    <option>Employment</option>
+                    <option>Outreach</option>
+                    <option>Community Partner</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('addProgramModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addProgram()">Add Program</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Session guard ────────────────────────────────────────────
+        const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+        if (_sess.role === 'admin') {
+            const al = document.getElementById('adminLink');
+            if (al) al.style.display = 'flex';
+        }
+
+        // ── Mock Data ────────────────────────────────────────────────
+        const ROLE_LABELS = {
+            admin:        'Admin',
+            supervisor:   'Supervisor',
+            case_manager: 'Case Manager',
+            intake:       'Intake Coordinator',
+            outreach:     'Outreach Worker',
+            readonly:     'Read Only'
+        };
+
+        const ROLE_CSS = {
+            admin:        'role-admin',
+            supervisor:   'role-supervisor',
+            case_manager: 'role-case-manager',
+            intake:       'role-intake',
+            outreach:     'role-outreach',
+            readonly:     'role-readonly'
+        };
+
+        const AVATAR_CSS = {
+            admin:        'ua-red',
+            supervisor:   'ua-purple',
+            case_manager: 'ua-blue',
+            intake:       'ua-orange',
+            outreach:     'ua-green',
+            readonly:     'ua-gray'
+        };
+
+        let users = [
+            { id: 1, name: 'Ashley Rivera',   email: 'ashley.r@hopics.org',  role: 'admin',        status: true,  lastLogin: 'Apr 6, 2026, 9:02 AM' },
+            { id: 2, name: 'Carlos Mendoza',  email: 'carlos.m@hopics.org',  role: 'supervisor',   status: true,  lastLogin: 'Apr 5, 2026, 4:17 PM' },
+            { id: 3, name: 'Elena Vasquez',   email: 'elena.v@hopics.org',   role: 'case_manager', status: true,  lastLogin: 'Apr 6, 2026, 8:45 AM' },
+            { id: 4, name: 'Marcus Davis',    email: 'marcus.d@hopics.org',  role: 'case_manager', status: true,  lastLogin: 'Apr 4, 2026, 3:30 PM' },
+            { id: 5, name: 'Jordan Kim',      email: 'jordan.k@hopics.org',  role: 'intake',       status: true,  lastLogin: 'Apr 3, 2026, 11:20 AM' },
+            { id: 6, name: 'Sam Thompson',    email: 'sam.t@hopics.org',     role: 'outreach',     status: false, lastLogin: 'Mar 28, 2026, 2:00 PM' }
+        ];
+
+        let programs = [
+            { name: 'Street Outreach',             type: 'Outreach',        active: true,  referrals: 47 },
+            { name: 'Emergency Shelter',            type: 'Housing',         active: true,  referrals: 91 },
+            { name: 'Drop-In Center',               type: 'Housing',         active: true,  referrals: 38 },
+            { name: 'Transitional Housing',         type: 'Housing',         active: true,  referrals: 62 },
+            { name: 'Rapid Rehousing',              type: 'Housing',         active: true,  referrals: 55 },
+            { name: 'Permanent Supportive Housing', type: 'Housing',         active: true,  referrals: 29 },
+            { name: 'Mental Health Services',       type: 'Mental Health',   active: true,  referrals: 43 },
+            { name: 'Substance Abuse Recovery',     type: 'Substance Abuse', active: true,  referrals: 31 },
+            { name: 'Employment Services',          type: 'Employment',      active: true,  referrals: 24 },
+            { name: 'Medical Outreach',             type: 'Medical',         active: true,  referrals: 18 },
+            { name: 'External / Community Partner', type: 'Community Partner', active: false, referrals: 7 }
+        ];
+
+        const activityLog = [
+            { ts: 'Apr 6, 2026, 9:18 AM',  user: 'Ashley R.',  action: 'created',     detail: 'New referral for Maria Lopez — Housing' },
+            { ts: 'Apr 6, 2026, 8:55 AM',  user: 'Elena V.',   action: 'login',       detail: 'Signed in via Google SSO' },
+            { ts: 'Apr 5, 2026, 4:22 PM',  user: 'Carlos M.',  action: 'edited',      detail: 'Updated referral REF_1711944120000 status → In Progress' },
+            { ts: 'Apr 5, 2026, 3:40 PM',  user: 'Ashley R.',  action: 'added',       detail: 'Added user Jordan Kim (Intake Coordinator)' },
+            { ts: 'Apr 5, 2026, 2:15 PM',  user: 'Marcus D.',  action: 'created',     detail: 'New referral for David Torres — Employment' },
+            { ts: 'Apr 4, 2026, 11:05 AM', user: 'Jordan K.',  action: 'login',       detail: 'Signed in via Google SSO' },
+            { ts: 'Apr 3, 2026, 3:50 PM',  user: 'Ashley R.',  action: 'deactivated', detail: 'Deactivated user Sam Thompson' },
+            { ts: 'Apr 3, 2026, 1:30 PM',  user: 'Elena V.',   action: 'created',     detail: 'New referral for Angela Kim — Medical' },
+            { ts: 'Apr 2, 2026, 10:45 AM', user: 'Carlos M.',  action: 'edited',      detail: 'Updated referral REF_1711855320000 status → Completed' },
+            { ts: 'Apr 1, 2026, 9:00 AM',  user: 'Ashley R.',  action: 'login',       detail: 'Signed in via Google SSO' }
+        ];
+
+        // ── Tab switching ─────────────────────────────────────────────
+        function switchTab(name, btn) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // ── Initials ─────────────────────────────────────────────────
+        function initials(name) {
+            const p = name.trim().split(' ');
+            return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
+        }
+
+        // ── Render Users ──────────────────────────────────────────────
+        function renderUsers(list) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = list.map(u => `
+                <tr data-id="${u.id}">
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                            <div class="admin-table-avatar ${AVATAR_CSS[u.role]}">${initials(u.name)}</div>
+                            <span style="font-weight:600;font-size:0.9rem;">${u.name}</span>
+                        </div>
+                    </td>
+                    <td style="color:#6e6e73;font-size:0.875rem;">${u.email}</td>
+                    <td><span class="role-badge ${ROLE_CSS[u.role]}">${ROLE_LABELS[u.role]}</span></td>
+                    <td>
+                        <span class="status-pill ${u.status ? 'status-active-pill' : 'status-inactive-pill'}">
+                            ${u.status ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td style="color:#6e6e73;font-size:0.85rem;">${u.lastLogin}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.625rem;">
+                            <button class="btn-xs btn-xs-secondary" onclick="openEditRole(${u.id})">Edit Role</button>
+                            <label class="toggle" title="${u.status ? 'Deactivate' : 'Activate'} user">
+                                <input type="checkbox" ${u.status ? 'checked' : ''} onchange="toggleUser(${u.id}, this.checked)">
+                                <div class="toggle-track"></div>
+                                <div class="toggle-thumb"></div>
+                            </label>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterUsers(q) {
+            const role = document.getElementById('roleFilter').value;
+            const lower = q.toLowerCase();
+            const filtered = users.filter(u =>
+                (!role || u.role === role) &&
+                (!q || u.name.toLowerCase().includes(lower) || u.email.toLowerCase().includes(lower))
+            );
+            renderUsers(filtered);
+        }
+
+        // ── Render Programs ───────────────────────────────────────────
+        function renderPrograms() {
+            const tbody = document.getElementById('programsTableBody');
+            tbody.innerHTML = programs.map((p, i) => `
+                <tr>
+                    <td style="font-weight:600;">${p.name}</td>
+                    <td><span class="prog-type-tag">${p.type}</span></td>
+                    <td>
+                        <span class="status-pill ${p.active ? 'prog-active' : 'prog-inactive'}">
+                            ${p.active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td style="font-weight:700;color:#1d1d1f;">${p.referrals}</td>
+                    <td>
+                        <button class="btn-xs btn-xs-secondary" onclick="toggleProgram(${i})">
+                            ${p.active ? 'Deactivate' : 'Activate'}
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function toggleProgram(i) {
+            programs[i].active = !programs[i].active;
+            renderPrograms();
+        }
+
+        // ── Render Activity Log ───────────────────────────────────────
+        const ACTION_CSS = {
+            created:     'action-created',
+            edited:      'action-edited',
+            login:       'action-login',
+            added:       'action-added',
+            deactivated: 'action-deactivated'
+        };
+
+        function renderActivity(list) {
+            const tbody = document.getElementById('activityTableBody');
+            tbody.innerHTML = list.map(a => `
+                <tr>
+                    <td style="color:#6e6e73;font-size:0.83rem;white-space:nowrap;">${a.ts}</td>
+                    <td style="font-weight:600;font-size:0.875rem;">${a.user}</td>
+                    <td><span class="action-tag ${ACTION_CSS[a.action] || ''}">${a.action.charAt(0).toUpperCase() + a.action.slice(1)}</span></td>
+                    <td style="font-size:0.875rem;color:#3d3d3f;">${a.detail}</td>
+                </tr>
+            `).join('');
+        }
+
+        function filterLog() {
+            const user = document.getElementById('logUserFilter').value;
+            const from = document.getElementById('logDateFrom').value;
+            const to   = document.getElementById('logDateTo').value;
+            let list = activityLog;
+            if (user) list = list.filter(a => a.user.startsWith(user.split(' ')[0]));
+            renderActivity(list);
+        }
+
+        // ── Toggle user active state ──────────────────────────────────
+        function toggleUser(id, active) {
+            const u = users.find(u => u.id === id);
+            if (u) {
+                u.status = active;
+                updateAdminStats();
+            }
+        }
+
+        // ── Add user ─────────────────────────────────────────────────
+        function addUser() {
+            const name  = document.getElementById('newUserName').value.trim();
+            const email = document.getElementById('newUserEmail').value.trim();
+            const role  = document.getElementById('newUserRole').value;
+
+            if (!name || !email) {
+                alert('Please fill in name and email.');
+                return;
+            }
+
+            users.push({
+                id: Date.now(),
+                name,
+                email,
+                role,
+                status: true,
+                lastLogin: 'Never'
+            });
+
+            closeModal('addUserModal');
+            document.getElementById('newUserName').value = '';
+            document.getElementById('newUserEmail').value = '';
+            renderUsers(users);
+            updateAdminStats();
+        }
+
+        // ── Add program ───────────────────────────────────────────────
+        function addProgram() {
+            const name = document.getElementById('newProgName').value.trim();
+            const type = document.getElementById('newProgType').value;
+            if (!name) { alert('Please enter a program name.'); return; }
+
+            programs.push({ name, type, active: true, referrals: 0 });
+            closeModal('addProgramModal');
+            document.getElementById('newProgName').value = '';
+            renderPrograms();
+        }
+
+        // ── Edit role ─────────────────────────────────────────────────
+        let _editRoleId = null;
+
+        function openEditRole(id) {
+            const u = users.find(u => u.id === id);
+            if (!u) return;
+            _editRoleId = id;
+            document.getElementById('editRoleUserName').textContent = u.name;
+            document.getElementById('editRoleSelect').value = u.role;
+            openModal('editRoleModal');
+        }
+
+        function saveRole() {
+            const u = users.find(u => u.id === _editRoleId);
+            if (u) {
+                u.role = document.getElementById('editRoleSelect').value;
+                renderUsers(users);
+                updateAdminStats();
+            }
+            closeModal('editRoleModal');
+        }
+
+        // ── Update stats ──────────────────────────────────────────────
+        function updateAdminStats() {
+            const cards = document.querySelectorAll('#adminStats .card-value');
+            cards[0].textContent = users.length;
+            cards[1].textContent = users.filter(u => u.status).length;
+            cards[2].textContent = users.filter(u => u.role === 'admin').length;
+            cards[3].textContent = users.filter(u => u.role === 'case_manager').length;
+        }
+
+        // ── Modal helpers ─────────────────────────────────────────────
+        function openModal(id) {
+            document.getElementById(id).classList.add('open');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+
+        function onOverlayClick(e, id) {
+            if (e.target === document.getElementById(id)) closeModal(id);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+            }
+        });
+
+        // ── Init ──────────────────────────────────────────────────────
+        renderUsers(users);
+        renderPrograms();
+        renderActivity(activityLog);
+    </script>
+</body>
+</html>

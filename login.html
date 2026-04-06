@@ -201,7 +201,7 @@
             .login-card { padding: 2rem 1.5rem; margin: 1rem; }
         }
     </style>
-    <script src="https://accounts.google.com/gsi/client" async></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
 </head>
 <body class="login-page">
     <div class="login-bg"></div>
@@ -241,93 +241,88 @@
         </div>
     </div>
 
-    <!-- Hidden Google One Tap / button container -->
-    <div id="g_id_onload"
-         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse"
-         data-auto_prompt="false">
-    </div>
-    <div class="g_id_signin"
-         data-type="standard"
-         data-size="large"
-         data-theme="outline"
-         data-text="sign_in_with"
-         data-shape="rectangular"
-         data-logo_alignment="left"
-         style="display:none;">
-    </div>
-
     <script>
-        // ── Google Apps Script URL ──────────────────────────────────
+        // ── Google OAuth 2.0 (Auth Platform token flow) ─────────────
+        const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
 
-        // ── Trigger Google Sign-In ──────────────────────────────────
+        let tokenClient;
+
+        // Initialize OAuth2 token client once the GSI library is ready
+        window.addEventListener('load', function () {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: 'openid email profile',
+                callback: handleTokenResponse,
+                error_callback: function (err) {
+                    hideLoading();
+                    if (err.type !== 'popup_closed') {
+                        showError('Sign-in was cancelled or failed. Please try again.');
+                    }
+                }
+            });
+        });
+
+        // ── Button click ────────────────────────────────────────────
         function triggerGoogleSignIn() {
-            // Use the hidden Google button if GSI library loaded
-            const gsiBtn = document.querySelector('.g_id_signin div[role="button"]');
-            if (gsiBtn) {
-                gsiBtn.click();
+            hideError();
+            if (tokenClient) {
+                tokenClient.requestAccessToken({ prompt: 'select_account' });
             } else {
-                // Fallback: show loading and do mock for dev
-                showLoading();
-                setTimeout(function() {
-                    mockSignIn('dev@gmail.com', 'Developer User', '');
-                }, 800);
+                showError('Auth library not loaded yet. Please refresh and try again.');
             }
         }
 
-        // ── Handle credential response from Google ──────────────────
-        function handleCredentialResponse(response) {
+        // ── Token received — fetch user info from Google ────────────
+        async function handleTokenResponse(tokenResponse) {
+            if (tokenResponse.error) {
+                showError('Sign-in failed: ' + tokenResponse.error);
+                return;
+            }
+
+            showLoading();
+
             try {
-                // Decode JWT payload (base64url middle part)
-                const parts = response.credential.split('.');
-                const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: 'Bearer ' + tokenResponse.access_token }
+                });
 
-                const email   = payload.email   || '';
-                const name    = payload.name    || '';
-                const picture = payload.picture || '';
+                if (!resp.ok) throw new Error('userinfo fetch failed');
 
-                // Store initial session
+                const user    = await resp.json();
+                const email   = user.email   || '';
+                const name    = user.name    || '';
+                const picture = user.picture || '';
+
+                // Store pending session
                 sessionStorage.setItem('hopics_user', JSON.stringify({
-                    email: email,
-                    name: name,
-                    picture: picture,
-                    role: 'pending'
+                    email, name, picture, role: 'pending'
                 }));
 
-                showLoading();
-                hideError();
-
-                // Verify with backend
+                // Verify authorization with backend
                 verifyAccess(email, name, picture);
+
             } catch (err) {
-                showError('Authentication error. Please try again.');
-                console.error('JWT decode error:', err);
+                hideLoading();
+                showError('Could not retrieve account info. Please try again.');
+                console.error('userinfo error:', err);
             }
         }
 
         // ── Verify access via Google Apps Script (JSONP) ────────────
         function verifyAccess(email, name, picture) {
-            // Inject JSONP script tag
-            const script = document.createElement('script');
-            const cb     = 'onUserVerified';
-
-            // Store context for callback
             window._pendingAuth = { email, name, picture };
 
+            const script = document.createElement('script');
             const src = GAS_URL +
                 '?action=verifyUser' +
                 '&email=' + encodeURIComponent(email) +
-                '&callback=' + cb;
+                '&callback=onUserVerified';
 
             script.src = src;
-            script.onerror = function() {
-                // Network error — fall back to mock
-                fallbackVerify(email, name, picture);
-            };
+            script.onerror = function () { fallbackVerify(email, name, picture); };
 
-            // Timeout fallback after 6s
-            const timeout = setTimeout(function() {
+            const timeout = setTimeout(function () {
                 fallbackVerify(email, name, picture);
             }, 6000);
 
@@ -341,10 +336,11 @@
             const { email, name, picture } = window._pendingAuth || {};
 
             if (data && data.authorized) {
-                const role = data.role || 'case_manager';
-                const displayName = data.name || name;
                 sessionStorage.setItem('hopics_user', JSON.stringify({
-                    email, name: displayName, picture, role
+                    email,
+                    name: data.name || name,
+                    picture,
+                    role: data.role || 'case_manager'
                 }));
                 window.location.href = 'dashboard.html';
             } else {
@@ -353,7 +349,7 @@
             }
         }
 
-        // ── Fallback / dev mock verification ───────────────────────
+        // ── Fallback when GAS is unreachable ────────────────────────
         function fallbackVerify(email, name, picture) {
             clearTimeout(window._authTimeout);
             const isAuthorized = email.endsWith('@hopics.org') || email.endsWith('@gmail.com');
@@ -362,24 +358,11 @@
                 sessionStorage.setItem('hopics_user', JSON.stringify({
                     email, name, picture, role: 'case_manager'
                 }));
-                setTimeout(function() {
-                    window.location.href = 'dashboard.html';
-                }, 500);
+                window.location.href = 'dashboard.html';
             } else {
                 hideLoading();
                 showError('Your account is not authorized. Contact your administrator.');
             }
-        }
-
-        // ── Dev shortcut (for testing without real OAuth) ───────────
-        function mockSignIn(email, name, picture) {
-            handleCredentialResponse({
-                // Fake JWT: header.payload.signature
-                credential: btoa('{}') + '.' +
-                    btoa(JSON.stringify({ email, name, picture }))
-                        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') +
-                    '.fakesig'
-            });
         }
 
         // ── UI helpers ──────────────────────────────────────────────
@@ -403,8 +386,8 @@
             document.getElementById('loginError').classList.remove('visible');
         }
 
-        // ── If already signed in, skip to dashboard ─────────────────
-        (function() {
+        // ── Skip login if already authenticated ─────────────────────
+        (function () {
             const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
             if (sess.role && sess.role !== 'pending') {
                 window.location.replace('dashboard.html');

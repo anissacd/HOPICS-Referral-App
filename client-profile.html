@@ -521,7 +521,14 @@
                     </svg>
                     <span>Messages</span>
                 </a>
-                <a href="index.html">
+                <a href="admin.html" id="adminLink" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <span>Admin</span>
+                </a>
+                <a href="index.html" onclick="sessionStorage.removeItem('hopics_user')">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -541,6 +548,15 @@
         </aside>
 
         <main class="app-main">
+
+            <!-- HIPAA Notice Bar -->
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:0.625rem 1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.625rem;font-size:0.8rem;color:#92400e;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span><strong>HIPAA Protected</strong> — This record contains protected health information. Access is limited to authorized personnel on a need-to-know basis.</span>
+            </div>
 
             <!-- Success Banner (shown after referral submission) -->
             <div class="success-banner" id="successBanner" style="display:none;">
@@ -636,21 +652,16 @@
 
                         <!-- Identification -->
                         <div class="section-divider">Identification</div>
-                        <div class="profile-fields three" style="margin-top:0.75rem;">
+                        <div class="profile-fields" style="margin-top:0.75rem;grid-template-columns:1fr 1fr;">
                             <div class="profile-field">
-                                <span class="field-label">HMIS ID</span>
+                                <span class="field-label">HMIS ID <span style="font-weight:400;color:#aeaeb2;text-transform:none;letter-spacing:0;">(from LAHSA HMIS)</span></span>
                                 <span class="field-value" data-f="hmisId">HTX-2024-00471</span>
                                 <input class="field-input" data-f="hmisId" value="HTX-2024-00471" placeholder="HMIS ID">
                             </div>
                             <div class="profile-field">
-                                <span class="field-label">SSN (Last 4)</span>
-                                <span class="field-value" data-f="ssn">••••</span>
-                                <input class="field-input" data-f="ssn" value="" placeholder="Last 4 digits" maxlength="4">
-                            </div>
-                            <div class="profile-field">
-                                <span class="field-label">Medicaid / Medicare #</span>
-                                <span class="field-value empty" data-f="medicaid">Not provided</span>
-                                <input class="field-input" data-f="medicaid" value="" placeholder="ID number">
+                                <span class="field-label">Insurance Type</span>
+                                <span class="field-value" data-f="insuranceId">Medi-Cal</span>
+                                <input class="field-input" data-f="insuranceId" value="Medi-Cal" placeholder="Insurance type">
                             </div>
                         </div>
 
@@ -758,20 +769,15 @@
                                 </select>
                             </div>
                             <div class="profile-field">
-                                <span class="field-label">Insurance Type</span>
-                                <span class="field-value" data-f="insurance">Medi-Cal</span>
-                                <select class="field-input" data-f="insurance">
-                                    <option>Medi-Cal</option>
-                                    <option>Medicare</option>
-                                    <option>Private Insurance</option>
-                                    <option>Uninsured</option>
-                                    <option>Unknown</option>
-                                </select>
-                            </div>
-                            <div class="profile-field">
                                 <span class="field-label">Monthly Income</span>
-                                <span class="field-value" data-f="income">$0 — No income</span>
-                                <input class="field-input" data-f="income" value="$0 — No income" placeholder="Monthly income">
+                                <span class="field-value" data-f="income">No income</span>
+                                <select class="field-input" data-f="income">
+                                    <option>No income</option>
+                                    <option>&lt;$500/mo</option>
+                                    <option>$500-$1000/mo</option>
+                                    <option>$1000-$2000/mo</option>
+                                    <option>&gt;$2000/mo</option>
+                                </select>
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Benefits</span>
@@ -1132,6 +1138,13 @@
             const inputArea = document.querySelector('.note-input-area');
             inputArea.insertAdjacentHTML('beforebegin', noteHTML);
             document.getElementById('newNoteText').value = '';
+        }
+
+        // Show admin link if user is admin
+        const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+        if (_sess.role === 'admin') {
+            const al = document.getElementById('adminLink');
+            if (al) al.style.display = 'flex';
         }
     </script>
 </body>

@@ -302,7 +302,14 @@
                     </svg>
                     <span>Messages</span>
                 </a>
-                <a href="index.html">
+                <a href="admin.html" id="adminLink" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <span>Admin</span>
+                </a>
+                <a href="index.html" onclick="sessionStorage.removeItem('hopics_user')">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -344,8 +351,9 @@
                 </div>
 
                 <form action="https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec" method="POST" novalidate>
-                    <input type="hidden" id="hmisId" name="hmisId">
+                    <input type="hidden" id="existingHmisId" name="existingHmisId">
                     <input type="hidden" id="isExistingClient" name="isExistingClient" value="false">
+                    <input type="hidden" id="staffEmailField" name="staffEmail">
 
                     <!-- Client Search -->
                     <div class="input-group" style="margin-bottom:0.5rem;">
@@ -395,11 +403,21 @@
                     <!-- Client Details -->
                     <div class="form-section-label">Client Details</div>
 
-                    <div class="form-row">
+                    <div class="form-row" style="grid-template-columns: repeat(3, 1fr);">
                         <div class="input-group">
                             <label class="input-label" for="clientName">Client Name</label>
                             <input class="input-field" type="text" id="clientName" name="clientName"
                                    placeholder="Full name" autocomplete="off" required>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label" for="manualHmisId">
+                                HMIS ID
+                                <span style="font-weight:400;color:#aeaeb2;">(from LAHSA HMIS)</span>
+                            </label>
+                            <input class="input-field" type="text" id="manualHmisId" name="hmisId"
+                                   placeholder="e.g. HTX-2024-00471" autocomplete="off"
+                                   pattern="[A-Z]{2,4}-\d{4}-\d{4,6}"
+                                   oninput="this.value=this.value.toUpperCase()">
                         </div>
                         <div class="input-group">
                             <label class="input-label" for="clientDOB">Date of Birth</label>
@@ -610,8 +628,11 @@
             selectedClient = client;
 
             // Fill hidden fields
-            document.getElementById('hmisId').value = client.id;
+            document.getElementById('existingHmisId').value = client.id;
             document.getElementById('isExistingClient').value = 'true';
+            // Pre-fill manual HMIS ID field with existing client's ID
+            document.getElementById('manualHmisId').value = client.id;
+            document.getElementById('manualHmisId').setAttribute('readonly', true);
 
             // Fill visible fields
             document.getElementById('clientName').value = client.name;
@@ -639,7 +660,9 @@
             document.getElementById('clientName').removeAttribute('readonly');
             document.getElementById('clientDOB').removeAttribute('readonly');
             document.getElementById('isExistingClient').value = 'false';
-            document.getElementById('hmisId').value = '';
+            document.getElementById('existingHmisId').value = '';
+            document.getElementById('manualHmisId').removeAttribute('readonly');
+            document.getElementById('manualHmisId').value = '';
             closeDropdown();
             document.getElementById('clientSearch').value = '';
             document.getElementById('searchClear').classList.remove('visible');
@@ -655,7 +678,9 @@
             document.getElementById('selectedClientCard').classList.remove('visible');
             document.getElementById('clientName').value = '';
             document.getElementById('clientDOB').value  = '';
-            document.getElementById('hmisId').value     = '';
+            document.getElementById('existingHmisId').value = '';
+            document.getElementById('manualHmisId').value   = '';
+            document.getElementById('manualHmisId').removeAttribute('readonly');
             document.getElementById('isExistingClient').value = 'false';
             document.getElementById('clientName').removeAttribute('readonly');
             document.getElementById('clientDOB').removeAttribute('readonly');
@@ -687,9 +712,14 @@
             const category    = document.getElementById('serviceCategory').value;
             const source      = document.getElementById('referralSource').value;
             const assigned    = document.getElementById('assignedTo').value;
-            const hmis        = document.getElementById('hmisId').value;
+            const hmis        = document.getElementById('manualHmisId').value.trim() ||
+                                document.getElementById('existingHmisId').value;
             const fromProgram = document.getElementById('fromProgram').value;
             const toProgram   = document.getElementById('toProgram').value;
+
+            // Inject current user's email for backend attribution
+            const _su = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+            document.getElementById('staffEmailField').value = _su.email || '';
 
             const handleLoad = function() {
                 frame.removeEventListener('load', handleLoad);
@@ -708,6 +738,13 @@
             frame.addEventListener('load', handleLoad);
             this.submit();
         });
+
+        // Show admin link if user is admin
+        const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+        if (_sess.role === 'admin') {
+            const al = document.getElementById('adminLink');
+            if (al) al.style.display = 'flex';
+        }
     </script>
 </body>
 </html>

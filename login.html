@@ -337,11 +337,13 @@
         // ── JSONP callback ──────────────────────────────────────────
         function onUserVerified(data) {
             clearTimeout(window._authTimeout);
-            const { email, name, picture } = window._pendingAuth || {};
+            const { email, picture } = window._pendingAuth || {};
 
             if (data && data.authorized) {
+                // Always use name from Users sheet — not Google account name
+                const sheetName = (data.name && data.name.trim()) ? data.name.trim() : '';
                 sessionStorage.setItem('hopics_user', JSON.stringify({
-                    email, name: data.name || name, picture,
+                    email, name: sheetName, picture,
                     role: data.role || 'case_manager'
                 }));
                 window.location.href = 'dashboard.html';
@@ -352,12 +354,13 @@
         }
 
         // ── Fallback when GAS is unreachable ────────────────────────
-        function fallbackVerify(email, name, picture) {
+        function fallbackVerify(email, _googleName, picture) {
             clearTimeout(window._authTimeout);
             const ok = email.endsWith('@hopics.org') || email.endsWith('@gmail.com');
             if (ok) {
+                // Do not use Google name — name will come from Users sheet
                 sessionStorage.setItem('hopics_user', JSON.stringify({
-                    email, name, picture, role: 'case_manager'
+                    email, name: '', picture, role: 'case_manager'
                 }));
                 window.location.href = 'dashboard.html';
             } else {

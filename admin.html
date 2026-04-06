@@ -558,6 +558,8 @@
             readonly:     'role-readonly'
         };
 
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+
         const AVATAR_CSS = {
             admin:        'ua-red',
             supervisor:   'ua-purple',
@@ -737,17 +739,39 @@
                 return;
             }
 
-            users.push({
-                id: Date.now(),
-                name,
-                email,
-                role,
-                status: true,
-                lastLogin: 'Never'
+            const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+
+            // Save to Google Sheets via iframe POST
+            const frame = document.getElementById('submissionFrame');
+            const form  = document.createElement('form');
+            form.method = 'POST';
+            form.action = GAS_URL;
+            form.target = 'submissionFrame';
+
+            const fields = {
+                action:   'newUser',
+                name:     name,
+                email:    email,
+                role:     role,
+                addedBy:  sess.email || ''
+            };
+
+            Object.entries(fields).forEach(([k, v]) => {
+                const input = document.createElement('input');
+                input.type  = 'hidden';
+                input.name  = k;
+                input.value = v;
+                form.appendChild(input);
             });
 
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+
+            // Update local list
+            users.push({ id: Date.now(), name, email, role, status: true, lastLogin: 'Never' });
             closeModal('addUserModal');
-            document.getElementById('newUserName').value = '';
+            document.getElementById('newUserName').value  = '';
             document.getElementById('newUserEmail').value = '';
             renderUsers(users);
             updateAdminStats();
@@ -820,5 +844,6 @@
         renderPrograms();
         renderActivity(activityLog);
     </script>
+    <iframe name="submissionFrame" style="display:none;"></iframe>
 </body>
 </html>

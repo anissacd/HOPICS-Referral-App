@@ -208,8 +208,6 @@ function doPost(e) {
 
 // ── doGet ────────────────────────────────────────────────────
 function doGet(e) {
-  initializeSheets();
-
   var params   = e.parameter || {};
   var action   = params.action || '';
   var callback = safeCallbackName(params.callback);

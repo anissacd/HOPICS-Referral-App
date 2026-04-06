@@ -802,12 +802,24 @@
 
         function saveRole() {
             const u = users.find(u => u.id === _editRoleId);
-            if (u) {
-                u.role = document.getElementById('editRoleSelect').value;
-                renderUsers(users);
-                updateAdminStats();
-            }
+            if (!u) return;
+
+            const newRole = document.getElementById('editRoleSelect').value;
+            u.role = newRole;
+            renderUsers(users);
+            updateAdminStats();
             closeModal('editRoleModal');
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                mode:   'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                    action: 'updateUserRole',
+                    email:  u.email,
+                    role:   newRole
+                }).toString()
+            }).catch(() => {});
         }
 
         // ── Update stats ──────────────────────────────────────────────

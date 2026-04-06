@@ -94,6 +94,10 @@ function doPost(e) {
       return handleNewUser(data);
     }
 
+    if (data.action === 'updateUserRole') {
+      return handleUpdateUserRole(data);
+    }
+
     if (data.id) {
       return handleEdit(data);
     }
@@ -346,6 +350,23 @@ function handleNewMessage(data) {
 }
 
 // ── handleNewUser ─────────────────────────────────────────────
+function handleUpdateUserRole(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Users sheet not found.' });
+
+  var email   = String(data.email || '').toLowerCase();
+  var newRole = data.role || '';
+  var values  = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).toLowerCase() === email) {
+      sheet.getRange(i + 1, 3).setValue(newRole); // Column C = Role
+      return createJsonOutput({ success: true });
+    }
+  }
+  return createJsonOutput({ success: false, message: 'User not found.' });
+}
+
 function handleNewUser(data) {
   var ss         = SpreadsheetApp.getActiveSpreadsheet();
   var usersSheet = ss.getSheetByName('Users');

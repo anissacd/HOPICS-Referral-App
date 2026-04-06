@@ -237,12 +237,13 @@
                 </div>
                 <div class="quick-actions">
                     <div class="filter-bar">
-                        <label for="userFilter">Viewing:</label>
-                        <select class="filter-select" id="userFilter">
-                            <option value="ashley">Ashley R.</option>
-                            <option value="carlos">Carlos M.</option>
-                            <option value="elena">Elena V.</option>
-                            <option value="marcus">Marcus D.</option>
+                        <label for="statusFilter">Status:</label>
+                        <select class="filter-select" id="statusFilter">
+                            <option value="">All</option>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="closed">Closed</option>
                         </select>
                     </div>
                     <a class="btn btn-primary" href="referral.html">
@@ -472,15 +473,10 @@
     <script>
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
         let referralsData = [];
-        let currentUser = 'ashley';
 
-        const mockReferrals = [
-            { id: '1', clientName: 'Maria Lopez',  clientDOB: '1985-03-15', referralSource: 'street',  serviceCategory: 'housing',         urgency: 'high',   assignedTo: 'ashley', assessmentNotes: 'Homeless for 2 months, needs emergency shelter.', status: 'pending',     created: '2024-04-06' },
-            { id: '2', clientName: 'Jason White',  clientDOB: '1990-07-22', referralSource: 'hospital', serviceCategory: 'medical',         urgency: 'medium', assignedTo: 'ashley', assessmentNotes: 'Follow-up care needed after discharge.',          status: 'in-progress', created: '2024-03-28' },
-            { id: '3', clientName: 'Angela Kim',   clientDOB: '1978-11-04', referralSource: 'shelter',  serviceCategory: 'mental-health',   urgency: 'low',    assignedTo: 'carlos', assessmentNotes: 'Weekly counseling sessions recommended.',          status: 'completed',   created: '2024-03-19' },
-            { id: '4', clientName: 'David Torres', clientDOB: '1995-02-18', referralSource: 'self',     serviceCategory: 'employment',      urgency: 'medium', assignedTo: 'elena',  assessmentNotes: 'Looking for job placement support.',              status: 'in-progress', created: '2024-03-12' },
-            { id: '5', clientName: 'Priya Patel',  clientDOB: '1988-09-30', referralSource: 'hospital', serviceCategory: 'substance-abuse', urgency: 'high',   assignedTo: 'marcus', assessmentNotes: 'Referred from ER visit.',                          status: 'closed',      created: '2024-03-01' },
-        ];
+        const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+        const currentUserEmail = _sess.email || '';
+        const currentUserName  = _sess.name  || '';
 
         const urgencyStyles = {
             low:      { bg: '#fff8e1', color: '#b45309' },
@@ -512,10 +508,28 @@
             return s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         }
 
+        function showLoading() {
+            const tbody = document.getElementById('referralsTable');
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>Loading referrals…</p></div></td></tr>`;
+        }
+
+        function hideLoading() { /* handled by renderReferralTable */ }
+
+        function showEmpty(msg) {
+            const tbody = document.getElementById('referralsTable');
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>${msg}</p></div></td></tr>`;
+            document.getElementById('referralCount').textContent = '0 referrals';
+        }
+
         function renderReferralTable() {
             const tbody = document.getElementById('referralsTable');
             const count = document.getElementById('referralCount');
-            const list = referralsData.filter(r => r.assignedTo === currentUser);
+            const statusFilter = document.getElementById('statusFilter');
+            const selectedStatus = statusFilter ? statusFilter.value : '';
+            const list = referralsData.filter(r => {
+                if (selectedStatus && r.status !== selectedStatus) return false;
+                return true;
+            });
             count.textContent = `${list.length} referral${list.length !== 1 ? 's' : ''}`;
 
             if (list.length === 0) {
@@ -525,12 +539,13 @@
 
             tbody.innerHTML = list.map(r => {
                 const urg = urgencyStyles[r.urgency] || urgencyStyles.medium;
+                const source = r.fromProgram || r.referralSource || '—';
                 return `<tr>
-                    <td><strong>${r.clientName}</strong></td>
-                    <td>${toTitle(r.serviceCategory)}</td>
-                    <td>${toTitle(r.referralSource)}</td>
-                    <td><span class="status-pill" style="background:${urg.bg};color:${urg.color};">${toTitle(r.urgency)}</span></td>
-                    <td><span class="status-pill ${statusClass[r.status] || 'status-pending'}">${statusLabel[r.status] || toTitle(r.status)}</span></td>
+                    <td><strong>${r.clientName || '—'}</strong></td>
+                    <td>${toTitle(r.serviceCategory || '')}</td>
+                    <td>${source}</td>
+                    <td><span class="status-pill" style="background:${urg.bg};color:${urg.color};">${toTitle(r.urgency || 'medium')}</span></td>
+                    <td><span class="status-pill ${statusClass[r.status] || 'status-pending'}">${statusLabel[r.status] || toTitle(r.status || '')}</span></td>
                     <td>${fmtDate(r.timestamp || r.created)}</td>
                     <td><button class="table-action" onclick="openEdit('${r.id}')">Edit</button></td>
                 </tr>`;
@@ -538,7 +553,9 @@
         }
 
         function renderReferrals(data) {
-            if (data && data.success && Array.isArray(data.referrals)) {
+            if (Array.isArray(data)) {
+                referralsData = data;
+            } else if (data && data.success && Array.isArray(data.referrals)) {
                 referralsData = data.referrals;
             } else {
                 referralsData = [];
@@ -547,29 +564,34 @@
             renderReferralTable();
         }
 
-        function loadReferrals(user) {
-            currentUser = user;
+        function loadReferrals() {
+            showLoading();
             const existing = document.getElementById('referralJsonp');
             if (existing) existing.remove();
 
             const script = document.createElement('script');
             script.id = 'referralJsonp';
-            script.src = `${GOOGLE_SCRIPT_URL}?action=listReferrals&assignedTo=${encodeURIComponent(user)}&callback=renderReferrals`;
-            document.body.appendChild(script);
+            script.src = GOOGLE_SCRIPT_URL +
+                '?action=listReferrals' +
+                '&staffEmail=' + encodeURIComponent(currentUserEmail) +
+                '&callback=renderReferrals';
+            script.onerror = function() { hideLoading(); showEmpty('Could not load referrals.'); };
+            setTimeout(function() { hideLoading(); }, 12000);
+            document.head.appendChild(script);
         }
 
         function openEdit(id) {
             const r = referralsData.find(x => x.id === id);
             if (!r) return;
-            document.getElementById('editId').value              = r.id;
-            document.getElementById('editClientName').value      = r.clientName;
-            document.getElementById('editClientDOB').value       = r.clientDOB;
-            document.getElementById('editReferralSource').value  = r.referralSource;
-            document.getElementById('editServiceCategory').value = r.serviceCategory;
-            document.getElementById('editUrgency').value         = r.urgency;
-            document.getElementById('editStatus').value          = r.status;
-            document.getElementById('editAssignedTo').value      = r.assignedTo;
-            document.getElementById('editAssessmentNotes').value = r.assessmentNotes;
+            document.getElementById('editId').value              = r.id || '';
+            document.getElementById('editClientName').value      = r.clientName || '';
+            document.getElementById('editClientDOB').value       = r.clientDOB || '';
+            document.getElementById('editReferralSource').value  = r.referralSource || 'other';
+            document.getElementById('editServiceCategory').value = r.serviceCategory || 'housing';
+            document.getElementById('editUrgency').value         = r.urgency || 'medium';
+            document.getElementById('editStatus').value          = r.status || 'pending';
+            document.getElementById('editAssignedTo').value      = r.assignedTo || '';
+            document.getElementById('editAssessmentNotes').value = r.assessmentNotes || '';
             document.getElementById('editModal').classList.add('open');
             document.body.style.overflow = 'hidden';
         }
@@ -583,9 +605,12 @@
             if (e.target === document.getElementById('editModal')) closeModal();
         }
 
-        document.getElementById('userFilter').addEventListener('change', function() {
-            loadReferrals(this.value);
-        });
+        const statusFilterEl = document.getElementById('statusFilter');
+        if (statusFilterEl) {
+            statusFilterEl.addEventListener('change', function() {
+                renderReferralTable();
+            });
+        }
 
         document.getElementById('editForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -593,30 +618,40 @@
             btn.textContent = 'Saving...';
             btn.disabled = true;
 
-            const iframe = document.getElementById('submissionFrame');
-            document.getElementById('editForm').target = 'submissionFrame';
-
-            const handleLoad = function() {
-                iframe.removeEventListener('load', handleLoad);
-                closeModal();
-                loadReferrals(document.getElementById('userFilter').value);
-                btn.textContent = 'Save Changes';
-                btn.disabled = false;
+            const referralId = document.getElementById('editId').value;
+            const newStatus  = document.getElementById('editStatus').value;
+            const params = {
+                id:               referralId,
+                status:           newStatus,
+                clientName:       document.getElementById('editClientName').value,
+                clientDOB:        document.getElementById('editClientDOB').value,
+                referralSource:   document.getElementById('editReferralSource').value,
+                serviceCategory:  document.getElementById('editServiceCategory').value,
+                urgency:          document.getElementById('editUrgency').value,
+                assignedTo:       document.getElementById('editAssignedTo').value,
+                assessmentNotes:  document.getElementById('editAssessmentNotes').value,
             };
 
-            iframe.addEventListener('load', handleLoad);
-            this.submit();
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(params).toString()
+            }).catch(function() {}).finally(function() {
+                closeModal();
+                loadReferrals();
+                btn.textContent = 'Save Changes';
+                btn.disabled = false;
+            });
         });
 
-        loadReferrals('ashley');
+        loadReferrals();
 
         // Show admin link if user is admin
-        const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
         if (_sess.role === 'admin') {
             const al = document.getElementById('adminLink');
             if (al) al.style.display = 'flex';
         }
     </script>
-    <iframe id="submissionFrame" name="submissionFrame" style="display:none;"></iframe>
 </body>
 </html>

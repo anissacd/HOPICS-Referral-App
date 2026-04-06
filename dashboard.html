@@ -259,27 +259,27 @@
             <section class="stats-grid">
                 <div class="stat-card">
                     <h3>Total Referrals</h3>
-                    <p class="card-value">184</p>
+                    <p class="card-value" id="statTotal">—</p>
                 </div>
                 <div class="stat-card">
                     <h3>Pending</h3>
-                    <p class="card-value">42</p>
+                    <p class="card-value" id="statPending">—</p>
                 </div>
                 <div class="stat-card">
                     <h3>In Progress</h3>
-                    <p class="card-value">78</p>
+                    <p class="card-value" id="statProgress">—</p>
                 </div>
                 <div class="stat-card">
                     <h3>Completed</h3>
-                    <p class="card-value">54</p>
+                    <p class="card-value" id="statCompleted">—</p>
                 </div>
                 <div class="stat-card">
-                    <h3>Closed</h3>
-                    <p class="card-value">10</p>
+                    <h3>Clients Served</h3>
+                    <p class="card-value" id="statClients">—</p>
                 </div>
                 <div class="stat-card">
                     <h3>Avg. Pending Time</h3>
-                    <p class="card-value">2.8d</p>
+                    <p class="card-value" id="statAvgDays">—</p>
                 </div>
             </section>
 
@@ -355,7 +355,7 @@
                                 <th style="min-width:100px;">Pending</th>
                             </tr>
                         </thead>
-                        <tbody></tbody>
+                        <tbody id="programFlowBody"></tbody>
                     </table>
                 </div>
             </section>
@@ -371,78 +371,15 @@
                         <thead>
                             <tr>
                                 <th>Client</th>
+                                <th>HMIS ID</th>
                                 <th>Program Flow</th>
-                                <th>Category</th>
                                 <th>Status</th>
-                                <th>Assigned To</th>
+                                <th>Date</th>
+                                <th>Submitted By</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Maria Lopez</strong></td>
-                                <td>
-                                    <div class="prog-flow-cell">
-                                        <span class="prog-tag">Street Outreach</span>
-                                        <svg class="prog-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                        <span class="prog-tag">Emergency Shelter</span>
-                                    </div>
-                                </td>
-                                <td>Housing</td>
-                                <td><span class="status-pill status-pending">Pending</span></td>
-                                <td>Ashley R.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Jason White</strong></td>
-                                <td>
-                                    <div class="prog-flow-cell">
-                                        <span class="prog-tag">Emergency Shelter</span>
-                                        <svg class="prog-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                        <span class="prog-tag">Mental Health Services</span>
-                                    </div>
-                                </td>
-                                <td>Mental Health</td>
-                                <td><span class="status-pill status-progress">In Progress</span></td>
-                                <td>Carlos M.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Angela Kim</strong></td>
-                                <td>
-                                    <div class="prog-flow-cell">
-                                        <span class="prog-tag">Drop-In Center</span>
-                                        <svg class="prog-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                        <span class="prog-tag">Medical Outreach</span>
-                                    </div>
-                                </td>
-                                <td>Medical</td>
-                                <td><span class="status-pill status-completed">Completed</span></td>
-                                <td>Elena V.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>David Torres</strong></td>
-                                <td>
-                                    <div class="prog-flow-cell">
-                                        <span class="prog-tag">Rapid Rehousing</span>
-                                        <svg class="prog-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                        <span class="prog-tag">Employment Services</span>
-                                    </div>
-                                </td>
-                                <td>Employment</td>
-                                <td><span class="status-pill status-progress">In Progress</span></td>
-                                <td>Marcus D.</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Priya Patel</strong></td>
-                                <td>
-                                    <div class="prog-flow-cell">
-                                        <span class="prog-tag">Emergency Shelter</span>
-                                        <svg class="prog-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                                        <span class="prog-tag">Substance Abuse Recovery</span>
-                                    </div>
-                                </td>
-                                <td>Substance Abuse</td>
-                                <td><span class="status-pill status-closed">Closed</span></td>
-                                <td>Ashley R.</td>
-                            </tr>
+                        <tbody id="recentReferralsBody">
+                            <tr><td colspan="6" style="text-align:center;color:#aeaeb2;padding:2rem;">Loading recent referrals…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -545,48 +482,108 @@
     </script>
 
     <script>
-        const programData = [
-            { name: 'Street Outreach',              sent: 32, received:  2, pending:  8 },
-            { name: 'Emergency Shelter',             sent: 18, received: 22, pending: 14 },
-            { name: 'Drop-In Center',                sent: 12, received:  6, pending:  4 },
-            { name: 'Rapid Rehousing',               sent:  8, received: 28, pending: 10 },
-            { name: 'Permanent Supportive Housing',  sent:  3, received: 19, pending:  6 },
-            { name: 'Mental Health Services',        sent:  6, received: 14, pending:  5 },
-            { name: 'Substance Abuse Recovery',      sent:  4, received:  9, pending:  3 },
-            { name: 'Employment Services',           sent:  4, received: 11, pending:  4 },
-        ];
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
 
-        const maxVal = Math.max(...programData.flatMap(p => [p.sent, p.received]));
+        function loadDashboardData() {
+            const script = document.createElement('script');
+            script.src = GOOGLE_SCRIPT_URL + '?action=listReferrals&callback=onDashboardLoaded';
+            script.onerror = function() { /* keep placeholder values as fallback */ };
+            document.head.appendChild(script);
+        }
 
-        const tbody = document.querySelector('#programFlowTable tbody');
-        tbody.innerHTML = programData.map(p => {
-            const net    = p.received - p.sent;
-            const netLabel = net > 0 ? `+${net} in` : net < 0 ? `${net} out` : 'Balanced';
-            const netClass = net > 0 ? 'net-in' : net < 0 ? 'net-out' : 'balanced';
-            const sentPct  = Math.round((p.sent / maxVal) * 100);
-            const recvPct  = Math.round((p.received / maxVal) * 100);
-            return `<tr>
-                <td><strong>${p.name}</strong></td>
-                <td>
-                    <div class="flow-bar-wrap">
-                        <span class="flow-num sent">${p.sent}</span>
-                        <div class="flow-bar-track">
-                            <div class="flow-bar-fill sent" style="width:${sentPct}%"></div>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div class="flow-bar-wrap">
-                        <span class="flow-num received">${p.received}</span>
-                        <div class="flow-bar-track">
-                            <div class="flow-bar-fill received" style="width:${recvPct}%"></div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="flow-badge ${netClass}">${netLabel}</span></td>
-                <td><span class="status-pill status-pending">${p.pending}</span></td>
-            </tr>`;
-        }).join('');
+        function onDashboardLoaded(data) {
+            if (!data || !data.success || !Array.isArray(data.referrals)) return;
+            const referrals = data.referrals;
+
+            // Stats
+            const total     = referrals.length;
+            const pending   = referrals.filter(r => r.status === 'pending').length;
+            const progress  = referrals.filter(r => r.status === 'in-progress' || r.status === 'in progress').length;
+            const completed = referrals.filter(r => r.status === 'completed').length;
+
+            // Unique clients served (by clientName)
+            const uniqueClients = new Set(referrals.map(r => r.clientName).filter(Boolean)).size;
+
+            // Avg days pending
+            const pendingRefs = referrals.filter(r => r.status === 'pending' && r.timestamp);
+            const avgDays = pendingRefs.length > 0
+                ? Math.round(pendingRefs.reduce((sum, r) => {
+                    return sum + (Date.now() - new Date(r.timestamp)) / 86400000;
+                  }, 0) / pendingRefs.length)
+                : 0;
+
+            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setVal('statTotal',     total);
+            setVal('statPending',   pending);
+            setVal('statProgress',  progress);
+            setVal('statCompleted', completed);
+            setVal('statClients',   uniqueClients);
+            setVal('statAvgDays',   avgDays + 'd');
+
+            // Recent referrals (last 5)
+            const recent = referrals.slice(-5).reverse();
+            const tbody = document.getElementById('recentReferralsBody');
+            if (tbody && recent.length > 0) {
+                tbody.innerHTML = recent.map(r => {
+                    const statusClass = { pending: 'status-pending', 'in-progress': 'status-progress', completed: 'status-completed', closed: 'status-closed' }[r.status] || 'status-pending';
+                    const date = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+                    return `<tr>
+                        <td><strong>${r.clientName || '—'}</strong></td>
+                        <td>${r.hmisId || '—'}</td>
+                        <td><span class="program-tag from-tag">${r.fromProgram || '—'}</span> → <span class="program-tag to-tag">${r.toProgram || '—'}</span></td>
+                        <td><span class="status-pill ${statusClass}">${r.status || 'pending'}</span></td>
+                        <td>${date}</td>
+                        <td>${r.submittedBy || r.createdBy || '—'}</td>
+                    </tr>`;
+                }).join('');
+            }
+
+            // Program flow
+            const programMap = {};
+            referrals.forEach(r => {
+                if (r.fromProgram) {
+                    if (!programMap[r.fromProgram]) programMap[r.fromProgram] = { sent: 0, received: 0, pending: 0 };
+                    programMap[r.fromProgram].sent++;
+                    if (r.status === 'pending') programMap[r.fromProgram].pending++;
+                }
+                if (r.toProgram) {
+                    if (!programMap[r.toProgram]) programMap[r.toProgram] = { sent: 0, received: 0, pending: 0 };
+                    programMap[r.toProgram].received++;
+                }
+            });
+            const flowBody = document.getElementById('programFlowBody');
+            if (flowBody && Object.keys(programMap).length > 0) {
+                const maxVal = Math.max(...Object.values(programMap).map(p => Math.max(p.sent, p.received)), 1);
+                flowBody.innerHTML = Object.entries(programMap).map(([prog, p]) => {
+                    const net = p.received - p.sent;
+                    const netLabel = net > 0 ? `+${net} in` : net < 0 ? `${net} out` : 'Balanced';
+                    const netClass = net > 0 ? 'net-in' : net < 0 ? 'net-out' : 'balanced';
+                    const sentPct = Math.round((p.sent / maxVal) * 100);
+                    const recvPct = Math.round((p.received / maxVal) * 100);
+                    return `<tr>
+                        <td><strong>${prog}</strong></td>
+                        <td>
+                            <div class="flow-bar-wrap">
+                                <span class="flow-num sent">${p.sent}</span>
+                                <div class="flow-bar-track">
+                                    <div class="flow-bar-fill sent" style="width:${sentPct}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flow-bar-wrap">
+                                <span class="flow-num received">${p.received}</span>
+                                <div class="flow-bar-track">
+                                    <div class="flow-bar-fill received" style="width:${recvPct}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="flow-badge ${netClass}">${netLabel}</span></td>
+                        <td><span class="status-pill status-pending">${p.pending}</span></td>
+                    </tr>`;
+                }).join('');
+            }
+        }
 
         // Show admin link if user is admin
         const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
@@ -594,6 +591,8 @@
             const al = document.getElementById('adminLink');
             if (al) al.style.display = 'flex';
         }
+
+        loadDashboardData();
     </script>
 </body>
 </html>

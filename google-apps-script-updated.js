@@ -146,7 +146,12 @@ function doGet(e) {
 
   if (action === 'listReferrals') {
     var referrals = getReferralsFromSheet();
-    if (params.assignedTo) {
+    if (params.staffEmail) {
+      var filterEmail = params.staffEmail.toLowerCase();
+      referrals = referrals.filter(function(r) {
+        return String(r.staffEmail || '').toLowerCase() === filterEmail;
+      });
+    } else if (params.assignedTo) {
       referrals = referrals.filter(function(r) {
         return r.assignedTo === params.assignedTo;
       });
@@ -509,10 +514,12 @@ function getReferralsFromSheet() {
       howFound:        row[8]  || '',
       serviceCategory: row[9]  || '',
       urgency:         row[10] || '',
+      submittedBy:     row[11] || '',
       assignedTo:      row[11] || '',
       assessmentNotes: row[12] || '',
       status:          row[13] || '',
       lastUpdated:     row[14] instanceof Date ? row[14].toISOString() : row[14] || '',
+      staffEmail:      row[15] || '',
       createdBy:       row[15] || ''
     };
   });

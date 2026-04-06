@@ -380,20 +380,6 @@
     <script>
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
 
-        // Mock data (10 clients)
-        const MOCK_CLIENTS = [
-            { hmisId: 'HTX-2024-00471', name: 'Maria Lopez',     dob: '1985-03-15', dateAdded: '2024-01-08', status: 'Active',        caseManager: 'ashley', totalReferrals: 3, lastActivity: '2024-04-01' },
-            { hmisId: 'HTX-2024-00382', name: 'Jason White',     dob: '1990-07-22', dateAdded: '2024-01-15', status: 'Transitional',   caseManager: 'carlos', totalReferrals: 2, lastActivity: '2024-03-28' },
-            { hmisId: 'HTX-2024-00291', name: 'Angela Kim',      dob: '1978-11-04', dateAdded: '2024-01-22', status: 'Housed',         caseManager: 'elena',  totalReferrals: 4, lastActivity: '2024-03-20' },
-            { hmisId: 'HTX-2024-00184', name: 'David Torres',    dob: '1995-02-18', dateAdded: '2024-02-03', status: 'Active',         caseManager: 'marcus', totalReferrals: 1, lastActivity: '2024-03-15' },
-            { hmisId: 'HTX-2024-00103', name: 'Priya Patel',     dob: '1988-09-30', dateAdded: '2024-02-11', status: 'Inactive',       caseManager: 'ashley', totalReferrals: 2, lastActivity: '2024-03-01' },
-            { hmisId: 'HTX-2024-00512', name: 'Carlos Rivera',   dob: '1982-06-14', dateAdded: '2024-02-19', status: 'Active',         caseManager: 'carlos', totalReferrals: 5, lastActivity: '2024-04-03' },
-            { hmisId: 'HTX-2024-00539', name: 'Tasha Williams',  dob: '1993-12-01', dateAdded: '2024-02-28', status: 'Transitional',   caseManager: 'elena',  totalReferrals: 2, lastActivity: '2024-03-25' },
-            { hmisId: 'HTX-2024-00601', name: 'Elijah Brown',    dob: '1975-08-22', dateAdded: '2024-03-05', status: 'Active',         caseManager: 'marcus', totalReferrals: 3, lastActivity: '2024-04-02' },
-            { hmisId: 'HTX-2024-00643', name: 'Nguyen Anh',      dob: '2000-04-09', dateAdded: '2024-03-12', status: 'Active',         caseManager: 'ashley', totalReferrals: 1, lastActivity: '2024-04-04' },
-            { hmisId: 'HTX-2024-00688', name: 'Sandra Morales',  dob: '1967-01-30', dateAdded: '2024-03-20', status: 'Housed',         caseManager: 'carlos', totalReferrals: 6, lastActivity: '2024-03-30' },
-        ];
-
         let allClients = [];
 
         const caseManagerLabel = {
@@ -513,39 +499,21 @@
             if (data && data.success && Array.isArray(data.clients) && data.clients.length > 0) {
                 allClients = data.clients;
             } else {
-                allClients = MOCK_CLIENTS;
+                allClients = [];
             }
             computeStats(allClients);
             renderClients(allClients);
         }
 
         function loadClients() {
-            // Try JSONP first; fall back to mock on error/timeout
-            const script  = document.createElement('script');
-            const timeout = setTimeout(() => {
-                script.remove();
-                allClients = MOCK_CLIENTS;
-                computeStats(allClients);
-                renderClients(allClients);
-            }, 5000);
-
+            const script = document.createElement('script');
             script.src = GOOGLE_SCRIPT_URL + '?action=listClients&callback=loadClientsCallback';
             script.onerror = function() {
-                clearTimeout(timeout);
                 script.remove();
-                allClients = MOCK_CLIENTS;
+                allClients = [];
                 computeStats(allClients);
                 renderClients(allClients);
             };
-
-            // Wrap callback to clear timeout
-            const origCallback = window.loadClientsCallback;
-            window.loadClientsCallback = function(data) {
-                clearTimeout(timeout);
-                origCallback(data);
-                window.loadClientsCallback = origCallback;
-            };
-
             document.body.appendChild(script);
         }
 

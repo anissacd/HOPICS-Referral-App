@@ -197,7 +197,7 @@ function handleNewReferral(data) {
     data.referralSource    || '',// How Found
     data.serviceCategory   || '',// Service Category
     data.urgency           || '',// Urgency
-    data.assignedTo        || '',// Assigned To
+    data.submittedBy || data.assignedTo || '',// Submitted By
     data.assessmentNotes   || '',// Assessment Notes
     'pending',                   // Status
     now,                         // Last Updated

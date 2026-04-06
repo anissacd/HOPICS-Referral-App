@@ -263,10 +263,11 @@
                 </a>
             </nav>
 
-            <div class="sidebar-section">
-                <div class="card">
-                    <div class="card-title">Admin Panel</div>
-                    <p>Manage users, programs, and review system activity logs.</p>
+            <div class="sidebar-user-widget" onclick="openProfileModal()" style="margin-top:auto;padding:1rem;border-top:1px solid rgba(255,255,255,0.08);cursor:pointer;display:flex;align-items:center;gap:0.75rem;transition:background 0.15s;" onmouseenter="this.style.background='rgba(255,255,255,0.05)'" onmouseleave="this.style.background='transparent'">
+                <div id="sidebarAvatar" style="width:36px;height:36px;border-radius:50%;background:#ffd700;display:grid;place-items:center;font-weight:800;font-size:0.8rem;color:#111;flex-shrink:0;overflow:hidden;">?</div>
+                <div style="min-width:0;">
+                    <div id="sidebarName" style="font-size:0.825rem;font-weight:600;color:#f5f5f7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Loading...</div>
+                    <div id="sidebarRole" style="font-size:0.7rem;color:#6e6e73;text-transform:capitalize;"></div>
                 </div>
             </div>
         </aside>
@@ -845,5 +846,110 @@
         renderActivity(activityLog);
     </script>
     <iframe name="submissionFrame" style="display:none;"></iframe>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);" onclick="if(event.target===this)closeProfileModal()">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#1c1c1e;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:2rem;width:100%;max-width:400px;margin:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h3 style="color:#f5f5f7;font-size:1.1rem;font-weight:700;margin:0;">My Profile</h3>
+                <button onclick="closeProfileModal()" style="background:none;border:none;color:#6e6e73;cursor:pointer;font-size:1.2rem;">✕</button>
+            </div>
+            <!-- Avatar -->
+            <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:1.5rem;gap:0.75rem;">
+                <div id="profileAvatar" style="width:72px;height:72px;border-radius:50%;background:#ffd700;display:grid;place-items:center;font-weight:800;font-size:1.5rem;color:#111;overflow:hidden;"></div>
+                <label style="font-size:0.78rem;color:#ffd700;cursor:pointer;">
+                    <input type="file" id="photoUpload" accept="image/*" style="display:none;" onchange="handlePhotoUpload(this)">
+                    Change Photo
+                </label>
+            </div>
+            <!-- Info rows -->
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:0.875rem 1rem;">
+                    <div style="font-size:0.7rem;color:#6e6e73;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.25rem;">Name</div>
+                    <div id="profileName" style="color:#f5f5f7;font-size:0.9rem;font-weight:600;"></div>
+                </div>
+                <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:0.875rem 1rem;">
+                    <div style="font-size:0.7rem;color:#6e6e73;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.25rem;">Email</div>
+                    <div id="profileEmail" style="color:#f5f5f7;font-size:0.9rem;"></div>
+                </div>
+                <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:0.875rem 1rem;">
+                    <div style="font-size:0.7rem;color:#6e6e73;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.25rem;">Role</div>
+                    <div id="profileRole" style="color:#ffd700;font-size:0.9rem;font-weight:600;text-transform:capitalize;"></div>
+                </div>
+            </div>
+            <button onclick="signOut()" style="margin-top:1.5rem;width:100%;padding:0.75rem;border-radius:10px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);color:#fca5a5;font-size:0.875rem;font-weight:600;cursor:pointer;">Sign Out</button>
+        </div>
+    </div>
+
+    <script>
+    (function initProfileWidget() {
+        const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+        if (!sess.email) return;
+
+        function getInitials(name) {
+            if (!name) return '?';
+            const p = name.trim().split(' ');
+            return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : name.slice(0,2).toUpperCase();
+        }
+
+        const savedPhoto = localStorage.getItem('hopics_profile_photo_' + sess.email);
+        const avatarContent = savedPhoto
+            ? `<img src="${savedPhoto}" style="width:100%;height:100%;object-fit:cover;">`
+            : getInitials(sess.name || sess.email);
+
+        const sidebarAv = document.getElementById('sidebarAvatar');
+        const sidebarNm = document.getElementById('sidebarName');
+        const sidebarRl = document.getElementById('sidebarRole');
+        if (sidebarAv) { sidebarAv.innerHTML = avatarContent; if (savedPhoto) sidebarAv.style.background = 'transparent'; }
+        if (sidebarNm) sidebarNm.textContent = sess.name || sess.email;
+        if (sidebarRl) sidebarRl.textContent = (sess.role || '').replace(/_/g, ' ');
+    })();
+
+    function openProfileModal() {
+        const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+        function getInitials(name) {
+            if (!name) return '?';
+            const p = name.trim().split(' ');
+            return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : name.slice(0,2).toUpperCase();
+        }
+        const savedPhoto = localStorage.getItem('hopics_profile_photo_' + sess.email);
+        const avEl = document.getElementById('profileAvatar');
+        if (avEl) {
+            avEl.innerHTML = savedPhoto ? `<img src="${savedPhoto}" style="width:100%;height:100%;object-fit:cover;">` : getInitials(sess.name || sess.email);
+            avEl.style.background = savedPhoto ? 'transparent' : '#ffd700';
+        }
+        const nm = document.getElementById('profileName');   if (nm) nm.textContent  = sess.name  || '—';
+        const em = document.getElementById('profileEmail');  if (em) em.textContent  = sess.email || '—';
+        const rl = document.getElementById('profileRole');   if (rl) rl.textContent  = (sess.role || '').replace(/_/g, ' ');
+        document.getElementById('profileModal').style.display = 'block';
+    }
+
+    function closeProfileModal() {
+        document.getElementById('profileModal').style.display = 'none';
+    }
+
+    function handlePhotoUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = e.target.result;
+            const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+            localStorage.setItem('hopics_profile_photo_' + sess.email, dataUrl);
+            // Update avatar everywhere
+            const img = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+            const avEl = document.getElementById('profileAvatar');
+            if (avEl) { avEl.innerHTML = img; avEl.style.background = 'transparent'; }
+            const sbAv = document.getElementById('sidebarAvatar');
+            if (sbAv) { sbAv.innerHTML = img; sbAv.style.background = 'transparent'; }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function signOut() {
+        sessionStorage.removeItem('hopics_user');
+        window.location.href = 'login.html';
+    }
+    </script>
 </body>
 </html>

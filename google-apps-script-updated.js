@@ -68,12 +68,20 @@ var PROGRAM_HEADERS = [
   'Address', 'Phone', 'Contact Name', 'Status', 'Date Added'
 ];
 
-// Activity Log (8 cols):
+// Activity Log (8 cols) — system-wide events (users, roles, messages, goals, etc.):
 //   Log ID | Timestamp | User Email | User Name |
 //   Action | Target Type | Target ID | Details
 var ACTIVITY_LOG_HEADERS = [
   'Log ID', 'Timestamp', 'User Email', 'User Name',
   'Action', 'Target Type', 'Target ID', 'Details'
+];
+
+// Referral Updates (10 cols) — referral-specific change history only:
+//   Update ID | Timestamp | Referral ID | HMIS ID | Client Name |
+//   Action | Old Status | New Status | Changed By | Staff Email
+var REFERRAL_UPDATE_HEADERS = [
+  'Update ID', 'Timestamp', 'Referral ID', 'HMIS ID', 'Client Name',
+  'Action', 'Old Status', 'New Status', 'Changed By', 'Staff Email'
 ];
 
 // Outcomes (10 cols):
@@ -96,8 +104,9 @@ function initializeSheets() {
     { name: 'Goals',        headers: GOAL_HEADERS        },
     { name: 'Case Notes',   headers: CASE_NOTE_HEADERS   },
     { name: 'Programs',     headers: PROGRAM_HEADERS     },
-    { name: 'Activity Log', headers: ACTIVITY_LOG_HEADERS},
-    { name: 'Outcomes',     headers: OUTCOME_HEADERS     }
+    { name: 'Activity Log',     headers: ACTIVITY_LOG_HEADERS    },
+    { name: 'Referral Updates', headers: REFERRAL_UPDATE_HEADERS },
+    { name: 'Outcomes',         headers: OUTCOME_HEADERS         }
   ];
 
   sheetsConfig.forEach(function(cfg) {
@@ -146,6 +155,30 @@ function logActivity(userEmail, userName, action, targetType, targetId, details)
     ]);
   } catch (e) {
     Logger.log('logActivity error: ' + e.toString());
+  }
+}
+
+// ── Referral Update Logger ────────────────────────────────────
+function logReferralUpdate(referralId, hmisId, clientName, action, oldStatus, newStatus, changedBy, staffEmail) {
+  try {
+    var ss    = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Referral Updates');
+    if (!sheet) return;
+    var updateId = 'RU_' + new Date().getTime();
+    sheet.appendRow([
+      updateId,
+      new Date(),
+      referralId  || '',
+      hmisId      || '',
+      clientName  || '',
+      action      || '',
+      oldStatus   || '',
+      newStatus   || '',
+      changedBy   || '',
+      staffEmail  || ''
+    ]);
+  } catch (e) {
+    Logger.log('logReferralUpdate error: ' + e.toString());
   }
 }
 
@@ -248,6 +281,10 @@ function doGet(e) {
     return createJsonOutput({ success: true, logs: getActivityLogFromSheet(params.limit || 100) }, callback);
   }
 
+  if (action === 'listReferralUpdates') {
+    return createJsonOutput({ success: true, updates: getReferralUpdatesFromSheet(params.referralId || '', params.limit || 200) }, callback);
+  }
+
   return createJsonOutput({ success: true, message: 'HOPICS Google Apps Script is running.' }, callback);
 }
 
@@ -297,9 +334,8 @@ function handleNewReferral(data) {
     lastActivity: now
   });
 
-  // Log activity
-  logActivity(data.staffEmail, data.submittedBy, 'Created Referral', 'Referral', id,
-    'Client: ' + (data.clientName || '') + ' | To: ' + (data.toProgram || ''));
+  // Log referral update
+  logReferralUpdate(id, hmisId, data.clientName, 'Created', '', 'pending', data.submittedBy, data.staffEmail);
 
   // Email supervisor on new referral
   if (SUPERVISOR_EMAIL) {
@@ -370,9 +406,9 @@ function handleEdit(data) {
 
   referralsSheet.getRange(rowIndex, 1, 1, updatedRow.length).setValues([updatedRow]);
 
-  // Log activity
-  logActivity(currentRow[12], currentRow[11], 'Updated Referral', 'Referral', currentRow[0],
-    'Status: ' + updatedRow[14]);
+  // Log referral update
+  logReferralUpdate(currentRow[0], currentRow[2], updatedRow[3], 'Updated',
+    currentRow[14], updatedRow[14], currentRow[11], currentRow[12]);
 
   return createJsonOutput({ success: true, message: 'Referral updated successfully.' });
 }
@@ -603,15 +639,18 @@ function handleAddOutcome(data) {
   logActivity(data.staffEmail, data.recordedBy, 'Recorded Outcome', 'Outcome', outcomeId,
     'Client: ' + (data.clientName || '') + ' | Outcome: ' + (data.outcome || ''));
 
-  // Update referral status to 'completed' if outcome recorded
+  // Update referral status to 'completed' and log referral update
   if (data.referralId) {
     var refSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Referrals');
     if (refSheet) {
       var vals = refSheet.getDataRange().getValues();
       for (var i = 1; i < vals.length; i++) {
         if (String(vals[i][0]) === String(data.referralId)) {
+          var prevStatus = vals[i][14] || '';
           refSheet.getRange(i + 1, 15).setValue('completed'); // col 15 = Status
           refSheet.getRange(i + 1, 16).setValue(new Date());  // col 16 = Last Updated
+          logReferralUpdate(data.referralId, vals[i][2], vals[i][3], 'Outcome Recorded',
+            prevStatus, 'completed', data.recordedBy, data.staffEmail);
           break;
         }
       }
@@ -905,6 +944,37 @@ function getActivityLogFromSheet(limitRows) {
       targetType: row[5] || '',
       targetId:   row[6] || '',
       details:    row[7] || ''
+    };
+  });
+}
+
+function getReferralUpdatesFromSheet(referralId, limitRows) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Referral Updates');
+  if (!sheet) return [];
+
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) return [];
+
+  var limit = parseInt(limitRows) || 200;
+  var rows  = values.slice(1).filter(function(r) {
+    return r[0] && (!referralId || String(r[2]) === String(referralId));
+  });
+
+  rows.reverse();
+  if (rows.length > limit) rows = rows.slice(0, limit);
+
+  return rows.map(function(row) {
+    return {
+      updateId:   row[0] || '',
+      timestamp:  row[1] instanceof Date ? row[1].toISOString() : row[1] || '',
+      referralId: row[2] || '',
+      hmisId:     row[3] || '',
+      clientName: row[4] || '',
+      action:     row[5] || '',
+      oldStatus:  row[6] || '',
+      newStatus:  row[7] || '',
+      changedBy:  row[8] || '',
+      staffEmail: row[9] || ''
     };
   });
 }

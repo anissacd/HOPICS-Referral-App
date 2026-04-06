@@ -782,22 +782,55 @@ function sendOverdueEmail(recipient, info) {
 
 function sendMessageNotificationEmail(recipient, info) {
   try {
-    var subject = 'New Message from ' + info.from + ' \u2014 HOPICS';
-    var body = [
-      'Hello,',
-      '',
-      'You have a new internal message in the HOPICS system.',
-      '',
-      'From:    ' + info.from,
-      'Message: ' + info.message,
-      '',
-      'Please log in to the HOPICS Referral App to reply.',
-      '',
-      'Thank you,',
-      'HOPICS Referral System'
-    ].join('\n');
+    var subject = '💬 New Message — HOPICS Referral System';
+    var appUrl  = 'https://anissacd.github.io/HOPICS-Referral-App/messages.html';
 
-    MailApp.sendEmail(recipient, subject, body);
+    var html = [
+      '<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;">',
+      '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f7;padding:40px 0;">',
+      '<tr><td align="center">',
+      '<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">',
+
+      // Header
+      '<tr><td style="background:#111111;padding:28px 36px;text-align:center;">',
+      '<span style="font-size:1.4rem;font-weight:800;letter-spacing:0.15em;color:#ffd700;">HOPICS</span>',
+      '<p style="color:#a0a0a8;font-size:0.8rem;margin:6px 0 0;">Referral Management System</p>',
+      '</td></tr>',
+
+      // Body
+      '<tr><td style="padding:36px;">',
+      '<p style="font-size:1rem;font-weight:600;color:#1d1d1f;margin:0 0 8px;">You have a new message</p>',
+      '<p style="font-size:0.875rem;color:#6e6e73;margin:0 0 24px;">Someone sent you a message on HOPICS.</p>',
+
+      // Message card
+      '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f7;border-radius:12px;padding:20px;margin-bottom:24px;">',
+      '<tr><td>',
+      '<p style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px;">From</p>',
+      '<p style="font-size:0.9rem;color:#1d1d1f;margin:0 0 16px;">' + info.from + '</p>',
+      '<p style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 6px;">Message</p>',
+      '<p style="font-size:1rem;color:#1d1d1f;line-height:1.6;margin:0;padding:12px 16px;background:#ffffff;border-radius:8px;border-left:3px solid #ffd700;">' + info.message + '</p>',
+      '</td></tr></table>',
+
+      // CTA button
+      '<table cellpadding="0" cellspacing="0" style="margin:0 auto;">',
+      '<tr><td style="background:#ffd700;border-radius:10px;padding:12px 28px;text-align:center;">',
+      '<a href="' + appUrl + '" style="color:#111111;font-weight:700;font-size:0.9rem;text-decoration:none;">Reply in HOPICS →</a>',
+      '</td></tr></table>',
+      '</td></tr>',
+
+      // Footer
+      '<tr><td style="background:#f5f5f7;padding:20px 36px;text-align:center;border-top:1px solid #e5e5ea;">',
+      '<p style="font-size:0.75rem;color:#aeaeb2;margin:0;">This is an internal notification from the HOPICS Referral System.<br>Do not share this email — it may contain protected information.</p>',
+      '</td></tr>',
+
+      '</table></td></tr></table></body></html>'
+    ].join('');
+
+    MailApp.sendEmail({
+      to:       recipient,
+      subject:  subject,
+      htmlBody: html
+    });
   } catch (e) {
     Logger.log('Failed to send message notification email: ' + e.toString());
   }

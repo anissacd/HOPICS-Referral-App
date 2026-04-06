@@ -332,9 +332,9 @@ function handleNewMessage(data) {
     'false'            // Is Read
   ]);
 
-  // Email recipient — look up by display name in Users sheet
-  var recipient = getStaffEmailByName(data.to);
-  if (recipient) {
+  // data.to is already an email address — send notification directly
+  var recipient = data.to || '';
+  if (recipient && recipient.indexOf('@') !== -1) {
     sendMessageNotificationEmail(recipient, {
       from:    data.from    || '',
       to:      data.to      || '',

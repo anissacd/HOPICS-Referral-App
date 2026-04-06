@@ -353,7 +353,6 @@
                 <form action="https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec" method="POST" novalidate>
                     <input type="hidden" id="existingHmisId" name="existingHmisId">
                     <input type="hidden" id="isExistingClient" name="isExistingClient" value="false">
-                    <input type="hidden" id="staffEmailField" name="staffEmail">
 
                     <!-- Client Search -->
                     <div class="input-group" style="margin-bottom:0.5rem;">
@@ -514,14 +513,11 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <label class="input-label" for="assignedTo">Assigned To</label>
-                            <select class="input-field" id="assignedTo" name="assignedTo">
-                                <option value="" disabled selected>Select staff member</option>
-                                <option value="ashley">Ashley R.</option>
-                                <option value="carlos">Carlos M.</option>
-                                <option value="elena">Elena V.</option>
-                                <option value="marcus">Marcus D.</option>
-                            </select>
+                            <label class="input-label">Submitted By</label>
+                            <input class="input-field" type="text" id="submittedByDisplay" readonly
+                                   style="background:#f5f5f7;color:#6e6e73;cursor:default;">
+                            <input type="hidden" id="submittedByField" name="submittedBy">
+                            <input type="hidden" id="staffEmailField" name="staffEmail">
                         </div>
                     </div>
 
@@ -696,55 +692,76 @@
             if (!e.target.closest('.search-wrapper')) closeDropdown();
         });
 
-        /* ── Form Submit ── */
-        const form  = document.querySelector('form');
-        const frame = document.getElementById('submissionFrame');
-        form.target = 'submissionFrame';
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+        const _sess   = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
 
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Auto-fill Submitted By from session
+        if (_sess.name || _sess.email) {
+            document.getElementById('submittedByDisplay').value = _sess.name || _sess.email;
+            document.getElementById('submittedByField').value   = _sess.name || _sess.email;
+            document.getElementById('staffEmailField').value    = _sess.email || '';
+        }
 
-            const btn = document.getElementById('submitBtn');
-            btn.textContent = 'Saving...';
-            btn.disabled = true;
-
-            const name        = document.getElementById('clientName').value.trim();
-            const category    = document.getElementById('serviceCategory').value;
-            const source      = document.getElementById('referralSource').value;
-            const assigned    = document.getElementById('assignedTo').value;
-            const hmis        = document.getElementById('manualHmisId').value.trim() ||
-                                document.getElementById('existingHmisId').value;
-            const fromProgram = document.getElementById('fromProgram').value;
-            const toProgram   = document.getElementById('toProgram').value;
-
-            // Inject current user's email for backend attribution
-            const _su = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
-            document.getElementById('staffEmailField').value = _su.email || '';
-
-            const handleLoad = function() {
-                frame.removeEventListener('load', handleLoad);
-                window.location.href = 'client-profile.html?' + new URLSearchParams({
-                    submitted:   'true',
-                    name:        name || 'New Client',
-                    category:    category,
-                    source:      source,
-                    assigned:    assigned,
-                    hmis:        hmis,
-                    fromProgram: fromProgram,
-                    toProgram:   toProgram,
-                }).toString();
-            };
-
-            frame.addEventListener('load', handleLoad);
-            this.submit();
-        });
-
-        // Show admin link if user is admin
-        const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+        // Show admin link
         if (_sess.role === 'admin') {
             const al = document.getElementById('adminLink');
             if (al) al.style.display = 'flex';
         }
+
+        /* ── Form Submit ── */
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const btn = document.getElementById('submitBtn');
+            btn.textContent = 'Saving...';
+            btn.disabled    = true;
+
+            const name        = document.getElementById('clientName').value.trim();
+            const hmis        = (document.getElementById('manualHmisId').value.trim() ||
+                                 document.getElementById('existingHmisId').value).trim();
+            const dob         = document.getElementById('clientDOB').value;
+            const fromProgram = document.getElementById('fromProgram').value;
+            const toProgram   = document.getElementById('toProgram').value;
+            const category    = document.getElementById('serviceCategory').value;
+            const source      = document.getElementById('referralSource').value;
+            const urgency     = document.getElementById('urgency').value;
+            const notes       = document.getElementById('assessmentNotes').value.trim();
+            const isExisting  = document.getElementById('isExistingClient').value;
+
+            if (!name) { alert('Client name is required.'); btn.textContent = 'Save Referral'; btn.disabled = false; return; }
+            if (!fromProgram || !toProgram) { alert('From Program and To Program are required.'); btn.textContent = 'Save Referral'; btn.disabled = false; return; }
+
+            const payload = new URLSearchParams({
+                clientName:       name,
+                hmisId:           hmis,
+                clientDOB:        dob,
+                fromProgram:      fromProgram,
+                toProgram:        toProgram,
+                serviceCategory:  category,
+                referralSource:   source,
+                urgency:          urgency,
+                assessmentNotes:  notes,
+                isExistingClient: isExisting,
+                submittedBy:      _sess.name  || '',
+                staffEmail:       _sess.email || ''
+            });
+
+            fetch(GAS_URL, {
+                method:  'POST',
+                mode:    'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body:    payload.toString()
+            }).catch(() => {}).finally(() => {
+                window.location.href = 'client-profile.html?' + new URLSearchParams({
+                    submitted:   'true',
+                    name:        name,
+                    hmis:        hmis,
+                    category:    category,
+                    fromProgram: fromProgram,
+                    toProgram:   toProgram,
+                }).toString();
+            });
+        });
     </script>
 </body>
 </html>

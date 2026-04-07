@@ -237,9 +237,18 @@ function doPost(e) {
 
 // ── doGet ────────────────────────────────────────────────────
 function doGet(e) {
-  var params   = e.parameter || {};
+  var params   = (e && e.parameter) || {};
   var action   = params.action || '';
   var callback = safeCallbackName(params.callback);
+  try {
+    return doGetInner(params, action, callback);
+  } catch (err) {
+    Logger.log('Error in doGet (' + action + '): ' + err.toString());
+    return createJsonOutput({ success: false, error: err.toString() }, callback);
+  }
+}
+
+function doGetInner(params, action, callback) {
 
   // ── Verify user access ────────────────────────────────────
   if (action === 'verifyUser') {
@@ -344,7 +353,7 @@ function doGet(e) {
   }
 
   return createJsonOutput({ success: true, message: 'HOPICS Google Apps Script is running.' }, callback);
-}
+}  // end doGetInner
 
 // ── handleNewReferral ─────────────────────────────────────────
 // Referrals cols (0-based):

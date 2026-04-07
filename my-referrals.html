@@ -358,14 +358,19 @@
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label class="input-label" for="editAssignedTo">Assigned To</label>
-                    <select class="input-field" id="editAssignedTo" name="assignedTo">
-                        <option value="ashley">Ashley R.</option>
-                        <option value="carlos">Carlos M.</option>
-                        <option value="elena">Elena V.</option>
-                        <option value="marcus">Marcus D.</option>
-                    </select>
+                <div class="modal-form-row">
+                    <div class="input-group">
+                        <label class="input-label" for="editFromProgram">From Program</label>
+                        <select class="input-field" id="editFromProgram" name="fromProgram">
+                            <option value="">— Select —</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label" for="editToProgram">To Program</label>
+                        <select class="input-field" id="editToProgram" name="toProgram">
+                            <option value="">— Select —</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="input-group" style="margin-top:1.25rem;">
@@ -676,12 +681,53 @@
             document.getElementById('editReferralSource').value  = r.referralSource || 'other';
             document.getElementById('editServiceCategory').value = r.serviceCategory || 'housing';
             document.getElementById('editUrgency').value         = r.urgency || 'medium';
-            document.getElementById('editStatus').value          = r.status || 'pending';
-            document.getElementById('editAssignedTo').value      = r.assignedTo || '';
+            document.getElementById('editStatus').value          = normalizeStatus(r.status);
             document.getElementById('editAssessmentNotes').value = r.assessmentNotes || '';
+            // Set from/to program after dropdowns are populated
+            _pendingEditPrograms = { from: r.fromProgram || '', to: r.toProgram || '' };
+            setEditProgramValues();
             document.getElementById('editModal').classList.add('open');
             document.body.style.overflow = 'hidden';
         }
+
+        let _pendingEditPrograms = null;
+        function setEditProgramValues() {
+            if (!_pendingEditPrograms) return;
+            const fp = document.getElementById('editFromProgram');
+            const tp = document.getElementById('editToProgram');
+            if (fp && fp.options.length > 1) {
+                fp.value = _pendingEditPrograms.from || '';
+                tp.value = _pendingEditPrograms.to   || '';
+                _pendingEditPrograms = null;
+            }
+        }
+
+        // Load programs into edit modal dropdowns
+        (function loadProgramsForEdit() {
+            const cb = '_progEditCb' + Date.now();
+            window[cb] = function(data) {
+                try { delete window[cb]; } catch(e) {}
+                if (!data || !data.success || !Array.isArray(data.programs)) return;
+                const active = data.programs.filter(p => !p.status || p.status.toLowerCase() !== 'inactive');
+                ['editFromProgram', 'editToProgram'].forEach(function(selId) {
+                    const sel = document.getElementById(selId);
+                    if (!sel) return;
+                    while (sel.options.length > 1) sel.remove(1);
+                    active.forEach(function(p) {
+                        const name = p.programName || p.name || '';
+                        if (!name) return;
+                        const opt = document.createElement('option');
+                        opt.value = name; opt.textContent = name;
+                        sel.appendChild(opt);
+                    });
+                });
+                setEditProgramValues();
+            };
+            const s = document.createElement('script');
+            s.src = GOOGLE_SCRIPT_URL + '?action=listPrograms&callback=' + cb;
+            s.onerror = function() { try { delete window[cb]; } catch(e) {} };
+            document.head.appendChild(s);
+        })();
 
         function closeModal() {
             document.getElementById('editModal').classList.remove('open');

@@ -701,6 +701,44 @@
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
         const _sess   = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
 
+        // ── Load programs from GAS into From/To dropdowns ──
+        function populateProgramDropdowns(programs) {
+            ['fromProgram', 'toProgram'].forEach(function(id) {
+                var sel = document.getElementById(id);
+                if (!sel) return;
+                var current = sel.value;
+                // Keep first placeholder option, remove static ones
+                while (sel.options.length > 1) sel.remove(1);
+                programs.forEach(function(p) {
+                    var name = p.programName || p.name || '';
+                    if (!name) return;
+                    var opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    sel.appendChild(opt);
+                });
+                // Restore selection if still valid
+                if (current) sel.value = current;
+            });
+        }
+
+        (function loadProgramsForForm() {
+            var cb = '_progFormCb' + Date.now();
+            window[cb] = function(data) {
+                try { delete window[cb]; } catch(e) {}
+                if (data && data.success && Array.isArray(data.programs)) {
+                    var active = data.programs.filter(function(p) {
+                        return !p.status || String(p.status).toLowerCase() !== 'inactive';
+                    });
+                    if (active.length) populateProgramDropdowns(active);
+                }
+            };
+            var s = document.createElement('script');
+            s.src = GAS_URL + '?action=listPrograms&callback=' + cb;
+            s.onerror = function() { try { delete window[cb]; } catch(e) {} };
+            document.head.appendChild(s);
+        })();
+
         // Auto-fill Submitted By from session
         if (_sess.name || _sess.email) {
             document.getElementById('submittedByDisplay').value = _sess.name || _sess.email;

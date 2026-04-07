@@ -319,36 +319,49 @@
         }
 
         // ── Verify access via Google Apps Script (JSONP) ────────────
-        function verifyAccess(email, name, picture) {
+        // Retries automatically up to 3 times — each attempt warms GAS further
+        function verifyAccess(email, name, picture, attempt) {
+            attempt = attempt || 1;
             window._pendingAuth = { email, name, picture };
             window._authDone    = false;
 
-            console.log('[HOPICS] Starting verifyUser for:', email);
+            console.log('[HOPICS] verifyUser attempt', attempt, 'for:', email);
+
+            // Each attempt uses a unique callback name so stale callbacks don't collide
+            var cbName = 'onUserVerified_' + attempt;
+            window[cbName] = function(data) { onUserVerified(data); };
 
             const script  = document.createElement('script');
             script.src    = GAS_URL +
                 '?action=verifyUser' +
                 '&email='    + encodeURIComponent(email) +
-                '&callback=onUserVerified';
+                '&callback=' + cbName;
             script.onerror = function () {
-                console.warn('[HOPICS] verifyUser script load error for:', email);
-                showSlowMessage(email);
+                console.warn('[HOPICS] verifyUser script error on attempt', attempt, 'for:', email);
+                showSlowMessage();
             };
 
-            // Warn at 15s but keep waiting; hard fail at 45s
+            // Warn at 15s
             const warnTimer = setTimeout(function () {
                 if (!window._authDone) {
-                    console.warn('[HOPICS] verifyUser taking >15s for:', email, '— showing slow message');
-                    showSlowMessage(email);
+                    console.warn('[HOPICS] verifyUser >15s on attempt', attempt);
+                    showSlowMessage();
                 }
             }, 15000);
 
+            // Auto-retry at 45s (up to 3 attempts), then show manual retry button
             const hardTimer = setTimeout(function () {
                 if (!window._authDone) {
-                    console.error('[HOPICS] verifyUser timed out after 45s for:', email);
                     window._authDone = true;
-                    hideLoading();
-                    showRetry();
+                    console.error('[HOPICS] verifyUser timed out on attempt', attempt, '— next attempt:', attempt + 1);
+                    if (attempt < 3) {
+                        document.getElementById('loginLoading').textContent =
+                            'Still warming up… retrying (attempt ' + (attempt + 1) + ' of 3)…';
+                        verifyAccess(email, name, picture, attempt + 1);
+                    } else {
+                        hideLoading();
+                        showRetry();
+                    }
                 }
             }, 45000);
 
@@ -357,14 +370,14 @@
             document.head.appendChild(script);
         }
 
-        function showSlowMessage(email) {
+        function showSlowMessage() {
             if (window._authDone) return;
             document.getElementById('loginLoading').textContent =
                 'Still verifying… Google servers are warming up. Please wait.';
         }
 
         function showRetry() {
-            showError('Verification timed out. The server is now awake — click Try Again to sign in.');
+            showError('Server is taking too long to respond. Click Try Again — it should work now.');
             document.getElementById('retryBtn').style.display = 'block';
         }
 
@@ -374,7 +387,7 @@
             document.getElementById('retryBtn').style.display = 'none';
             document.getElementById('loginError').classList.remove('visible');
             showLoading();
-            verifyAccess(auth.email, auth.name, auth.picture);
+            verifyAccess(auth.email, auth.name, auth.picture, 1);
         }
 
         // ── JSONP callback ──────────────────────────────────────────

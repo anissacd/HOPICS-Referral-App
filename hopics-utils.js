@@ -1,6 +1,85 @@
 // ── HOPICS Shared Utilities ──────────────────────────────────
 // Include this script on every page: <script src="hopics-utils.js"></script>
 
+// ── Collapsible Sidebar ───────────────────────────────────────
+// Auto-injects a hamburger toggle into .sidebar-brand on DOMContentLoaded
+(function initSidebarToggle() {
+    function setup() {
+        var brand = document.querySelector('.sidebar-brand');
+        var sidebar = document.querySelector('.app-sidebar');
+        if (!brand || !sidebar) return;
+
+        // Inject toggle button
+        var btn = document.createElement('button');
+        btn.className = 'sidebar-toggle-btn';
+        btn.setAttribute('aria-label', 'Toggle sidebar');
+        btn.innerHTML = '<div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div>';
+        brand.appendChild(btn);
+
+        // Restore saved state
+        var collapsed = localStorage.getItem('hopics_sidebar_collapsed') === '1';
+        if (collapsed) sidebar.classList.add('sidebar-collapsed');
+
+        btn.addEventListener('click', function() {
+            sidebar.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('hopics_sidebar_collapsed',
+                sidebar.classList.contains('sidebar-collapsed') ? '1' : '0');
+        });
+
+        // Add tooltips to nav items when collapsed
+        sidebar.querySelectorAll('.sidebar-nav a').forEach(function(a) {
+            var spanText = a.querySelector('span');
+            if (spanText) a.setAttribute('title', spanText.textContent.trim());
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setup();
+    }
+})();
+
+// ── CSV Export ────────────────────────────────────────────────
+// Usage: exportTableToCSV(tableId, filename)
+//        exportArrayToCSV(headers, rows, filename)
+function exportTableToCSV(tableId, filename) {
+    var table = document.getElementById(tableId);
+    if (!table) { showToast('No data to export', 'error'); return; }
+    var rows = Array.from(table.querySelectorAll('tr'));
+    var csv  = rows.map(function(row) {
+        return Array.from(row.querySelectorAll('th,td')).map(function(cell) {
+            var text = cell.innerText.replace(/"/g, '""').replace(/\n/g, ' ').trim();
+            return '"' + text + '"';
+        }).join(',');
+    }).join('\n');
+    _downloadCSV(csv, filename || 'export.csv');
+}
+
+function exportArrayToCSV(headers, rows, filename) {
+    var csv = [headers.map(function(h) { return '"' + h + '"'; }).join(',')];
+    rows.forEach(function(row) {
+        csv.push(row.map(function(cell) {
+            return '"' + String(cell == null ? '' : cell).replace(/"/g, '""') + '"';
+        }).join(','));
+    });
+    _downloadCSV(csv.join('\n'), filename || 'export.csv');
+}
+
+function _downloadCSV(csv, filename) {
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Exported ' + filename, 'success');
+}
+
 // ── Toast notification ────────────────────────────────────────
 // Usage: showToast('Referral saved!', 'success')
 // Types: 'success' | 'error' | 'info' (default)

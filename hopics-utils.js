@@ -207,6 +207,141 @@ function showToast(msg, type) {
     toast._t = setTimeout(function () { toast.classList.remove('show'); }, 3200);
 }
 
+// ── Message Notification Poller ───────────────────────────────
+// Runs on every page except messages.html (which has its own poller).
+// Polls GAS every 60s for new unread threads and shows a popup card.
+(function initMsgNotifications() {
+    if (window.location.pathname.indexOf('messages') !== -1) return;
+
+    var _lastUnread = 0;
+    var _firstPoll  = true;
+
+    // ── Browser notification permission ──────────────────────
+    function requestPermission() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+
+    function showBrowserNotif(title, body) {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        var n = new Notification(title, { body: body });
+        n.onclick = function() { window.location.href = 'messages.html'; };
+    }
+
+    // ── In-app popup card ────────────────────────────────────
+    function injectStyles() {
+        if (document.getElementById('_msgNotifCSS')) return;
+        var s = document.createElement('style');
+        s.id = '_msgNotifCSS';
+        s.textContent = [
+            '#_msgNotifCard{position:fixed;top:1.25rem;right:1.25rem;z-index:9999;background:#fff;',
+            'border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);border:1px solid #e5e5ea;',
+            'padding:1rem 1.25rem;max-width:320px;min-width:260px;display:flex;flex-direction:column;',
+            'gap:.5rem;animation:_msgIn .35s cubic-bezier(.22,1,.36,1) both;}',
+            '@keyframes _msgIn{from{opacity:0;transform:translateY(-12px) scale(.97)}to{opacity:1;transform:none}}',
+            '._mnH{display:flex;align-items:center;gap:.625rem;}',
+            '._mnAv{width:36px;height:36px;border-radius:50%;background:#ffd700;display:grid;place-items:center;',
+            'font-weight:700;font-size:.9rem;color:#111;flex-shrink:0;}',
+            '._mnTitle{font-weight:700;font-size:.875rem;color:#1d1d1f;}',
+            '._mnSub{font-size:.75rem;color:#6e6e73;}',
+            '._mnPrev{font-size:.825rem;color:#3a3a3c;line-height:1.4;overflow:hidden;',
+            'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}',
+            '._mnActs{display:flex;gap:.5rem;margin-top:.25rem;}',
+            '._mnBtn{padding:.4rem .875rem;border-radius:8px;font-size:.8rem;font-weight:600;border:none;cursor:pointer;}',
+            '._mnView{background:#ffd700;color:#111;} ._mnX{background:#f5f5f7;color:#3a3a3c;margin-left:auto;}'
+        ].join('');
+        document.head.appendChild(s);
+    }
+
+    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function showCard(senderEmail, preview, count) {
+        injectStyles();
+        var old = document.getElementById('_msgNotifCard');
+        if (old) old.remove();
+
+        var initial = (senderEmail || '?').charAt(0).toUpperCase();
+        var countLabel = count > 1 ? count + ' new messages' : 'New message';
+
+        var card = document.createElement('div');
+        card.id = '_msgNotifCard';
+        card.innerHTML =
+            '<div class="_mnH">' +
+                '<div class="_mnAv">' + initial + '</div>' +
+                '<div><div class="_mnTitle">' + countLabel + '</div>' +
+                '<div class="_mnSub">from ' + esc(senderEmail) + '</div></div>' +
+                '<button class="_mnBtn _mnX" onclick="event.stopPropagation();document.getElementById(\'_msgNotifCard\').remove();">✕</button>' +
+            '</div>' +
+            (preview ? '<div class="_mnPrev">' + esc(preview) + '</div>' : '') +
+            '<div class="_mnActs"><button class="_mnBtn _mnView" onclick="window.location.href=\'messages.html\'">View Messages</button></div>';
+
+        card.style.cursor = 'pointer';
+        card.onclick = function() { window.location.href = 'messages.html'; };
+        document.body.appendChild(card);
+        setTimeout(function() { if (card.parentNode) card.remove(); }, 8000);
+    }
+
+    // ── Nav badge (works on all pages) ───────────────────────
+    function updateNavBadge(count) {
+        var link = document.querySelector('.sidebar-nav a[href="messages.html"]');
+        if (!link) return;
+        var badge = link.querySelector('.nav-unread-badge');
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'nav-unread-badge';
+                badge.style.cssText = 'background:#ef4444;color:#fff;border-radius:99px;font-size:.65rem;font-weight:700;padding:.1rem .45rem;margin-left:auto;flex-shrink:0;';
+                link.appendChild(badge);
+            }
+            badge.textContent = count > 99 ? '99+' : count;
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+
+    // ── Poll ─────────────────────────────────────────────────
+    function poll() {
+        var sess = null;
+        try { sess = JSON.parse(sessionStorage.getItem('hopics_user') || 'null'); } catch(e) {}
+        if (!sess || !sess.email) return;
+
+        gasGet('getThreads', { user: sess.email, archived: false })
+            .then(function(data) {
+                if (!data || !data.success || !Array.isArray(data.threads)) return;
+                var totalUnread = data.threads.reduce(function(n, t) { return n + (t.unreadCount || 0); }, 0);
+                updateNavBadge(totalUnread);
+
+                if (!_firstPoll && totalUnread > _lastUnread) {
+                    // Find newest unread thread for preview
+                    var unreadThreads = data.threads.filter(function(t) { return (t.unreadCount || 0) > 0; });
+                    var first = unreadThreads[0] || {};
+                    var senderEmail = (first.participants || []).find(function(p) { return p !== sess.email; }) || 'Someone';
+                    var preview = first.lastMessage || '';
+                    showCard(senderEmail, preview, totalUnread);
+                    showBrowserNotif('New message from ' + senderEmail, preview.substring(0, 80) || 'You have a new message');
+                    playChime('receive');
+                }
+
+                _lastUnread  = totalUnread;
+                _firstPoll   = false;
+            })
+            .catch(function() {});
+    }
+
+    function start() {
+        requestPermission();
+        setTimeout(poll, 5000);        // first poll 5s after page load
+        setInterval(poll, 60000);      // then every 60s
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+    } else {
+        start();
+    }
+})();
+
 // ── Chime / notification sound ────────────────────────────────
 // Generates a short tone using the Web Audio API — no file needed
 // Usage: playChime('send') | playChime('receive') | playChime('success') | playChime('error')

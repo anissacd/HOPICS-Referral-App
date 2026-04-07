@@ -1065,11 +1065,26 @@
 
         // ── Staff Picker Modal ─────────────────────────────────
         function startNewMessage() {
-            renderStaffList(allUsers);
             document.getElementById('newMsgOverlay').classList.add('open');
             const si = document.getElementById('staffSearchInput');
             si.value = '';
             setTimeout(() => si.focus(), 50);
+
+            if (allUsers.length > 0) {
+                renderStaffList(allUsers);
+            } else {
+                // Users not loaded yet — fetch now
+                document.getElementById('staffPickerList').innerHTML =
+                    '<div style="padding:1.25rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">Loading staff…</div>';
+                loadUsers(function() {
+                    if (allUsers.length > 0) {
+                        renderStaffList(allUsers);
+                    } else {
+                        document.getElementById('staffPickerList').innerHTML =
+                            '<div style="padding:1.25rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">Could not load staff list.<br>Make sure users are added in Admin → Users.</div>';
+                    }
+                });
+            }
         }
 
         function closeNewMsgModal() {
@@ -1079,13 +1094,14 @@
         function renderStaffList(users) {
             const list = document.getElementById('staffPickerList');
             if (!users || users.length === 0) {
-                list.innerHTML = '<div style="padding:1rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">No staff found.</div>';
+                list.innerHTML = '<div style="padding:1.25rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">No staff found matching your search.</div>';
                 return;
             }
             list.innerHTML = users.map(u => {
                 const name = (u.name && u.name.trim()) ? u.name.trim() : u.email;
+                const safeEmail = u.email.replace(/'/g, "\\'");
                 return `
-                    <div class="staff-item" onclick="startDirectMessage('${escapeHtml(u.email)}')">
+                    <div class="staff-item" onclick="startDirectMessage('${safeEmail}')">
                         <div class="staff-item-avatar">${initials(u.email)}</div>
                         <div class="staff-item-info">
                             <div class="staff-item-name">${escapeHtml(name)}</div>

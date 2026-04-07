@@ -915,16 +915,8 @@
         function onUsersLoaded(data) {
             if (data && data.success && Array.isArray(data.users)) {
                 users = data.users.map(function(u, i) {
-                    // Old schema had no Program column — detect by checking if program field is a date
-                    var prog      = u.program   || '';
-                    var lastLogin = u.lastLogin || 'Never';
-                    if (looksLikeDate(prog)) {
-                        // Columns shifted: program slot has dateAdded, lastLogin slot has addedBy
-                        prog      = '';
-                        lastLogin = u.dateAdded || 'Never';
-                    }
-                    // Clean up raw ISO timestamps for display
-                    if (looksLikeDate(lastLogin)) {
+                    var lastLogin = u.lastLogin || '';
+                    if (lastLogin && lastLogin !== 'Never') {
                         try { lastLogin = new Date(lastLogin).toLocaleDateString(); } catch(e) {}
                     }
                     return {
@@ -933,8 +925,8 @@
                         email:     u.email || '',
                         role:      u.role  || 'case_manager',
                         status:    String(u.status).toLowerCase() === 'active',
-                        program:   prog,
-                        lastLogin: lastLogin
+                        program:   u.program || '',
+                        lastLogin: lastLogin || 'Never'
                     };
                 });
                 renderUsers(users);

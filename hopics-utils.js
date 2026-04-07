@@ -1,6 +1,70 @@
 // ── HOPICS Shared Utilities ──────────────────────────────────
 // Include this script on every page: <script src="hopics-utils.js"></script>
 
+// ── Background Session Refresh ────────────────────────────────
+// Silently re-verifies the logged-in user's role/name/program on every page
+// load. If an admin changed their role, the session updates immediately.
+// If the account was deactivated, they are signed out.
+(function refreshSession() {
+    var HOPICS_GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+
+    var sess = null;
+    try { sess = JSON.parse(sessionStorage.getItem('hopics_user') || 'null'); } catch(e) {}
+    if (!sess || !sess.email) return;  // not logged in — nothing to refresh
+
+    var cbName = '_sessRefresh_' + Date.now();
+    var done   = false;
+
+    // Timeout: if GAS doesn't respond in 20s, silently give up (don't block the user)
+    var timer = setTimeout(function() {
+        done = true;
+        try { delete window[cbName]; } catch(e) {}
+    }, 20000);
+
+    window[cbName] = function(data) {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try { delete window[cbName]; } catch(e) {}
+
+        if (!data) return;
+
+        if (data.authorized === false) {
+            // Account deactivated — sign out
+            sessionStorage.removeItem('hopics_user');
+            if (window.location.pathname.indexOf('login') === -1 &&
+                window.location.pathname.indexOf('index') === -1) {
+                window.location.replace('login.html');
+            }
+            return;
+        }
+
+        if (data.authorized === true) {
+            var changed = (data.role    !== sess.role)    ||
+                          (data.name    !== sess.name)    ||
+                          (data.program !== sess.program);
+            if (changed) {
+                sess.role    = data.role    || sess.role;
+                sess.name    = data.name    || sess.name;
+                sess.program = data.program || sess.program;
+                sessionStorage.setItem('hopics_user', JSON.stringify(sess));
+
+                // Update profile pill name if visible on this page
+                var nm = document.getElementById('sidebarName');
+                if (nm && data.name) nm.textContent = data.name;
+            }
+        }
+    };
+
+    var s = document.createElement('script');
+    s.src = HOPICS_GAS_URL + '?action=verifyUser&email=' + encodeURIComponent(sess.email) + '&callback=' + cbName;
+    s.onerror = function() {
+        clearTimeout(timer);
+        try { delete window[cbName]; } catch(e) {}
+    };
+    document.head.appendChild(s);
+})();
+
 // ── Collapsible Sidebar ───────────────────────────────────────
 // Auto-injects a hamburger toggle into .sidebar-brand on DOMContentLoaded
 (function initSidebarToggle() {

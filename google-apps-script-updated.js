@@ -241,38 +241,61 @@ function doGet(e) {
   var action   = params.action || '';
   var callback = safeCallbackName(params.callback);
   try {
-    return doGetInner(params, action, callback);
+    var result = doGetInner(params, action);
+    var json   = JSON.stringify(result);
+    if (callback) {
+      // JSONP — works cross-origin without CORS headers
+      return ContentService
+        .createTextOutput(callback + '(' + json + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    // Plain JSON — works with fetch() after proper deployment
+    return ContentService
+      .createTextOutput(json)
+      .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     Logger.log('Error in doGet (' + action + '): ' + err.toString());
-    return createJsonOutput({ success: false, error: err.toString() }, callback);
+    var errJson = JSON.stringify({ success: false, error: err.toString() });
+    if (callback) {
+      return ContentService
+        .createTextOutput(callback + '(' + errJson + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService
+      .createTextOutput(errJson)
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-function doGetInner(params, action, callback) {
+function doGetInner(params, action) {
 
   // ── Verify user access ────────────────────────────────────
   if (action === 'verifyUser') {
     var email = params.email || '';
-    if (!email) {
-      return createJsonOutput({ authorized: false, message: 'No email provided.' }, callback);
-    }
+    if (!email) return { authorized: false, message: 'No email provided.' };
 
     var result = getUserRecord(email);
-    if (result && String(result.status).toLowerCase() === 'active') {
+    if (result) {
+      var status = String(result.status || '').toLowerCase().trim();
+      // Only block users explicitly marked inactive/deactivated/disabled
+      // Blank status is treated as active (e.g. manually-added users without status set)
+      if (status === 'inactive' || status === 'deactivated' || status === 'disabled') {
+        return { authorized: false };
+      }
       updateLastLogin(email);
-      return createJsonOutput({
+      return {
         authorized: true,
         role:    result.role    || 'case_manager',
         name:    result.name    || '',
         program: result.program || ''
-      }, callback);
+      };
     }
-
-    return createJsonOutput({ authorized: false }, callback);
+    return { authorized: false };
   }
 
-  if (action === 'listUsers') {
-    return createJsonOutput({ success: true, users: getUsersFromSheet() }, callback);
+  // getUsers / listUsers — returns clean array of {name, email, role, program}
+  if (action === 'getUsers' || action === 'listUsers') {
+    return { success: true, users: getUsersFromSheet() };
   }
 
   if (action === 'listReferrals') {
@@ -283,7 +306,6 @@ function doGetInner(params, action, callback) {
         return String(r.hmisId || '').toLowerCase() === filterHmis;
       });
     } else if (params.program) {
-      // Filter by assigned program — matches fromProgram OR toProgram
       var filterProg = params.program.toLowerCase();
       referrals = referrals.filter(function(r) {
         return String(r.fromProgram || '').toLowerCase() === filterProg ||
@@ -295,64 +317,64 @@ function doGetInner(params, action, callback) {
         return String(r.staffEmail || '').toLowerCase() === filterEmail;
       });
     }
-    return createJsonOutput({ success: true, referrals: referrals }, callback);
+    return { success: true, referrals: referrals };
   }
 
   if (action === 'listClients') {
-    return createJsonOutput({ success: true, clients: getClientsFromSheet() }, callback);
+    return { success: true, clients: getClientsFromSheet() };
   }
 
   if (action === 'getMessages') {
-    return createJsonOutput({ success: true, messages: getMessagesFromSheet(params.thread || '') }, callback);
+    return { success: true, messages: getMessagesFromSheet(params.thread || '') };
   }
 
   if (action === 'getThreads') {
-    return createJsonOutput({ success: true, threads: getThreadsFromSheet(params.user || '', params.archived === 'true') }, callback);
+    return { success: true, threads: getThreadsFromSheet(params.user || '', params.archived === 'true') };
   }
 
   if (action === 'listGoals') {
-    return createJsonOutput({ success: true, goals: getGoalsFromSheet(params.hmisId || '') }, callback);
+    return { success: true, goals: getGoalsFromSheet(params.hmisId || '') };
   }
 
   if (action === 'listCaseNotes') {
-    return createJsonOutput({ success: true, notes: getCaseNotesFromSheet(params.hmisId || '') }, callback);
+    return { success: true, notes: getCaseNotesFromSheet(params.hmisId || '') };
   }
 
   if (action === 'listPrograms') {
-    return createJsonOutput({ success: true, programs: getProgramsFromSheet() }, callback);
+    return { success: true, programs: getProgramsFromSheet() };
   }
 
   if (action === 'listOutcomes') {
-    return createJsonOutput({ success: true, outcomes: getOutcomesFromSheet(params.referralId || '', params.hmisId || '') }, callback);
+    return { success: true, outcomes: getOutcomesFromSheet(params.referralId || '', params.hmisId || '') };
   }
 
   if (action === 'listActivityLog') {
-    return createJsonOutput({ success: true, logs: getActivityLogFromSheet(params.limit || 100) }, callback);
+    return { success: true, logs: getActivityLogFromSheet(params.limit || 100) };
   }
 
   if (action === 'listReferralUpdates') {
-    return createJsonOutput({ success: true, updates: getReferralUpdatesFromSheet(params.referralId || '', params.limit || 200) }, callback);
+    return { success: true, updates: getReferralUpdatesFromSheet(params.referralId || '', params.limit || 200) };
   }
 
   if (action === 'listPosts') {
-    return createJsonOutput({ success: true, posts: getCommunityPostsFromSheet() }, callback);
+    return { success: true, posts: getCommunityPostsFromSheet() };
   }
 
   if (action === 'listComments') {
-    return createJsonOutput({ success: true, comments: getCommunityCommentsFromSheet(params.postId || '') }, callback);
+    return { success: true, comments: getCommunityCommentsFromSheet(params.postId || '') };
   }
 
   if (action === 'landingStats') {
-    return createJsonOutput({
+    return {
       status: 'ok',
       referrals: getReferralsFromSheet(),
       clients:   getClientsFromSheet(),
       programs:  getProgramsFromSheet(),
       users:     getUsersFromSheet()
-    }, callback);
+    };
   }
 
-  return createJsonOutput({ success: true, message: 'HOPICS Google Apps Script is running.' }, callback);
+  return { success: true, message: 'HOPICS Google Apps Script is running.' };
 }  // end doGetInner
 
 // ── handleNewReferral ─────────────────────────────────────────

@@ -513,15 +513,13 @@
         }
 
         function loadClients() {
-            const script = document.createElement('script');
-            script.src = GOOGLE_SCRIPT_URL + '?action=listClients&callback=loadClientsCallback';
-            script.onerror = function() {
-                script.remove();
+            gasGet('listClients').then(function(data) {
+                loadClientsCallback(data);
+            }).catch(function() {
                 allClients = [];
                 computeStats(allClients);
                 renderClients(allClients);
-            };
-            document.body.appendChild(script);
+            });
         }
 
         loadClients();

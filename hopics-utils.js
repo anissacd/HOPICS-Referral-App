@@ -1,22 +1,58 @@
 // ── HOPICS Shared Utilities ──────────────────────────────────
 // Include this script on every page: <script src="hopics-utils.js"></script>
 
+// ── GAS URL ───────────────────────────────────────────────────
+var HOPICS_GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+
+// ── gasGet ────────────────────────────────────────────────────
+// Fetch data from GAS backend. Returns a Promise.
+// Usage: gasGet('listUsers').then(function(data) { ... });
+//        gasGet('getThreads', { user: email, archived: false }).then(...);
+// Uses JSONP internally so it works cross-origin without CORS headers.
+function gasGet(action, params) {
+    return new Promise(function(resolve, reject) {
+        var base = window.GOOGLE_SCRIPT_URL || HOPICS_GAS_URL;
+        var cbName = '_gasGet_' + Date.now() + '_' + (Math.random() * 1e9 | 0);
+        var qs = 'action=' + encodeURIComponent(action);
+        if (params) {
+            Object.keys(params).forEach(function(k) {
+                if (params[k] !== undefined && params[k] !== null) {
+                    qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+                }
+            });
+        }
+        var timer = setTimeout(function() {
+            try { delete window[cbName]; } catch(e) {}
+            reject(new Error('gasGet timeout: ' + action));
+        }, 30000);
+        window[cbName] = function(data) {
+            clearTimeout(timer);
+            try { delete window[cbName]; } catch(e) {}
+            resolve(data);
+        };
+        var s = document.createElement('script');
+        s.src = base + '?' + qs + '&callback=' + cbName;
+        s.onerror = function() {
+            clearTimeout(timer);
+            try { delete window[cbName]; } catch(e) {}
+            reject(new Error('gasGet error: ' + action));
+        };
+        document.head.appendChild(s);
+    });
+}
+
 // ── Background Session Refresh ────────────────────────────────
 // Silently re-verifies the logged-in user's role/name/program on every page
 // load. If an admin changed their role, the session updates immediately.
 // If the account was deactivated, they are signed out.
 (function refreshSession() {
-    var HOPICS_GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
-
     var sess = null;
     try { sess = JSON.parse(sessionStorage.getItem('hopics_user') || 'null'); } catch(e) {}
     if (!sess || !sess.email) return;  // not logged in — nothing to refresh
 
     var cbName = '_sessRefresh_' + Date.now();
     var done   = false;
-
-    // Timeout: if GAS doesn't respond in 20s, silently give up (don't block the user)
-    var timer = setTimeout(function() {
+    var timer  = setTimeout(function() {
         done = true;
         try { delete window[cbName]; } catch(e) {}
     }, 20000);
@@ -26,11 +62,12 @@
         done = true;
         clearTimeout(timer);
         try { delete window[cbName]; } catch(e) {}
-
         if (!data) return;
 
+        console.log('[HOPICS] verifyUser response for', sess.email, ':', data);
+
         if (data.authorized === false) {
-            // Account deactivated — sign out
+            console.warn('[HOPICS] User not authorized — redirecting to login. Check that', sess.email, 'exists in the Users sheet with Status = Active.');
             sessionStorage.removeItem('hopics_user');
             if (window.location.pathname.indexOf('login') === -1 &&
                 window.location.pathname.indexOf('index') === -1) {
@@ -40,7 +77,8 @@
         }
 
         if (data.authorized === true) {
-            var changed = (data.role    !== sess.role)    ||
+            var roleChanged = data.role && data.role !== sess.role;
+            var changed = roleChanged ||
                           (data.name    !== sess.name)    ||
                           (data.program !== sess.program);
             if (changed) {
@@ -49,7 +87,11 @@
                 sess.program = data.program || sess.program;
                 sessionStorage.setItem('hopics_user', JSON.stringify(sess));
 
-                // Update profile pill name if visible on this page
+                if (roleChanged) {
+                    window.location.reload();
+                    return;
+                }
+
                 var nm = document.getElementById('sidebarName');
                 if (nm && data.name) nm.textContent = data.name;
             }

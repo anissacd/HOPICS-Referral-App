@@ -1100,38 +1100,6 @@
             .replace(/'/g,'&#39;');
     }
 
-    // ── JSONP helper ───────────────────────────────────────────
-    var _cbCounter = 0;
-    function jsonpGet(params, timeout) {
-        return new Promise(function(resolve, reject) {
-            var cbName = '__hopics_cb_' + (++_cbCounter) + '_' + Date.now();
-            var script = document.createElement('script');
-            var timer  = setTimeout(function() {
-                cleanup();
-                reject(new Error('JSONP timeout'));
-            }, timeout || TIMEOUT_MS);
-
-            window[cbName] = function(data) {
-                cleanup();
-                resolve(data);
-            };
-
-            var qs = Object.keys(params).map(function(k) {
-                return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
-            }).join('&');
-
-            script.src = GAS_URL + '?' + qs + '&callback=' + cbName;
-            script.onerror = function() { cleanup(); reject(new Error('Script load error')); };
-            document.head.appendChild(script);
-
-            function cleanup() {
-                clearTimeout(timer);
-                delete window[cbName];
-                if (script.parentNode) script.parentNode.removeChild(script);
-            }
-        });
-    }
-
     // ── Fetch POST (with CORS) ───────────────────────────────────
     function gasPost(fields) {
         var body = new URLSearchParams();
@@ -1178,7 +1146,7 @@
     }
 
     function loadPosts(isRetry) {
-        jsonpGet({ action: 'listPosts' }, TIMEOUT_MS)
+        gasGet('listPosts')
             .then(function(data) {
                 removeSkeleons();
                 if (!data.success) throw new Error(data.error || 'GAS error');
@@ -1542,7 +1510,7 @@
     }
 
     function loadComments(postId, isRetry) {
-        jsonpGet({ action: 'listComments', postId: postId }, TIMEOUT_MS)
+        gasGet('listComments', { postId: postId })
             .then(function(data) {
                 _commentsLoaded[postId] = 'done';
                 if (!data.success) throw new Error(data.error || 'GAS error');

@@ -884,39 +884,6 @@
         let activeThreadData = null;
         let userMap          = {};   // email.toLowerCase() → { name, email, role }
         let allUsers         = [];   // all users except current, for staff picker
-        let _cbSeq           = 0;   // unique JSONP callback counter
-
-        // ── JSONP helper with unique callback names ────────────
-        // Prevents stale callbacks from a previous load from clobbering a newer one
-        function jsonpLoad(url, onSuccess, onError, _retry) {
-            const cbName = '_gasCb' + (++_cbSeq);
-            const timeout = setTimeout(function() {
-                try { delete window[cbName]; } catch(e) {}
-                // auto-retry once on cold-start timeout
-                if (!_retry) {
-                    jsonpLoad(url, onSuccess, onError, true);
-                } else {
-                    if (onError) onError();
-                }
-            }, 45000);
-            window[cbName] = function(data) {
-                clearTimeout(timeout);
-                try { delete window[cbName]; } catch(e) {}
-                onSuccess(data);
-            };
-            const s = document.createElement('script');
-            s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
-            s.onerror = function() {
-                clearTimeout(timeout);
-                try { delete window[cbName]; } catch(e) {}
-                if (!_retry) {
-                    jsonpLoad(url, onSuccess, onError, true);
-                } else {
-                    if (onError) onError();
-                }
-            };
-            document.head.appendChild(s);
-        }
 
         // ── Name resolution ────────────────────────────────────
         function nameFor(email) {
@@ -951,9 +918,9 @@
 
         // ── Load users list (for name resolution + staff picker) ─
         function loadUsers(cb) {
-            jsonpLoad(
-                GOOGLE_SCRIPT_URL + '?action=listUsers',
-                function(data) {
+            gasGet('listUsers')
+                .then(function(data) {
+                    console.log('Users from GAS (messages):', data);
                     if (data && data.success && Array.isArray(data.users)) {
                         data.users.forEach(u => {
                             if (u.email) userMap[u.email.toLowerCase()] = u;
@@ -963,9 +930,11 @@
                         );
                     }
                     if (cb) cb();
-                },
-                function() { if (cb) cb(); }
-            );
+                })
+                .catch(function(err) {
+                    console.error('Failed to load users:', err);
+                    if (cb) cb();
+                });
         }
 
         // ── Load Threads ──────────────────────────────────────
@@ -973,20 +942,18 @@
             const list = document.getElementById('threadList');
             list.innerHTML = '<div style="padding:2rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">Loading…</div>';
 
-            jsonpLoad(
-                GOOGLE_SCRIPT_URL + '?action=getThreads&user=' + encodeURIComponent(CURRENT_EMAIL) + '&archived=' + (_currentMsgTab === 'archived'),
-                function(data) {
+            gasGet('getThreads', { user: CURRENT_EMAIL, archived: _currentMsgTab === 'archived' })
+                .then(function(data) {
                     if (data && data.success && Array.isArray(data.threads)) {
                         allThreads = data.threads;
                         renderThreadList(allThreads);
                     } else {
                         list.innerHTML = '<div style="padding:2rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">No conversations yet. Click New Message to start one.</div>';
                     }
-                },
-                function() {
+                })
+                .catch(function() {
                     list.innerHTML = '<div style="padding:2rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">Could not load messages.<br><button onclick="loadUsers(function(){loadThreads();})" style="margin-top:0.75rem;padding:0.45rem 1.1rem;background:#ffd700;border:none;border-radius:8px;font-weight:600;color:#111;cursor:pointer;">Retry</button></div>';
-                }
-            );
+                });
         }
 
         // ── Unread badge on nav Messages link ─────────────────
@@ -1094,9 +1061,8 @@
             document.getElementById('messagesArea').innerHTML =
                 '<div style="margin:auto;text-align:center;color:#aeaeb2;font-size:0.875rem;">Loading…</div>';
 
-            jsonpLoad(
-                GOOGLE_SCRIPT_URL + '?action=getMessages&thread=' + encodeURIComponent(threadId),
-                function(data) {
+            gasGet('getMessages', { thread: threadId })
+                .then(function(data) {
                     if (data && data.success && Array.isArray(data.messages)) {
                         renderMessages(data.messages.map(m => ({
                             from: m.from,
@@ -1108,12 +1074,11 @@
                         document.getElementById('messagesArea').innerHTML =
                             '<div style="margin:auto;text-align:center;color:#aeaeb2;font-size:0.875rem;">No messages yet. Say hello!</div>';
                     }
-                },
-                function() {
+                })
+                .catch(function() {
                     document.getElementById('messagesArea').innerHTML =
                         '<div style="margin:auto;text-align:center;color:#aeaeb2;font-size:0.875rem;">Could not load messages.</div>';
-                }
-            );
+                });
         }
 
         // ── Render Messages ────────────────────────────────────
@@ -1353,32 +1318,31 @@
                 if (document.hidden) return;  // skip when tab is not visible
                 const prevActiveId = activeThreadId;
                 const prevTs = activeThreadData ? activeThreadData.lastTimestamp : null;
-                jsonpLoad(
-                    GOOGLE_SCRIPT_URL + '?action=getThreads&user=' + encodeURIComponent(CURRENT_EMAIL) + '&archived=' + (typeof _currentMsgTab !== 'undefined' && _currentMsgTab === 'archived'),
-                    function(data) {
-                        if (!data || !data.success || !Array.isArray(data.threads)) return;
-                        allThreads = data.threads;
-                        // Keep active thread unread count cleared locally
-                        if (prevActiveId) {
-                            const at = allThreads.find(function(t) { return t.threadId === prevActiveId; });
-                            if (at) at.unreadCount = 0;
+                gasGet('getThreads', {
+                    user: CURRENT_EMAIL,
+                    archived: typeof _currentMsgTab !== 'undefined' && _currentMsgTab === 'archived'
+                }).then(function(data) {
+                    if (!data || !data.success || !Array.isArray(data.threads)) return;
+                    allThreads = data.threads;
+                    // Keep active thread unread count cleared locally
+                    if (prevActiveId) {
+                        const at = allThreads.find(function(t) { return t.threadId === prevActiveId; });
+                        if (at) at.unreadCount = 0;
+                    }
+                    renderThreadList(allThreads);
+                    // If active thread has new messages since last check, reload them
+                    if (prevActiveId && prevTs) {
+                        const at = allThreads.find(function(t) { return t.threadId === prevActiveId; });
+                        if (at && at.lastTimestamp && at.lastTimestamp !== prevTs) {
+                            activeThreadData = at;
+                            loadMessages(prevActiveId);
+                            markThreadAsRead(prevActiveId);
                         }
-                        renderThreadList(allThreads);
-                        // If active thread has new messages since last check, reload them
-                        if (prevActiveId && prevTs) {
-                            const at = allThreads.find(function(t) { return t.threadId === prevActiveId; });
-                            if (at && at.lastTimestamp && at.lastTimestamp !== prevTs) {
-                                activeThreadData = at;
-                                loadMessages(prevActiveId);
-                                markThreadAsRead(prevActiveId);
-                            }
-                        }
-                        // Chime if there are new unread messages
-                        const newUnread = allThreads.reduce(function(n, t) { return n + (t.unreadCount || 0); }, 0);
-                        if (newUnread > 0) playChime('receive');
-                    },
-                    function() {}  // silent on poll error
-                );
+                    }
+                    // Chime if there are new unread messages
+                    const newUnread = allThreads.reduce(function(n, t) { return n + (t.unreadCount || 0); }, 0);
+                    if (newUnread > 0) playChime('receive');
+                }).catch(function() {});  // silent on poll error
             }, 30000);
         }
     </script>

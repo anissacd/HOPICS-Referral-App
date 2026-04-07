@@ -1016,29 +1016,6 @@
             if (nm) nm.textContent = _sess.name || _sess.email;
         })();
 
-        // ── JSONP helper ────────────────────────────────────────
-        let _cbIdx = 0;
-        function jsonpLoad(url, onSuccess, onError) {
-            const cbName = '_cpCb' + (++_cbIdx);
-            const timeout = setTimeout(function() {
-                delete window[cbName];
-                if (onError) onError('Timeout');
-            }, 20000);
-            window[cbName] = function(data) {
-                clearTimeout(timeout);
-                delete window[cbName];
-                onSuccess(data);
-            };
-            const s = document.createElement('script');
-            s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
-            s.onerror = function() {
-                clearTimeout(timeout);
-                delete window[cbName];
-                if (onError) onError('Script error');
-            };
-            document.head.appendChild(s);
-        }
-
         // ── Current client ──────────────────────────────────────
         let currentHmisId = _urlParams.get('hmisId') || _urlParams.get('id') || '';
         let currentClientName = _urlParams.get('name') || 'Client';
@@ -1064,7 +1041,7 @@
                 loadNotes();
                 return;
             }
-            jsonpLoad(GAS_URL + '?action=listClients', function(data) {
+            gasGet('listClients').then(function(data) {
                 const clients = (data && data.clients) ? data.clients : [];
                 const client = clients.find(c => String(c.hmisId).toLowerCase() === currentHmisId.toLowerCase());
                 if (client) {
@@ -1077,7 +1054,7 @@
                 loadReferrals();
                 loadGoals();
                 loadNotes();
-            }, function() {
+            }).catch(function() {
                 applyClientToHeader({ name: currentClientName, hmisId: currentHmisId });
                 loadReferrals();
                 loadGoals();
@@ -1135,15 +1112,13 @@
             if (loading) loading.style.display = 'block';
             if (table)   table.style.display = 'none';
 
-            let url = GAS_URL + '?action=listReferrals';
-            if (currentHmisId) url += '&hmisId=' + encodeURIComponent(currentHmisId);
-
-            jsonpLoad(url, function(data) {
+            const refParams = currentHmisId ? { hmisId: currentHmisId } : undefined;
+            gasGet('listReferrals', refParams).then(function(data) {
                 if (loading) loading.style.display = 'none';
                 if (table)   table.style.display = '';
                 const refs = (data && data.referrals) ? data.referrals : [];
                 renderReferrals(refs);
-            }, function() {
+            }).catch(function() {
                 if (loading) loading.textContent = 'Could not load referrals.';
             });
         }
@@ -1223,12 +1198,11 @@
 
         // ── Load Goals ──────────────────────────────────────────
         function loadGoals() {
-            let url = GAS_URL + '?action=listGoals';
-            if (currentHmisId) url += '&hmisId=' + encodeURIComponent(currentHmisId);
-            jsonpLoad(url, function(data) {
+            const goalParams = currentHmisId ? { hmisId: currentHmisId } : undefined;
+            gasGet('listGoals', goalParams).then(function(data) {
                 const goals = (data && data.goals) ? data.goals : [];
                 renderGoals(goals);
-            }, function() {
+            }).catch(function() {
                 document.getElementById('goalsContainer').innerHTML = '<p style="color:#aeaeb2;font-size:.875rem;">Could not load goals.</p>';
             });
         }
@@ -1306,12 +1280,11 @@
 
         // ── Load Case Notes ─────────────────────────────────────
         function loadNotes() {
-            let url = GAS_URL + '?action=listCaseNotes';
-            if (currentHmisId) url += '&hmisId=' + encodeURIComponent(currentHmisId);
-            jsonpLoad(url, function(data) {
+            const noteParams = currentHmisId ? { hmisId: currentHmisId } : undefined;
+            gasGet('listCaseNotes', noteParams).then(function(data) {
                 const notes = (data && data.notes) ? data.notes : [];
                 renderNotes(notes);
-            }, function() {
+            }).catch(function() {
                 document.getElementById('notesContainer').innerHTML = '<p style="color:#aeaeb2;font-size:.875rem;">Could not load notes.</p>';
             });
         }

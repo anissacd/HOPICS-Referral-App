@@ -693,19 +693,13 @@
 
         // ── Load clients from GAS for search ──
         (function loadClientsForSearch() {
-            var cb = '_clientSearchCb' + Date.now();
-            window[cb] = function(data) {
-                try { delete window[cb]; } catch(e) {}
+            gasGet('listClients').then(function(data) {
                 if (data && data.success && Array.isArray(data.clients)) {
                     CLIENTS = data.clients.map(function(c) {
                         return { id: c.hmisId || '', name: c.name || '', dob: c.dob || '', housing: c.status || '', program: c.program || '' };
                     });
                 }
-            };
-            var s = document.createElement('script');
-            s.src = GAS_URL + '?action=listClients&callback=' + cb;
-            s.onerror = function() { try { delete window[cb]; } catch(e) {} };
-            document.head.appendChild(s);
+            }).catch(function() {});
         })();
 
         // ── Load programs from GAS into From/To dropdowns ──
@@ -730,20 +724,14 @@
         }
 
         (function loadProgramsForForm() {
-            var cb = '_progFormCb' + Date.now();
-            window[cb] = function(data) {
-                try { delete window[cb]; } catch(e) {}
+            gasGet('listPrograms').then(function(data) {
                 if (data && data.success && Array.isArray(data.programs)) {
                     var active = data.programs.filter(function(p) {
                         return !p.status || String(p.status).toLowerCase() !== 'inactive';
                     });
                     if (active.length) populateProgramDropdowns(active);
                 }
-            };
-            var s = document.createElement('script');
-            s.src = GAS_URL + '?action=listPrograms&callback=' + cb;
-            s.onerror = function() { try { delete window[cb]; } catch(e) {} };
-            document.head.appendChild(s);
+            }).catch(function() {});
         })();
 
         // Auto-fill Submitted By from session

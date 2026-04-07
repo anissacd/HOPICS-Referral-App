@@ -318,26 +318,58 @@
         // ── Verify access via Google Apps Script (JSONP) ────────────
         function verifyAccess(email, name, picture) {
             window._pendingAuth = { email, name, picture };
+            window._authDone    = false;
+
+            console.log('[HOPICS] Starting verifyUser for:', email);
 
             const script  = document.createElement('script');
             script.src    = GAS_URL +
                 '?action=verifyUser' +
                 '&email='    + encodeURIComponent(email) +
                 '&callback=onUserVerified';
-            script.onerror = function () { fallbackVerify(email, name, picture); };
+            script.onerror = function () {
+                console.warn('[HOPICS] verifyUser script load error for:', email);
+                showSlowMessage(email);
+            };
 
-            const timeout = setTimeout(function () {
-                fallbackVerify(email, name, picture);
+            // Warn at 15s but keep waiting; hard fail at 45s
+            const warnTimer = setTimeout(function () {
+                if (!window._authDone) {
+                    console.warn('[HOPICS] verifyUser taking >15s for:', email, '— showing slow message');
+                    showSlowMessage(email);
+                }
             }, 15000);
 
-            window._authTimeout = timeout;
+            const hardTimer = setTimeout(function () {
+                if (!window._authDone) {
+                    console.error('[HOPICS] verifyUser timed out after 45s for:', email);
+                    window._authDone = true;
+                    hideLoading();
+                    showError('Verification timed out. Please refresh the page and try again.');
+                }
+            }, 45000);
+
+            window._authWarnTimer = warnTimer;
+            window._authHardTimer = hardTimer;
             document.head.appendChild(script);
+        }
+
+        function showSlowMessage(email) {
+            if (window._authDone) return;
+            document.getElementById('loginLoading').textContent =
+                'Still verifying… Google servers are warming up. Please wait.';
         }
 
         // ── JSONP callback ──────────────────────────────────────────
         function onUserVerified(data) {
-            clearTimeout(window._authTimeout);
+            clearTimeout(window._authWarnTimer);
+            clearTimeout(window._authHardTimer);
+
+            if (window._authDone) return;  // hard timeout already fired
+            window._authDone = true;
+
             const { email, picture } = window._pendingAuth || {};
+            console.log('[HOPICS] verifyUser response for', email, ':', data);
 
             if (data && data.authorized) {
                 // Always use name and program from Users sheet — not Google account
@@ -347,24 +379,10 @@
                     role:    data.role    || 'case_manager',
                     program: data.program || ''
                 }));
+                console.log('[HOPICS] Login success — role:', data.role, 'name:', sheetName);
                 window.location.href = 'dashboard.html';
             } else {
-                hideLoading();
-                showError('Your account is not authorized. Contact your administrator.');
-            }
-        }
-
-        // ── Fallback when GAS is unreachable ────────────────────────
-        function fallbackVerify(email, _googleName, picture) {
-            clearTimeout(window._authTimeout);
-            const ok = email.endsWith('@hopics.org') || email.endsWith('@gmail.com');
-            if (ok) {
-                // Do not use Google name — name will come from Users sheet
-                sessionStorage.setItem('hopics_user', JSON.stringify({
-                    email, name: '', picture, role: 'case_manager', program: ''
-                }));
-                window.location.href = 'dashboard.html';
-            } else {
+                console.warn('[HOPICS] Access denied for:', email, '— response:', data);
                 hideLoading();
                 showError('Your account is not authorized. Contact your administrator.');
             }

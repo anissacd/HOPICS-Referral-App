@@ -633,9 +633,7 @@
 
         // ── Load live stats ──
         function loadStats() {
-            var cb = 'stats_' + Date.now();
-            window[cb] = function(data) {
-                delete window[cb];
+            gasGet('landingStats').then(function(data) {
                 if (!data || data.status !== 'ok') return;
                 var r = data.referrals || [];
                 var c = data.clients || [];
@@ -666,13 +664,7 @@
                     animateCount(document.getElementById('sPrograms'), p.filter(function(x){ return x.status !== 'inactive'; }).length || p.length);
                     animateCount(document.getElementById('sStaff'), u.length);
                 }
-            };
-
-            var s = document.createElement('script');
-            s.src = GAS_URL + '?action=landingStats&callback=' + cb;
-            s.onerror = function() { delete window[cb]; };
-            document.head.appendChild(s);
-            setTimeout(function() { if (window[cb]) { delete window[cb]; } }, 15000);
+            }).catch(function() {});
         }
 
         loadStats();

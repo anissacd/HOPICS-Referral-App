@@ -686,10 +686,9 @@
         }
 
         function loadDashboardData() {
-            const script = document.createElement('script');
-            script.src = GOOGLE_SCRIPT_URL + '?action=listReferrals&callback=onDashboardLoaded';
-            script.onerror = function() { /* keep placeholder values as fallback */ };
-            document.head.appendChild(script);
+            gasGet('listReferrals').then(function(data) {
+                onDashboardLoaded(data);
+            }).catch(function() { /* keep placeholder values as fallback */ });
         }
 
         function onDashboardLoaded(data) {

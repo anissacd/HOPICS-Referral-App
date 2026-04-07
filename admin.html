@@ -601,7 +601,8 @@
             readonly:     'role-readonly'
         };
 
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+        const GAS_URL = GOOGLE_SCRIPT_URL;
 
         const AVATAR_CSS = {
             admin:        'ua-red',
@@ -908,15 +909,12 @@
             const tbody = document.getElementById('usersTableBody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#aeaeb2;">Loading users…</td></tr>';
 
-            const script = document.createElement('script');
-            script.src = GAS_URL + '?action=listUsers&callback=onUsersLoaded';
-            script.onerror = function() {
+            gasGet('listUsers').then(function(data) {
+                console.log('Users from GAS (admin):', data);
+                onUsersLoaded(data);
+            }).catch(function() {
                 if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#aeaeb2;">Could not load users.</td></tr>';
-            };
-            setTimeout(function() {
-                if (users.length === 0) renderUsers([]);
-            }, 10000);
-            document.head.appendChild(script);
+            });
         }
 
         // Detect if a value looks like a date/timestamp (column shift from old schema)
@@ -963,40 +961,29 @@
             const tbody = document.getElementById('programsTableBody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:#aeaeb2;">Loading programs…</td></tr>';
 
-            const cbName = '_progCb' + Date.now();
-            window[cbName] = function(data) {
-                try { delete window[cbName]; } catch(e) {}
+            gasGet('listPrograms').then(function(data) {
                 if (data && data.success && Array.isArray(data.programs)) {
                     programs = data.programs;
                 } else {
                     programs = [];
                 }
                 renderPrograms();
-            };
-            const script = document.createElement('script');
-            script.src = GAS_URL + '?action=listPrograms&callback=' + cbName;
-            script.onerror = function() {
+            }).catch(function() {
                 programs = [];
                 renderPrograms();
-            };
-            document.head.appendChild(script);
+            });
         }
 
         // ── Load programs into dropdown selects ───────────────────────
         function loadProgramsForDropdown() {
-            const cbName = '_progDdCb' + Date.now();
-            window[cbName] = function(data) {
-                try { delete window[cbName]; } catch(e) {}
+            gasGet('listPrograms').then(function(data) {
                 const selects = document.querySelectorAll('.program-dropdown');
                 const opts = '<option value="">-- No Program --</option>' +
                     (data.success && data.programs ? data.programs.filter(p => p.status !== 'Inactive').map(p =>
                         `<option value="${p.programName}">${p.programName}</option>`
                     ).join('') : '');
                 selects.forEach(s => { s.innerHTML = opts; });
-            };
-            const s = document.createElement('script');
-            s.src = GAS_URL + '?action=listPrograms&callback=' + cbName;
-            document.head.appendChild(s);
+            }).catch(function() {});
         }
 
         // ── Edit program assignment for a user ────────────────────────

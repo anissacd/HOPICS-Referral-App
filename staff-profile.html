@@ -415,9 +415,7 @@
         function loadProfile() {
             if (isAdminViewingOther) {
                 // Load from GAS
-                const cbName = '_profCb' + Date.now();
-                window[cbName] = function(data) {
-                    try { delete window[cbName]; } catch(e) {}
+                gasGet('listUsers').then(function(data) {
                     if (data && data.success && Array.isArray(data.users)) {
                         const u = data.users.find(function(x) {
                             return x.email && x.email.toLowerCase() === viewEmail.toLowerCase();
@@ -432,11 +430,10 @@
                     // Fallback: render with just the email
                     profileData = { email: viewEmail, name: viewEmail, role: '', program: '' };
                     renderProfile(profileData);
-                };
-                const s = document.createElement('script');
-                s.src = GAS_URL + '?action=listUsers&callback=' + cbName;
-                s.onerror = function() { try { delete window[cbName]; } catch(e) {} };
-                document.head.appendChild(s);
+                }).catch(function() {
+                    profileData = { email: viewEmail, name: viewEmail, role: '', program: '' };
+                    renderProfile(profileData);
+                });
             } else {
                 // Own profile — use session
                 profileData = {
@@ -453,9 +450,7 @@
         function populateProgramSelect(currentProgram) {
             const sel = document.getElementById('editProgram');
             if (!sel) return;
-            const cbName = '_pgCb' + Date.now();
-            window[cbName] = function(data) {
-                try { delete window[cbName]; } catch(e) {}
+            gasGet('listPrograms').then(function(data) {
                 if (!data || !data.success || !Array.isArray(data.programs)) return;
                 const active = data.programs.filter(function(p) {
                     return !p.status || p.status.toLowerCase() !== 'inactive';
@@ -469,11 +464,7 @@
                     if (name === currentProgram) opt.selected = true;
                     sel.appendChild(opt);
                 });
-            };
-            const s = document.createElement('script');
-            s.src = GAS_URL + '?action=listPrograms&callback=' + cbName;
-            s.onerror = function() { try { delete window[cbName]; } catch(e) {} };
-            document.head.appendChild(s);
+            }).catch(function() {});
         }
 
         loadProfile();

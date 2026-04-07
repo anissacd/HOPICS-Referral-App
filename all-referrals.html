@@ -939,18 +939,11 @@
         }
 
         /* ── Load all referrals (no server-side filter) ── */
-        let _refCbSeq = 0, _refLoadTimer = null, _refHardTimer = null;
-
         function loadReferrals() {
             showLoading();
-            if (_refLoadTimer)  { clearTimeout(_refLoadTimer);  _refLoadTimer  = null; }
-            if (_refHardTimer)  { clearTimeout(_refHardTimer);  _refHardTimer  = null; }
 
-            const cbName = '_refCb' + (++_refCbSeq);
-            window[cbName] = function(data) {
-                try { delete window[cbName]; } catch(e) {}
-                if (_refLoadTimer) { clearTimeout(_refLoadTimer); _refLoadTimer = null; }
-                if (_refHardTimer) { clearTimeout(_refHardTimer); _refHardTimer = null; }
+            // No staffEmail/program filter — load all referrals
+            gasGet('listReferrals').then(function(data) {
                 if (Array.isArray(data)) {
                     referralsData = data;
                 } else if (data && data.success && Array.isArray(data.referrals)) {
@@ -962,37 +955,9 @@
                 updateStats(referralsData);
                 populateCategoryFilter(referralsData);
                 renderReferralCards();
-            };
-
-            const script = document.createElement('script');
-            // No staffEmail/program filter — load all referrals
-            script.src = GOOGLE_SCRIPT_URL + '?action=listReferrals&callback=' + cbName;
-            script.onerror = function() {
-                try { delete window[cbName]; } catch(e) {}
-                if (_refLoadTimer) { clearTimeout(_refLoadTimer); _refLoadTimer = null; }
-                if (_refHardTimer) { clearTimeout(_refHardTimer); _refHardTimer = null; }
+            }).catch(function() {
                 showEmpty('<p style="margin:0 0 0.75rem;">Could not reach the server.</p><button onclick="loadReferrals()" style="padding:0.5rem 1.25rem;background:#ffd700;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Retry</button>');
-            };
-
-            // Auto-retry silently at 20s
-            _refLoadTimer = setTimeout(function() {
-                _refLoadTimer = null;
-                if (window[cbName]) {
-                    try { delete window[cbName]; } catch(e) {}
-                    loadReferrals();
-                }
-            }, 20000);
-
-            // Hard fail at 50s
-            _refHardTimer = setTimeout(function() {
-                _refHardTimer = null;
-                if (window[cbName]) {
-                    try { delete window[cbName]; } catch(e) {}
-                    showEmpty('<p style="margin:0 0 0.75rem;">Server is taking too long. Please try again.</p><button onclick="loadReferrals()" style="padding:0.5rem 1.25rem;background:#ffd700;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Retry</button>');
-                }
-            }, 50000);
-
-            document.head.appendChild(script);
+            });
         }
 
         /* ── Delete ── */
@@ -1051,9 +1016,7 @@
 
         /* ── Load programs into edit modal and filter dropdowns ── */
         (function loadProgramsForFiltersAndEdit() {
-            const cb = '_progCb' + Date.now();
-            window[cb] = function(data) {
-                try { delete window[cb]; } catch(e) {}
+            gasGet('listPrograms').then(function(data) {
                 if (!data || !data.success || !Array.isArray(data.programs)) return;
 
                 const active = data.programs.filter(p => !p.status || p.status.toLowerCase() !== 'inactive');
@@ -1086,18 +1049,12 @@
                 });
 
                 setEditProgramValues();
-            };
-            const s = document.createElement('script');
-            s.src = GOOGLE_SCRIPT_URL + '?action=listPrograms&callback=' + cb;
-            s.onerror = function() { try { delete window[cb]; } catch(e) {} };
-            document.head.appendChild(s);
+            }).catch(function() {});
         })();
 
         /* ── Load staff/users into filter dropdown ── */
         (function loadUsersForFilter() {
-            const cb = '_usersCb' + Date.now();
-            window[cb] = function(data) {
-                try { delete window[cb]; } catch(e) {}
+            gasGet('listUsers').then(function(data) {
                 if (!data || !data.success || !Array.isArray(data.users)) return;
                 const sel = document.getElementById('staffFilter');
                 if (!sel) return;
@@ -1109,11 +1066,7 @@
                     opt.value = email; opt.textContent = name;
                     sel.appendChild(opt);
                 });
-            };
-            const s = document.createElement('script');
-            s.src = GOOGLE_SCRIPT_URL + '?action=listUsers&callback=' + cb;
-            s.onerror = function() { try { delete window[cb]; } catch(e) {} };
-            document.head.appendChild(s);
+            }).catch(function() {});
         })();
 
         /* ── Filter change listeners ── */

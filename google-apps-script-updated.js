@@ -220,6 +220,7 @@ function doPost(e) {
     if (data.action === 'deleteThread')       return handleDeleteThread(data);
     if (data.action === 'archiveThread')      return handleArchiveThread(data);
     if (data.action === 'unarchiveThread')    return handleUnarchiveThread(data);
+    if (data.action === 'markRead')           return handleMarkRead(data);
     if (data.action === 'updateClient')       return handleUpdateClient(data);
     if (data.action === 'addPost')            return handleAddPost(data);
     if (data.action === 'addComment')         return handleAddComment(data);
@@ -856,6 +857,24 @@ function handleUnarchiveThread(data) {
   return createJsonOutput({ success: true });
 }
 
+// ── handleMarkRead ────────────────────────────────────────────
+function handleMarkRead(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Messages');
+  if (!sheet) return createJsonOutput({ success: false });
+  var threadId  = data.threadId || '';
+  var userLower = (data.user || '').toLowerCase();
+  if (!threadId || !userLower) return createJsonOutput({ success: false });
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][1]) === String(threadId) &&
+        (values[i][5] || '').toLowerCase() === userLower &&
+        String(values[i][7]) === 'false') {
+      sheet.getRange(i + 1, 8).setValue('true');  // Column H = Is Read
+    }
+  }
+  return createJsonOutput({ success: true });
+}
+
 // ── handleUpdateClient ────────────────────────────────────────
 function handleUpdateClient(data) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Clients');
@@ -1014,9 +1033,12 @@ function getMessagesFromSheet(threadId) {
 function getThreadsFromSheet(user, archivedOnly) {
   var messages = getMessagesFromSheet('');
   var threadMap = {};
+  var userLower = user ? user.toLowerCase() : '';
 
   messages.forEach(function(msg) {
-    if (user && msg.from !== user && msg.to !== user) return;
+    var fromLower = (msg.from || '').toLowerCase();
+    var toLower   = (msg.to   || '').toLowerCase();
+    if (userLower && fromLower !== userLower && toLower !== userLower) return;
 
     var tid = msg.threadId;
     var isArchived = msg.threadType && msg.threadType.indexOf('ARCHIVED:' + user) !== -1;
@@ -1034,7 +1056,7 @@ function getThreadsFromSheet(user, archivedOnly) {
       };
     }
     if (isArchived) threadMap[tid].archived = true;
-    if (msg.to === user && msg.isRead === 'false') {
+    if (toLower === userLower && msg.isRead === 'false') {
       threadMap[tid].unreadCount = (threadMap[tid].unreadCount || 0) + 1;
     }
   });

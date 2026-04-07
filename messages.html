@@ -989,6 +989,35 @@
             );
         }
 
+        // ── Unread badge on nav Messages link ─────────────────
+        function updateUnreadBadge() {
+            const total = allThreads.reduce(function(n, t) { return n + (t.unreadCount || 0); }, 0);
+            const link = document.querySelector('.sidebar-nav a[href="messages.html"]');
+            if (!link) return;
+            let badge = link.querySelector('.nav-unread-badge');
+            if (total > 0) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'nav-unread-badge';
+                    badge.style.cssText = 'background:#ef4444;color:#fff;border-radius:99px;font-size:0.65rem;font-weight:700;padding:0.1rem 0.45rem;margin-left:auto;flex-shrink:0;';
+                    link.appendChild(badge);
+                }
+                badge.textContent = total > 99 ? '99+' : String(total);
+            } else if (badge) {
+                badge.remove();
+            }
+        }
+
+        // ── Mark thread read in GAS ────────────────────────────
+        function markThreadAsRead(threadId) {
+            if (!CURRENT_EMAIL || !threadId) return;
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST', mode: 'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ action: 'markRead', threadId: threadId, user: CURRENT_EMAIL }).toString()
+            }).catch(function() {});
+        }
+
         // ── Render Thread List ─────────────────────────────────
         function renderThreadList(threads) {
             const list = document.getElementById('threadList');
@@ -1019,6 +1048,7 @@
                         </div>
                     </div>`;
             }).join('');
+            updateUnreadBadge();
         }
 
         // ── Filter threads (search by name or email) ───────────
@@ -1055,6 +1085,7 @@
             document.getElementById('convSubEmail').textContent = emailSub;
 
             loadMessages(threadId);
+            markThreadAsRead(threadId);
             document.getElementById('composerInput').focus();
         }
 
@@ -1317,6 +1348,38 @@
             loadUsers(function() {
                 loadThreads();
             });
+            // Poll for new messages every 30 seconds
+            setInterval(function() {
+                if (document.hidden) return;  // skip when tab is not visible
+                const prevActiveId = activeThreadId;
+                const prevTs = activeThreadData ? activeThreadData.lastTimestamp : null;
+                jsonpLoad(
+                    GOOGLE_SCRIPT_URL + '?action=getThreads&user=' + encodeURIComponent(CURRENT_EMAIL) + '&archived=' + (typeof _currentMsgTab !== 'undefined' && _currentMsgTab === 'archived'),
+                    function(data) {
+                        if (!data || !data.success || !Array.isArray(data.threads)) return;
+                        allThreads = data.threads;
+                        // Keep active thread unread count cleared locally
+                        if (prevActiveId) {
+                            const at = allThreads.find(function(t) { return t.threadId === prevActiveId; });
+                            if (at) at.unreadCount = 0;
+                        }
+                        renderThreadList(allThreads);
+                        // If active thread has new messages since last check, reload them
+                        if (prevActiveId && prevTs) {
+                            const at = allThreads.find(function(t) { return t.threadId === prevActiveId; });
+                            if (at && at.lastTimestamp && at.lastTimestamp !== prevTs) {
+                                activeThreadData = at;
+                                loadMessages(prevActiveId);
+                                markThreadAsRead(prevActiveId);
+                            }
+                        }
+                        // Chime if there are new unread messages
+                        const newUnread = allThreads.reduce(function(n, t) { return n + (t.unreadCount || 0); }, 0);
+                        if (newUnread > 0) playChime('receive');
+                    },
+                    function() {}  // silent on poll error
+                );
+            }, 30000);
         }
     </script>
 

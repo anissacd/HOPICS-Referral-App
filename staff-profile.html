@@ -318,7 +318,8 @@
     </div>
 
     <script>
-        const GAS_URL = window._HOPICS_GAS_URL || (typeof GOOGLE_SCRIPT_URL !== 'undefined' ? GOOGLE_SCRIPT_URL : '');
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+        const GAS_URL = window._HOPICS_GAS_URL || GOOGLE_SCRIPT_URL;
 
         const _sess     = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
         if (!_sess.email) window.location.replace('login.html');
@@ -389,7 +390,7 @@
             }
             document.getElementById('editPhone').value = phone;
 
-            // Role/Program rows: only editable if admin
+            // Role and Program: only editable by admin (either on own profile or viewing another user)
             if (!_isAdmin) {
                 document.getElementById('roleRow').classList.add('readonly');
                 document.getElementById('programRow').classList.add('readonly');
@@ -450,12 +451,12 @@
         }
 
         function populateProgramSelect(currentProgram) {
-            if (!_isAdmin) return;
+            const sel = document.getElementById('editProgram');
+            if (!sel) return;
             const cbName = '_pgCb' + Date.now();
             window[cbName] = function(data) {
                 try { delete window[cbName]; } catch(e) {}
                 if (!data || !data.success || !Array.isArray(data.programs)) return;
-                const sel = document.getElementById('editProgram');
                 const active = data.programs.filter(function(p) {
                     return !p.status || p.status.toLowerCase() !== 'inactive';
                 });
@@ -517,6 +518,7 @@
             if (gasUrl) {
                 fetch(gasUrl, {
                     method: 'POST',
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({
                         action:  'updateUserRole',

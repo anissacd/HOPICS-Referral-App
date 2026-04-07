@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HOPICS — Client Profile</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="hopics-utils.js"></script>
     <style>
         /* ── Success Banner ── */
         .success-banner {
@@ -471,7 +472,7 @@
 </head>
 <body>
 <!-- Fixed profile button top-right -->
-<div id="profileBtn" onclick="openProfileModal()">
+<div id="profileBtn" onclick="window.location.href='staff-profile.html'">
     <div id="sidebarAvatar" style="width:30px;height:30px;border-radius:50%;background:#ffd700;display:grid;place-items:center;font-weight:800;font-size:0.7rem;color:#111;flex-shrink:0;overflow:hidden;">?</div>
     <span id="sidebarName" style="font-size:0.78rem;font-weight:600;color:#f5f5f7;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
 </div>
@@ -606,7 +607,15 @@
                         <button class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
                         <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
                     </div>
-                    <a class="btn btn-primary" href="referral.html">
+                    <button class="btn btn-secondary" onclick="exportReport()" title="Export PDF / Print">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                            <rect x="6" y="14" width="12" height="8"/>
+                        </svg>
+                        Export
+                    </button>
+                    <a class="btn btn-primary" id="newReferralBtn" href="referral.html">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
                              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -659,9 +668,9 @@
                         <div class="section-divider">Identification</div>
                         <div class="profile-fields" style="margin-top:0.75rem;grid-template-columns:1fr 1fr;">
                             <div class="profile-field">
-                                <span class="field-label">HMIS ID <span style="font-weight:400;color:#aeaeb2;text-transform:none;letter-spacing:0;">(from LAHSA HMIS)</span></span>
-                                <span class="field-value" data-f="hmisId">HTX-2024-00471</span>
-                                <input class="field-input" data-f="hmisId" value="HTX-2024-00471" placeholder="HMIS ID">
+                                <span class="field-label">HMIS ID</span>
+                                <span class="field-value" data-f="hmisId">—</span>
+                                <input class="field-input" data-f="hmisId" value="" placeholder="H123434">
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Insurance Type</span>
@@ -784,61 +793,6 @@
                                     <option>&gt;$2000/mo</option>
                                 </select>
                             </div>
-                            <div class="profile-field">
-                                <span class="field-label">Benefits</span>
-                                <span class="field-value" data-f="benefits">CalFresh, General Relief</span>
-                                <input class="field-input" data-f="benefits" value="CalFresh, General Relief" placeholder="Benefits received">
-                            </div>
-                        </div>
-
-                        <!-- Program -->
-                        <div class="section-divider">Program</div>
-                        <div class="profile-fields" style="margin-top:0.75rem;">
-                            <div class="profile-field">
-                                <span class="field-label">Program Name</span>
-                                <span class="field-value" data-f="program">Emergency Housing Program</span>
-                                <input class="field-input" data-f="program" value="Emergency Housing Program" placeholder="Program">
-                            </div>
-                            <div class="profile-field">
-                                <span class="field-label">Case Manager</span>
-                                <span class="field-value" data-f="caseManager">Ashley R.</span>
-                                <select class="field-input" data-f="caseManager">
-                                    <option>Ashley R.</option>
-                                    <option>Carlos M.</option>
-                                    <option>Elena V.</option>
-                                    <option>Marcus D.</option>
-                                </select>
-                            </div>
-                            <div class="profile-field">
-                                <span class="field-label">Intake Date</span>
-                                <span class="field-value" data-f="intakeDate">March 12, 2024</span>
-                                <input class="field-input" type="date" data-f="intakeDate" value="2024-03-12">
-                            </div>
-                            <div class="profile-field">
-                                <span class="field-label">Exit Date</span>
-                                <span class="field-value empty" data-f="exitDate">Still enrolled</span>
-                                <input class="field-input" type="date" data-f="exitDate" value="">
-                            </div>
-                        </div>
-
-                        <!-- Emergency Contact -->
-                        <div class="section-divider">Emergency Contact</div>
-                        <div class="profile-fields three" style="margin-top:0.75rem;">
-                            <div class="profile-field">
-                                <span class="field-label">Contact Name</span>
-                                <span class="field-value" data-f="ecName">Rosa Lopez</span>
-                                <input class="field-input" data-f="ecName" value="Rosa Lopez" placeholder="Full name">
-                            </div>
-                            <div class="profile-field">
-                                <span class="field-label">Relationship</span>
-                                <span class="field-value" data-f="ecRelation">Sister</span>
-                                <input class="field-input" data-f="ecRelation" value="Sister" placeholder="Relationship">
-                            </div>
-                            <div class="profile-field">
-                                <span class="field-label">Contact Phone</span>
-                                <span class="field-value" data-f="ecPhone">(213) 555-0199</span>
-                                <input class="field-input" type="tel" data-f="ecPhone" value="(213) 555-0199" placeholder="Phone">
-                            </div>
                         </div>
                     </div>
 
@@ -847,13 +801,14 @@
                         <div class="profile-card-header">
                             <div>
                                 <div class="profile-card-title">Referral History</div>
-                                <div class="profile-card-subtitle">All referrals linked to this client</div>
+                                <div class="profile-card-subtitle" id="refHistSubtitle">Loading...</div>
                             </div>
-                            <a class="btn btn-secondary" href="referral.html" style="font-size:0.8rem;padding:0.45rem 0.875rem;">
+                            <a class="btn btn-secondary" id="addReferralBtn" href="referral.html" style="font-size:0.8rem;padding:0.45rem 0.875rem;">
                                 + Add Referral
                             </a>
                         </div>
-                        <div class="table-wrapper" style="margin-top:0;">
+                        <div id="refHistLoading" style="text-align:center;padding:1.5rem;color:#aeaeb2;font-size:0.875rem;">Loading referrals...</div>
+                        <div class="table-wrapper" style="margin-top:0;display:none;" id="refHistTable">
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -862,43 +817,11 @@
                                         <th>Category</th>
                                         <th>Urgency</th>
                                         <th>Status</th>
-                                        <th>Assigned</th>
+                                        <th>Submitted By</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
-                                <tbody id="referralTableBody">
-                                    <tr>
-                                        <td>Apr 6, 2024</td>
-                                        <td><div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;font-size:0.8rem;"><span style="background:#f5f5f7;border-radius:5px;padding:0.15rem 0.45rem;">Street Outreach</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg><span style="background:#f5f5f7;border-radius:5px;padding:0.15rem 0.45rem;">Emergency Shelter</span></div></td>
-                                        <td>Housing</td>
-                                        <td><span class="status-pill" style="background:#fee2e2;color:#991b1b;font-size:0.72rem;">High</span></td>
-                                        <td><span class="status-pill status-pending">Pending</span></td>
-                                        <td>Ashley R.</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Mar 28, 2024</td>
-                                        <td><div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;font-size:0.8rem;"><span style="background:#f5f5f7;border-radius:5px;padding:0.15rem 0.45rem;">Emergency Shelter</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg><span style="background:#f5f5f7;border-radius:5px;padding:0.15rem 0.45rem;">Medical Outreach</span></div></td>
-                                        <td>Medical</td>
-                                        <td><span class="status-pill" style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;">Medium</span></td>
-                                        <td><span class="status-pill status-progress">In Progress</span></td>
-                                        <td>Carlos M.</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Mar 19, 2024</td>
-                                        <td><div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;font-size:0.8rem;"><span style="background:#f5f5f7;border-radius:5px;padding:0.15rem 0.45rem;">Drop-In Center</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg><span style="background:#f5f5f7;border-radius:5px;padding:0.15rem 0.45rem;">Mental Health Services</span></div></td>
-                                        <td>Mental Health</td>
-                                        <td><span class="status-pill" style="background:#fff8e1;color:#b45309;font-size:0.72rem;">Low</span></td>
-                                        <td><span class="status-pill status-completed">Completed</span></td>
-                                        <td>Elena V.</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Mar 12, 2024</td>
-                                        <td><div style="display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;font-size:0.8rem;"><span style="background:#f5f5f7;border-radius:5px;padding:0.15rem 0.45rem;">Rapid Rehousing</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg><span style="background:#f5f5f7;border-radius:5px;padding:0.15rem 0.45rem;">Employment Services</span></div></td>
-                                        <td>Employment</td>
-                                        <td><span class="status-pill" style="background:#e0f2fe;color:#0369a1;font-size:0.72rem;">Medium</span></td>
-                                        <td><span class="status-pill status-progress">In Progress</span></td>
-                                        <td>Marcus D.</td>
-                                    </tr>
-                                </tbody>
+                                <tbody id="referralTableBody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -912,62 +835,13 @@
                         <div class="profile-card-header">
                             <div>
                                 <div class="profile-card-title">Goals & Case Plan</div>
-                                <div class="profile-card-subtitle">1 of 3 completed</div>
+                                <div class="profile-card-subtitle" id="goalSubtitle">Loading...</div>
                             </div>
                         </div>
-
-                        <div class="goal-item">
-                            <div class="goal-header">
-                                <div>
-                                    <div class="goal-title">Secure permanent housing</div>
-                                    <div class="goal-category">Housing · Target: Jun 2024</div>
-                                </div>
-                                <span class="status-pill status-progress">In Progress</span>
-                            </div>
-                            <div class="goal-progress-bar">
-                                <div class="goal-progress-fill" style="width:60%"></div>
-                            </div>
-                            <div class="goal-footer">
-                                <span>60% complete</span>
-                                <span>Updated Apr 2</span>
-                            </div>
+                        <div id="goalsContainer">
+                            <div style="text-align:center;padding:1rem;color:#aeaeb2;font-size:0.875rem;">Loading goals...</div>
                         </div>
-
-                        <div class="goal-item">
-                            <div class="goal-header">
-                                <div>
-                                    <div class="goal-title">Obtain stable employment or income</div>
-                                    <div class="goal-category">Employment · Target: Aug 2024</div>
-                                </div>
-                                <span class="status-pill" style="background:#f5f5f7;color:#6e6e73;">Not Started</span>
-                            </div>
-                            <div class="goal-progress-bar">
-                                <div class="goal-progress-fill not-started" style="width:5%"></div>
-                            </div>
-                            <div class="goal-footer">
-                                <span>0% complete</span>
-                                <span>Created Mar 12</span>
-                            </div>
-                        </div>
-
-                        <div class="goal-item">
-                            <div class="goal-header">
-                                <div>
-                                    <div class="goal-title">Complete mental health assessment</div>
-                                    <div class="goal-category">Mental Health · Target: Apr 2024</div>
-                                </div>
-                                <span class="status-pill status-completed">Completed</span>
-                            </div>
-                            <div class="goal-progress-bar">
-                                <div class="goal-progress-fill complete" style="width:100%"></div>
-                            </div>
-                            <div class="goal-footer">
-                                <span>100% complete</span>
-                                <span>Completed Mar 19</span>
-                            </div>
-                        </div>
-
-                        <button class="add-item-btn" onclick="alert('Add Goal — coming soon')">
+                        <button class="add-item-btn" onclick="openAddGoalModal()">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                  fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -981,43 +855,10 @@
                         <div class="profile-card-header">
                             <div>
                                 <div class="profile-card-title">Case Notes</div>
-                                <div class="profile-card-subtitle">Activity log and staff notes</div>
+                                <div class="profile-card-subtitle" id="notesSubtitle">Loading...</div>
                             </div>
                         </div>
-
-                        <div class="note-item">
-                            <div class="note-avatar">AR</div>
-                            <div class="note-content">
-                                <div class="note-header">
-                                    <span class="note-author">Ashley R.</span>
-                                    <span class="note-date">Apr 6, 2024</span>
-                                </div>
-                                <p class="note-text">New housing referral submitted. Client expressed interest in transitional housing near public transit. Follow up scheduled for Apr 10.</p>
-                            </div>
-                        </div>
-
-                        <div class="note-item">
-                            <div class="note-avatar">CM</div>
-                            <div class="note-content">
-                                <div class="note-header">
-                                    <span class="note-author">Carlos M.</span>
-                                    <span class="note-date">Mar 28, 2024</span>
-                                </div>
-                                <p class="note-text">Medical referral accepted by LA County clinic. Client has appointment on Apr 3 at 10:00am. Transportation arranged via Metro.</p>
-                            </div>
-                        </div>
-
-                        <div class="note-item">
-                            <div class="note-avatar">EV</div>
-                            <div class="note-content">
-                                <div class="note-header">
-                                    <span class="note-author">Elena V.</span>
-                                    <span class="note-date">Mar 19, 2024</span>
-                                </div>
-                                <p class="note-text">Mental health assessment completed. Client was cooperative and engaged. Diagnosis pending, counselor recommends weekly sessions.</p>
-                            </div>
-                        </div>
-
+                        <div id="notesContainer"></div>
                         <div class="note-input-area">
                             <textarea id="newNoteText" placeholder="Add a case note..."></textarea>
                             <div class="note-input-footer">
@@ -1033,124 +874,514 @@
         </main>
     </div>
 
+    <!-- Edit Referral Modal -->
+    <div id="editRefModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);" onclick="if(event.target===this)closeEditRefModal()">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:20px;padding:2rem;width:100%;max-width:480px;margin:1rem;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h3 style="font-size:1.05rem;font-weight:700;margin:0;">Edit Referral</h3>
+                <button onclick="closeEditRefModal()" style="background:none;border:none;color:#6e6e73;cursor:pointer;font-size:1.2rem;">✕</button>
+            </div>
+            <input type="hidden" id="editRefId">
+            <div style="display:grid;gap:1rem;">
+                <div>
+                    <label style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem;">From Program</label>
+                    <input id="editRefFrom" type="text" style="width:100%;padding:.6rem .875rem;border-radius:10px;border:1px solid #d2d2d7;font-size:.9rem;" placeholder="From Program">
+                </div>
+                <div>
+                    <label style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem;">To Program</label>
+                    <input id="editRefTo" type="text" style="width:100%;padding:.6rem .875rem;border-radius:10px;border:1px solid #d2d2d7;font-size:.9rem;" placeholder="To Program">
+                </div>
+                <div>
+                    <label style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem;">Service Category</label>
+                    <select id="editRefCategory" style="width:100%;padding:.6rem .875rem;border-radius:10px;border:1px solid #d2d2d7;font-size:.9rem;background:#fff;">
+                        <option>Housing</option><option>Medical</option><option>Mental Health</option>
+                        <option>Employment</option><option>Legal</option><option>Food</option>
+                        <option>Transportation</option><option>Education</option><option>Benefits</option><option>Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem;">Status</label>
+                    <select id="editRefStatus" style="width:100%;padding:.6rem .875rem;border-radius:10px;border:1px solid #d2d2d7;font-size:.9rem;background:#fff;">
+                        <option>Pending</option><option>In Progress</option><option>Completed</option><option>Cancelled</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem;">Urgency</label>
+                    <select id="editRefUrgency" style="width:100%;padding:.6rem .875rem;border-radius:10px;border:1px solid #d2d2d7;font-size:.9rem;background:#fff;">
+                        <option>Low</option><option>Medium</option><option>High</option><option>Emergency</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem;">Assessment Notes</label>
+                    <textarea id="editRefNotes" rows="3" style="width:100%;padding:.6rem .875rem;border-radius:10px;border:1px solid #d2d2d7;font-size:.9rem;resize:vertical;" placeholder="Notes..."></textarea>
+                </div>
+            </div>
+            <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem;">
+                <button class="btn btn-secondary" onclick="closeEditRefModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveEditReferral()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Goal Modal -->
+    <div id="addGoalModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);" onclick="if(event.target===this)closeAddGoalModal()">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:20px;padding:2rem;width:100%;max-width:440px;margin:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h3 style="font-size:1.05rem;font-weight:700;margin:0;">Add Goal</h3>
+                <button onclick="closeAddGoalModal()" style="background:none;border:none;color:#6e6e73;cursor:pointer;font-size:1.2rem;">✕</button>
+            </div>
+            <div style="display:grid;gap:1rem;">
+                <div>
+                    <label style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem;">Goal Description</label>
+                    <input id="goalDesc" type="text" style="width:100%;padding:.6rem .875rem;border-radius:10px;border:1px solid #d2d2d7;font-size:.9rem;" placeholder="Describe the goal...">
+                </div>
+                <div>
+                    <label style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem;">Category / Priority</label>
+                    <select id="goalPriority" style="width:100%;padding:.6rem .875rem;border-radius:10px;border:1px solid #d2d2d7;font-size:.9rem;background:#fff;">
+                        <option>Housing</option><option>Employment</option><option>Mental Health</option>
+                        <option>Medical</option><option>Life Skills</option><option>Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem;">Target Date</label>
+                    <input id="goalTarget" type="date" style="width:100%;padding:.6rem .875rem;border-radius:10px;border:1px solid #d2d2d7;font-size:.9rem;">
+                </div>
+                <div>
+                    <label style="font-size:0.75rem;font-weight:600;color:#aeaeb2;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.4rem;">Status</label>
+                    <select id="goalStatus" style="width:100%;padding:.6rem .875rem;border-radius:10px;border:1px solid #d2d2d7;font-size:.9rem;background:#fff;">
+                        <option>Not Started</option><option>In Progress</option><option>Completed</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem;">
+                <button class="btn btn-secondary" onclick="closeAddGoalModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveNewGoal()">Add Goal</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        /* ── URL Params ── */
-        const params = new URLSearchParams(window.location.search);
-        const submitted = params.get('submitted');
-        const clientNameParam = params.get('name');
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+        const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+        const _urlParams = new URLSearchParams(window.location.search);
 
-        if (submitted === 'true' && clientNameParam) {
-            const banner = document.getElementById('successBanner');
-            const nameEl = document.getElementById('submittedName');
-            nameEl.textContent = clientNameParam;
-            banner.style.display = 'flex';
+        // Auth guard
+        if (!_sess.email) window.location.replace('login.html');
 
-            // Pre-fill name in profile
-            const nameField = document.querySelector('[data-f="fullName"]');
-            const nameInput = document.querySelector('input[data-f="fullName"]');
-            if (nameField) nameField.textContent = clientNameParam;
-            if (nameInput) nameInput.value = clientNameParam;
-            document.getElementById('headerClientName').textContent = clientNameParam;
-
-            // Update initials
-            const parts = clientNameParam.trim().split(' ');
-            const initials = parts.length >= 2
-                ? parts[0][0] + parts[parts.length - 1][0]
-                : clientNameParam.slice(0, 2);
-            document.getElementById('clientInitials').textContent = initials.toUpperCase();
-
-            // Add new referral row to table
-            const tbody = document.getElementById('referralTableBody');
-            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${today}</td>
-                <td>${params.get('category') || 'Housing'}</td>
-                <td>${params.get('source') || 'Intake'}</td>
-                <td><span class="status-pill" style="background:#fff8e1;color:#b45309;font-size:0.72rem;">New</span></td>
-                <td><span class="status-pill status-pending">Pending</span></td>
-                <td>${params.get('assigned') || 'Unassigned'}</td>
-            `;
-            tbody.insertBefore(row, tbody.firstChild);
+        // Show admin link
+        if (_sess.role === 'admin') {
+            const al = document.getElementById('adminLink');
+            if (al) al.style.display = 'flex';
         }
 
-        /* ── Edit Mode ── */
+        // ── Profile button ──────────────────────────────────────
+        (function initProfileBtn() {
+            function getInitials(name) {
+                if (!name) return '?';
+                const p = name.trim().split(' ');
+                return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : name.slice(0,2).toUpperCase();
+            }
+            const savedPhoto = localStorage.getItem('hopics_profile_photo_' + _sess.email);
+            const avEl = document.getElementById('sidebarAvatar');
+            if (avEl) {
+                avEl.innerHTML = savedPhoto ? `<img src="${savedPhoto}" style="width:100%;height:100%;object-fit:cover;">` : getInitials(_sess.name || _sess.email);
+                if (savedPhoto) avEl.style.background = 'transparent';
+            }
+            const nm = document.getElementById('sidebarName');
+            if (nm) nm.textContent = _sess.name || _sess.email;
+        })();
+
+        // ── JSONP helper ────────────────────────────────────────
+        let _cbIdx = 0;
+        function jsonpLoad(url, onSuccess, onError) {
+            const cbName = '_cpCb' + (++_cbIdx);
+            const timeout = setTimeout(function() {
+                delete window[cbName];
+                if (onError) onError('Timeout');
+            }, 20000);
+            window[cbName] = function(data) {
+                clearTimeout(timeout);
+                delete window[cbName];
+                onSuccess(data);
+            };
+            const s = document.createElement('script');
+            s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+            s.onerror = function() {
+                clearTimeout(timeout);
+                delete window[cbName];
+                if (onError) onError('Script error');
+            };
+            document.head.appendChild(s);
+        }
+
+        // ── Current client ──────────────────────────────────────
+        let currentHmisId = _urlParams.get('hmisId') || _urlParams.get('id') || '';
+        let currentClientName = _urlParams.get('name') || 'Client';
+        let currentClientData = null;
+
+        // Handle ?submitted=true param (new referral submitted)
+        const submitted = _urlParams.get('submitted');
+        if (submitted === 'true' && _urlParams.get('name')) {
+            const banner = document.getElementById('successBanner');
+            const nameEl = document.getElementById('submittedName');
+            if (nameEl) nameEl.textContent = _urlParams.get('name');
+            if (banner) banner.style.display = 'flex';
+            currentClientName = _urlParams.get('name');
+        }
+
+        // ── Load client data from GAS ───────────────────────────
+        function loadClientData() {
+            if (!currentHmisId) {
+                // No hmisId: use URL params as fallback
+                applyClientToHeader({ name: currentClientName, hmisId: '' });
+                loadReferrals();
+                loadGoals();
+                loadNotes();
+                return;
+            }
+            jsonpLoad(GAS_URL + '?action=listClients', function(data) {
+                const clients = (data && data.clients) ? data.clients : [];
+                const client = clients.find(c => String(c.hmisId).toLowerCase() === currentHmisId.toLowerCase());
+                if (client) {
+                    currentClientData = client;
+                    currentClientName = client.name || currentClientName;
+                    applyClientToHeader(client);
+                } else {
+                    applyClientToHeader({ name: currentClientName, hmisId: currentHmisId });
+                }
+                loadReferrals();
+                loadGoals();
+                loadNotes();
+            }, function() {
+                applyClientToHeader({ name: currentClientName, hmisId: currentHmisId });
+                loadReferrals();
+                loadGoals();
+                loadNotes();
+            });
+        }
+
+        function applyClientToHeader(client) {
+            const name = client.name || currentClientName;
+            document.getElementById('headerClientName').textContent = name;
+            if (client.hmisId) document.getElementById('headerHmisId').textContent = client.hmisId;
+            const parts = name.trim().split(' ');
+            const initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : name.slice(0,2).toUpperCase();
+            document.getElementById('clientInitials').textContent = initials;
+
+            // Pre-fill profile fields
+            const setField = (f, val) => {
+                const span = document.querySelector(`[data-f="${f}"]`);
+                const inp = document.querySelector(`[data-f="${f}"].field-input, input[data-f="${f}"], select[data-f="${f}"]`);
+                if (span && !span.classList.contains('field-input')) { span.textContent = val || '—'; if (!val) span.classList.add('empty'); }
+                if (inp) inp.value = val || '';
+            };
+            setField('fullName', client.name);
+            setField('hmisId', client.hmisId);
+            setField('dob', client.dob);
+
+            // Update "Add Referral" link with hmisId
+            const addBtn = document.getElementById('addReferralBtn');
+            if (addBtn && client.hmisId) addBtn.href = 'referral.html?hmisId=' + encodeURIComponent(client.hmisId) + '&name=' + encodeURIComponent(client.name || '');
+            const newRefBtn = document.getElementById('newReferralBtn');
+            if (newRefBtn && client.hmisId) newRefBtn.href = 'referral.html?hmisId=' + encodeURIComponent(client.hmisId) + '&name=' + encodeURIComponent(client.name || '');
+        }
+
+        // ── Urgency color ───────────────────────────────────────
+        function urgencyPill(u) {
+            const map = { High: '#fee2e2:#991b1b', Medium: '#e0f2fe:#0369a1', Low: '#fff8e1:#b45309', Emergency: '#fce7f3:#9d174d' };
+            const [bg, color] = (map[u] || '#f5f5f7:#6e6e73').split(':');
+            return `<span class="status-pill" style="background:${bg};color:${color};font-size:0.72rem;">${u || '—'}</span>`;
+        }
+        function statusClass(s) {
+            const m = { 'Pending':'status-pending','In Progress':'status-progress','Completed':'status-completed','Cancelled':'status-cancelled' };
+            return m[s] || 'status-pending';
+        }
+        function fmtDate(d) {
+            if (!d) return '—';
+            const dt = new Date(d);
+            return isNaN(dt) ? d : dt.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+        }
+
+        // ── Load Referrals ──────────────────────────────────────
+        function loadReferrals() {
+            const loading = document.getElementById('refHistLoading');
+            const table   = document.getElementById('refHistTable');
+            if (loading) loading.style.display = 'block';
+            if (table)   table.style.display = 'none';
+
+            let url = GAS_URL + '?action=listReferrals';
+            if (currentHmisId) url += '&hmisId=' + encodeURIComponent(currentHmisId);
+
+            jsonpLoad(url, function(data) {
+                if (loading) loading.style.display = 'none';
+                if (table)   table.style.display = '';
+                const refs = (data && data.referrals) ? data.referrals : [];
+                renderReferrals(refs);
+            }, function() {
+                if (loading) loading.textContent = 'Could not load referrals.';
+            });
+        }
+
+        function renderReferrals(refs) {
+            const tbody = document.getElementById('referralTableBody');
+            const sub   = document.getElementById('refHistSubtitle');
+            if (sub) sub.textContent = refs.length + ' referral' + (refs.length !== 1 ? 's' : '');
+            if (!tbody) return;
+            if (!refs.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aeaeb2;padding:1.5rem;">No referrals found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = refs.map(r => `
+                <tr>
+                    <td>${fmtDate(r.timestamp)}</td>
+                    <td><div style="display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;font-size:.8rem;">
+                        <span style="background:#f5f5f7;border-radius:5px;padding:.15rem .45rem;">${r.fromProgram || '—'}</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <span style="background:#f5f5f7;border-radius:5px;padding:.15rem .45rem;">${r.toProgram || '—'}</span>
+                    </div></td>
+                    <td>${r.serviceCategory || '—'}</td>
+                    <td>${urgencyPill(r.urgency)}</td>
+                    <td><span class="status-pill ${statusClass(r.status)}">${r.status || 'Pending'}</span></td>
+                    <td>${r.submittedBy || '—'}</td>
+                    <td><button onclick="openEditRefModal(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="background:none;border:1px solid #d2d2d7;border-radius:8px;padding:.25rem .625rem;font-size:.78rem;cursor:pointer;color:#1d1d1f;">Edit</button></td>
+                </tr>`).join('');
+
+            // Update stats
+            const active = refs.filter(r => r.status === 'In Progress' || r.status === 'Pending').length;
+            const el1 = document.querySelector('.profile-stat-value:nth-of-type(1)');
+            const statVals = document.querySelectorAll('.profile-stat-value');
+            if (statVals[0]) statVals[0].textContent = refs.length;
+            if (statVals[1]) statVals[1].textContent = active;
+        }
+
+        // ── Edit Referral ───────────────────────────────────────
+        let editingReferral = null;
+        function openEditRefModal(r) {
+            editingReferral = r;
+            document.getElementById('editRefId').value = r.id || '';
+            document.getElementById('editRefFrom').value = r.fromProgram || '';
+            document.getElementById('editRefTo').value = r.toProgram || '';
+            document.getElementById('editRefCategory').value = r.serviceCategory || 'Housing';
+            document.getElementById('editRefStatus').value = r.status || 'Pending';
+            document.getElementById('editRefUrgency').value = r.urgency || 'Medium';
+            document.getElementById('editRefNotes').value = r.assessmentNotes || '';
+            document.getElementById('editRefModal').style.display = 'block';
+        }
+        function closeEditRefModal() { document.getElementById('editRefModal').style.display = 'none'; }
+        function saveEditReferral() {
+            const id = document.getElementById('editRefId').value;
+            if (!id) return;
+            const body = new URLSearchParams({
+                id,
+                fromProgram:     document.getElementById('editRefFrom').value,
+                toProgram:       document.getElementById('editRefTo').value,
+                serviceCategory: document.getElementById('editRefCategory').value,
+                status:          document.getElementById('editRefStatus').value,
+                urgency:         document.getElementById('editRefUrgency').value,
+                assessmentNotes: document.getElementById('editRefNotes').value,
+                staffEmail:      _sess.email || ''
+            });
+            fetch(GAS_URL, { method:'POST', mode:'no-cors', body });
+            closeEditRefModal();
+            showToast('Referral updated', 'success');
+            playChime('success');
+            setTimeout(loadReferrals, 1500);
+        }
+
+        // ── Load Goals ──────────────────────────────────────────
+        function loadGoals() {
+            let url = GAS_URL + '?action=listGoals';
+            if (currentHmisId) url += '&hmisId=' + encodeURIComponent(currentHmisId);
+            jsonpLoad(url, function(data) {
+                const goals = (data && data.goals) ? data.goals : [];
+                renderGoals(goals);
+            }, function() {
+                document.getElementById('goalsContainer').innerHTML = '<p style="color:#aeaeb2;font-size:.875rem;">Could not load goals.</p>';
+            });
+        }
+
+        function renderGoals(goals) {
+            const container = document.getElementById('goalsContainer');
+            const sub = document.getElementById('goalSubtitle');
+            const done = goals.filter(g => g.status === 'Completed').length;
+            if (sub) sub.textContent = goals.length ? `${done} of ${goals.length} completed` : 'No goals yet';
+
+            if (!goals.length) {
+                container.innerHTML = '<p style="color:#aeaeb2;font-size:.875rem;padding:.5rem 0;">No goals added yet.</p>';
+                const sv = document.querySelectorAll('.profile-stat-value');
+                if (sv[2]) sv[2].innerHTML = '0';
+                return;
+            }
+            const sv = document.querySelectorAll('.profile-stat-value');
+            if (sv[2]) sv[2].innerHTML = `${done}<span style="font-size:1rem;color:#aeaeb2;font-weight:500;">/${goals.length}</span>`;
+
+            container.innerHTML = goals.map(g => {
+                const pct = g.status === 'Completed' ? 100 : g.status === 'Not Started' ? 0 : 40;
+                const fillClass = g.status === 'Completed' ? 'complete' : g.status === 'Not Started' ? 'not-started' : '';
+                const pill = g.status === 'Completed'
+                    ? `<span class="status-pill status-completed">Completed</span>`
+                    : g.status === 'Not Started'
+                    ? `<span class="status-pill" style="background:#f5f5f7;color:#6e6e73;">Not Started</span>`
+                    : `<span class="status-pill status-progress">In Progress</span>`;
+                const target = g.targetDate ? fmtDate(g.targetDate) : '';
+                return `<div class="goal-item">
+                    <div class="goal-header">
+                        <div>
+                            <div class="goal-title">${g.goalDescription || '—'}</div>
+                            <div class="goal-category">${g.priority || ''}${target ? ' · Target: ' + target : ''}</div>
+                        </div>
+                        ${pill}
+                    </div>
+                    <div class="goal-progress-bar"><div class="goal-progress-fill ${fillClass}" style="width:${pct}%"></div></div>
+                    <div class="goal-footer"><span>${pct}% complete</span><span>Added by ${g.createdBy || '—'}</span></div>
+                </div>`;
+            }).join('');
+        }
+
+        // ── Add Goal Modal ──────────────────────────────────────
+        function openAddGoalModal() { document.getElementById('addGoalModal').style.display = 'block'; }
+        function closeAddGoalModal() { document.getElementById('addGoalModal').style.display = 'none'; }
+        function saveNewGoal() {
+            const desc = document.getElementById('goalDesc').value.trim();
+            if (!desc) { showToast('Please enter a goal description', 'error'); return; }
+            const body = new URLSearchParams({
+                action:          'addGoal',
+                hmisId:          currentHmisId || '',
+                clientName:      currentClientName || '',
+                goalDescription: desc,
+                priority:        document.getElementById('goalPriority').value,
+                targetDate:      document.getElementById('goalTarget').value,
+                status:          document.getElementById('goalStatus').value,
+                createdBy:       _sess.name || _sess.email || '',
+                staffEmail:      _sess.email || ''
+            });
+            fetch(GAS_URL, { method:'POST', mode:'no-cors', body });
+            closeAddGoalModal();
+            showToast('Goal added', 'success');
+            playChime('success');
+            document.getElementById('goalDesc').value = '';
+            document.getElementById('goalTarget').value = '';
+            setTimeout(loadGoals, 1500);
+        }
+
+        // ── Load Case Notes ─────────────────────────────────────
+        function loadNotes() {
+            let url = GAS_URL + '?action=listCaseNotes';
+            if (currentHmisId) url += '&hmisId=' + encodeURIComponent(currentHmisId);
+            jsonpLoad(url, function(data) {
+                const notes = (data && data.notes) ? data.notes : [];
+                renderNotes(notes);
+            }, function() {
+                document.getElementById('notesContainer').innerHTML = '<p style="color:#aeaeb2;font-size:.875rem;">Could not load notes.</p>';
+            });
+        }
+
+        function renderNotes(notes) {
+            const container = document.getElementById('notesContainer');
+            const sub = document.getElementById('notesSubtitle');
+            if (sub) sub.textContent = notes.length + ' note' + (notes.length !== 1 ? 's' : '');
+            if (!notes.length) {
+                container.innerHTML = '<p style="color:#aeaeb2;font-size:.875rem;padding:.5rem 0;">No case notes yet.</p>';
+                return;
+            }
+            container.innerHTML = [...notes].reverse().map(n => {
+                const initials = (n.createdBy || '??').split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+                return `<div class="note-item">
+                    <div class="note-avatar">${initials}</div>
+                    <div class="note-content">
+                        <div class="note-header">
+                            <span class="note-author">${n.createdBy || '—'}</span>
+                            <span class="note-date">${fmtDate(n.dateCreated)}</span>
+                        </div>
+                        <p class="note-text">${(n.note || '').replace(/</g,'&lt;')}</p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ── Post Case Note ──────────────────────────────────────
+        function addNote() {
+            const text = document.getElementById('newNoteText').value.trim();
+            if (!text) return;
+            const body = new URLSearchParams({
+                action:     'addCaseNote',
+                hmisId:     currentHmisId || '',
+                clientName: currentClientName || '',
+                note:       text,
+                noteType:   'General',
+                createdBy:  _sess.name || _sess.email || '',
+                staffEmail: _sess.email || ''
+            });
+            fetch(GAS_URL, { method:'POST', mode:'no-cors', body });
+
+            // Optimistic UI
+            const initials = (_sess.name || '??').split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+            const today = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+            const container = document.getElementById('notesContainer');
+            const noteHTML = `<div class="note-item" style="animation:slideDown .3s ease;">
+                <div class="note-avatar" style="background:#fff8e1;color:#b45309;">${initials}</div>
+                <div class="note-content">
+                    <div class="note-header">
+                        <span class="note-author">${_sess.name || 'You'}</span>
+                        <span class="note-date">${today}</span>
+                    </div>
+                    <p class="note-text">${text.replace(/</g,'&lt;')}</p>
+                </div>
+            </div>`;
+            container.insertAdjacentHTML('afterbegin', noteHTML);
+            document.getElementById('newNoteText').value = '';
+            showToast('Note saved', 'success');
+            playChime('send');
+        }
+
+        // ── Edit Mode ───────────────────────────────────────────
         function enterEditMode() {
             document.getElementById('profileSection').classList.add('editing');
             document.getElementById('editBtn').style.display = 'none';
             document.getElementById('saveActions').style.display = 'flex';
         }
-
         function cancelEdit() {
             document.getElementById('profileSection').classList.remove('editing');
             document.getElementById('editBtn').style.display = '';
             document.getElementById('saveActions').style.display = 'none';
         }
-
         function saveProfile() {
             document.querySelectorAll('#profileSection .field-input').forEach(input => {
                 const f = input.dataset.f;
                 const span = document.querySelector(`#profileSection .field-value[data-f="${f}"]`);
-                if (!span) return;
-                const val = input.value.trim();
-                if (val) {
-                    span.textContent = val;
-                    span.classList.remove('empty');
-                } else {
-                    span.textContent = 'Not provided';
-                    span.classList.add('empty');
-                }
+                if (!span || span.classList.contains('field-input')) return;
+                const val = input.tagName === 'SELECT' ? input.options[input.selectedIndex].text : input.value.trim();
+                if (val) { span.textContent = val; span.classList.remove('empty'); }
+                else     { span.textContent = 'Not provided'; span.classList.add('empty'); }
             });
-
-            // Sync header elements
-            const nameVal = document.querySelector('[data-f="fullName"]').textContent;
-            const hmisVal = document.querySelector('[data-f="hmisId"]').textContent;
-            const programVal = document.querySelector('[data-f="program"]').textContent;
-            const intakeVal = document.querySelector('[data-f="intakeDate"]').textContent;
-
-            document.getElementById('headerClientName').textContent = nameVal;
-            document.getElementById('headerHmisId').textContent = hmisVal;
-            document.getElementById('headerProgram').textContent = programVal;
-
+            const nameVal = document.querySelector('.field-value[data-f="fullName"]');
+            const hmisVal = document.querySelector('.field-value[data-f="hmisId"]');
+            if (nameVal) document.getElementById('headerClientName').textContent = nameVal.textContent;
+            if (hmisVal) document.getElementById('headerHmisId').textContent = hmisVal.textContent;
             // Update initials
-            const parts = nameVal.trim().split(' ');
-            const initials = parts.length >= 2
-                ? parts[0][0] + parts[parts.length - 1][0]
-                : nameVal.slice(0, 2);
-            document.getElementById('clientInitials').textContent = initials.toUpperCase();
-
+            const name = nameVal ? nameVal.textContent : currentClientName;
+            const parts = name.trim().split(' ');
+            const initials = parts.length >= 2 ? (parts[0][0]+parts[parts.length-1][0]).toUpperCase() : name.slice(0,2).toUpperCase();
+            document.getElementById('clientInitials').textContent = initials;
+            // Save to GAS
+            const body = new URLSearchParams({
+                action:     'updateClient',
+                hmisId:     hmisVal ? hmisVal.textContent : currentHmisId,
+                name:       nameVal ? nameVal.textContent : '',
+                staffEmail: _sess.email || '',
+                updatedBy:  _sess.name || _sess.email || ''
+            });
+            fetch(GAS_URL, { method:'POST', mode:'no-cors', body });
             cancelEdit();
+            showToast('Profile saved', 'success');
+            playChime('success');
         }
 
-        /* ── Add Case Note ── */
-        function addNote() {
-            const text = document.getElementById('newNoteText').value.trim();
-            if (!text) return;
+        // ── Export / Print ──────────────────────────────────────
+        function exportReport() { window.print(); }
 
-            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const noteHTML = `
-                <div class="note-item" style="animation:slideDown 0.3s ease;">
-                    <div class="note-avatar" style="background:#fff8e1;color:#b45309;">YO</div>
-                    <div class="note-content">
-                        <div class="note-header">
-                            <span class="note-author">You</span>
-                            <span class="note-date">${today}</span>
-                        </div>
-                        <p class="note-text">${text.replace(/</g, '&lt;')}</p>
-                    </div>
-                </div>`;
-
-            const inputArea = document.querySelector('.note-input-area');
-            inputArea.insertAdjacentHTML('beforebegin', noteHTML);
-            document.getElementById('newNoteText').value = '';
-        }
-
-        // Show admin link if user is admin
-        const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
-        if (_sess.role === 'admin') {
-            const al = document.getElementById('adminLink');
-            if (al) al.style.display = 'flex';
-        }
+        // ── Init ────────────────────────────────────────────────
+        loadClientData();
     </script>
 </body>
 </html>

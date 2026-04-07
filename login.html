@@ -340,11 +340,12 @@
             const { email, picture } = window._pendingAuth || {};
 
             if (data && data.authorized) {
-                // Always use name from Users sheet — not Google account name
+                // Always use name and program from Users sheet — not Google account
                 const sheetName = (data.name && data.name.trim()) ? data.name.trim() : '';
                 sessionStorage.setItem('hopics_user', JSON.stringify({
                     email, name: sheetName, picture,
-                    role: data.role || 'case_manager'
+                    role:    data.role    || 'case_manager',
+                    program: data.program || ''
                 }));
                 window.location.href = 'dashboard.html';
             } else {
@@ -360,7 +361,7 @@
             if (ok) {
                 // Do not use Google name — name will come from Users sheet
                 sessionStorage.setItem('hopics_user', JSON.stringify({
-                    email, name: '', picture, role: 'case_manager'
+                    email, name: '', picture, role: 'case_manager', program: ''
                 }));
                 window.location.href = 'dashboard.html';
             } else {

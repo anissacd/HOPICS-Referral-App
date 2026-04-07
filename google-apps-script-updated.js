@@ -38,10 +38,10 @@ var MESSAGE_HEADERS = [
   'From', 'To', 'Message', 'Is Read'
 ];
 
-// Users (7 cols):
-//   Email | Name | Role | Status | Date Added | Last Login | Added By
+// Users (8 cols):
+//   Email | Name | Role | Status | Program | Date Added | Last Login | Added By
 var USER_HEADERS = [
-  'Email', 'Name', 'Role', 'Status', 'Date Added', 'Last Login', 'Added By'
+  'Email', 'Name', 'Role', 'Status', 'Program', 'Date Added', 'Last Login', 'Added By'
 ];
 
 // Goals (11 cols):
@@ -196,8 +196,14 @@ function doPost(e) {
     if (data.action === 'updateGoal')      return handleUpdateGoal(data);
     if (data.action === 'addCaseNote')     return handleAddCaseNote(data);
     if (data.action === 'addProgram')      return handleAddProgram(data);
-    if (data.action === 'addOutcome')      return handleAddOutcome(data);
-    if (data.id)                           return handleEdit(data);
+    if (data.action === 'addOutcome')         return handleAddOutcome(data);
+    if (data.action === 'deleteReferral')     return handleDeleteReferral(data);
+    if (data.action === 'updateProgram')      return handleUpdateProgram(data);
+    if (data.action === 'deleteProgram')      return handleDeleteProgram(data);
+    if (data.action === 'updateUserProgram')  return handleUpdateUserProgram(data);
+    if (data.action === 'deleteThread')       return handleDeleteThread(data);
+    if (data.action === 'updateClient')       return handleUpdateClient(data);
+    if (data.id)                              return handleEdit(data);
 
     return handleNewReferral(data);
   } catch (error) {
@@ -224,8 +230,9 @@ function doGet(e) {
       updateLastLogin(email);
       return createJsonOutput({
         authorized: true,
-        role: result.role || 'case_manager',
-        name: result.name || ''
+        role:    result.role    || 'case_manager',
+        name:    result.name    || '',
+        program: result.program || ''
       }, callback);
     }
 
@@ -238,7 +245,19 @@ function doGet(e) {
 
   if (action === 'listReferrals') {
     var referrals = getReferralsFromSheet();
-    if (params.staffEmail) {
+    if (params.hmisId) {
+      var filterHmis = String(params.hmisId).toLowerCase();
+      referrals = referrals.filter(function(r) {
+        return String(r.hmisId || '').toLowerCase() === filterHmis;
+      });
+    } else if (params.program) {
+      // Filter by assigned program — matches fromProgram OR toProgram
+      var filterProg = params.program.toLowerCase();
+      referrals = referrals.filter(function(r) {
+        return String(r.fromProgram || '').toLowerCase() === filterProg ||
+               String(r.toProgram   || '').toLowerCase() === filterProg;
+      });
+    } else if (params.staffEmail) {
       var filterEmail = params.staffEmail.toLowerCase();
       referrals = referrals.filter(function(r) {
         return String(r.staffEmail || '').toLowerCase() === filterEmail;
@@ -464,6 +483,9 @@ function handleUpdateUserRole(data) {
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).toLowerCase() === email) {
       sheet.getRange(i + 1, 3).setValue(newRole); // Column C = Role
+      if (data.program !== undefined) {
+        sheet.getRange(i + 1, 5).setValue(data.program); // Column E = Program
+      }
       logActivity(data.changedBy || '', '', 'Updated Role', 'User', email, 'New role: ' + newRole);
       return createJsonOutput({ success: true });
     }
@@ -500,9 +522,10 @@ function handleNewUser(data) {
     name,
     role,
     'Active',
-    now,
-    '',
-    addedBy
+    data.program || '',   // Program
+    now,                  // Date Added
+    '',                   // Last Login
+    addedBy               // Added By
   ]);
 
   logActivity(addedBy, '', 'Added User', 'User', email, 'Role: ' + role);
@@ -658,11 +681,127 @@ function handleAddOutcome(data) {
   return createJsonOutput({ success: true, outcomeId: outcomeId });
 }
 
+// ── handleDeleteReferral (admin only — enforced on frontend) ──
+function handleDeleteReferral(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Referrals');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Referrals sheet not found.' });
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(data.id)) {
+      logReferralUpdate(data.id, values[i][2], values[i][3], 'Deleted',
+        values[i][14], '', data.deletedBy || '', data.staffEmail || '');
+      sheet.deleteRow(i + 1);
+      return createJsonOutput({ success: true });
+    }
+  }
+  return createJsonOutput({ success: false, message: 'Referral not found.' });
+}
+
+// ── handleUpdateProgram (admin only — enforced on frontend) ───
+function handleUpdateProgram(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Programs');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Programs sheet not found.' });
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(data.programId)) {
+      var row = [
+        values[i][0],
+        data.programName  || values[i][1],
+        data.category     || values[i][2],
+        data.description  !== undefined ? data.description  : values[i][3],
+        data.address      !== undefined ? data.address      : values[i][4],
+        data.phone        !== undefined ? data.phone        : values[i][5],
+        data.contactName  !== undefined ? data.contactName  : values[i][6],
+        data.status       || values[i][7],
+        values[i][8]
+      ];
+      sheet.getRange(i + 1, 1, 1, row.length).setValues([row]);
+      logActivity(data.updatedBy || '', '', 'Updated Program', 'Program', data.programId, data.programName || '');
+      return createJsonOutput({ success: true });
+    }
+  }
+  return createJsonOutput({ success: false, message: 'Program not found.' });
+}
+
+// ── handleDeleteProgram (admin only — enforced on frontend) ───
+function handleDeleteProgram(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Programs');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Programs sheet not found.' });
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(data.programId)) {
+      sheet.deleteRow(i + 1);
+      logActivity(data.deletedBy || '', '', 'Deleted Program', 'Program', data.programId, '');
+      return createJsonOutput({ success: true });
+    }
+  }
+  return createJsonOutput({ success: false, message: 'Program not found.' });
+}
+
+// ── handleUpdateUserProgram ───────────────────────────────────
+function handleUpdateUserProgram(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Users sheet not found.' });
+  var email   = String(data.email   || '').toLowerCase();
+  var program = data.program || '';
+  var values  = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]).toLowerCase() === email) {
+      sheet.getRange(i + 1, 5).setValue(program); // Column E = Program
+      logActivity(data.changedBy || '', '', 'Updated Program Assignment', 'User', email, 'Program: ' + program);
+      return createJsonOutput({ success: true });
+    }
+  }
+  return createJsonOutput({ success: false, message: 'User not found.' });
+}
+
+// ── handleDeleteThread ────────────────────────────────────────
+function handleDeleteThread(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Messages');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Messages sheet not found.' });
+  var threadId = data.threadId || '';
+  if (!threadId) return createJsonOutput({ success: false, message: 'Thread ID required.' });
+  var values = sheet.getDataRange().getValues();
+  var deleted = 0;
+  for (var i = values.length - 1; i >= 1; i--) {
+    if (String(values[i][1]) === String(threadId)) {
+      sheet.deleteRow(i + 1);
+      deleted++;
+    }
+  }
+  logActivity(data.deletedBy || '', '', 'Deleted Thread', 'Message', threadId, deleted + ' messages removed');
+  return createJsonOutput({ success: true, deleted: deleted });
+}
+
+// ── handleUpdateClient ────────────────────────────────────────
+function handleUpdateClient(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Clients');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Clients sheet not found.' });
+  var hmisId = data.hmisId || '';
+  if (!hmisId) return createJsonOutput({ success: false, message: 'HMIS ID required.' });
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(hmisId)) {
+      var row = i + 1;
+      if (data.name)   sheet.getRange(row, 2).setValue(data.name);
+      if (data.dob)    sheet.getRange(row, 3).setValue(data.dob);
+      if (data.status) sheet.getRange(row, 5).setValue(data.status);
+      sheet.getRange(row, 8).setValue(new Date()); // Last Activity
+      logActivity(data.staffEmail || '', data.updatedBy || '', 'Updated Client', 'Client', hmisId, data.name || hmisId);
+      return createJsonOutput({ success: true });
+    }
+  }
+  // Client not found — append new row
+  sheet.appendRow([hmisId, data.name || '', data.dob || '', new Date(), data.status || 'Active', data.updatedBy || '', 0, new Date()]);
+  return createJsonOutput({ success: true, created: true });
+}
+
 // ── Users Sheet Helpers ───────────────────────────────────────
+// Users cols (0-based):
+// [0]Email [1]Name [2]Role [3]Status [4]Program [5]Date Added [6]Last Login [7]Added By
 function getUserRecord(email) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
   if (!sheet) return null;
-
   var values = sheet.getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).toLowerCase() === String(email).toLowerCase()) {
@@ -671,9 +810,10 @@ function getUserRecord(email) {
         name:      values[i][1] || '',
         role:      values[i][2] || 'case_manager',
         status:    values[i][3] || 'Active',
-        dateAdded: values[i][4] || '',
-        lastLogin: values[i][5] || '',
-        addedBy:   values[i][6] || ''
+        program:   values[i][4] || '',
+        dateAdded: values[i][5] || '',
+        lastLogin: values[i][6] || '',
+        addedBy:   values[i][7] || ''
       };
     }
   }
@@ -683,11 +823,10 @@ function getUserRecord(email) {
 function updateLastLogin(email) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
   if (!sheet) return;
-
   var values = sheet.getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).toLowerCase() === String(email).toLowerCase()) {
-      sheet.getRange(i + 1, 6).setValue(new Date()); // Column F = Last Login
+      sheet.getRange(i + 1, 7).setValue(new Date()); // Column G = Last Login
       return;
     }
   }
@@ -696,19 +835,18 @@ function updateLastLogin(email) {
 function getUsersFromSheet() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
   if (!sheet) return [];
-
   var values = sheet.getDataRange().getValues();
   if (values.length < 2) return [];
-
   return values.slice(1).filter(function(row) { return row[0]; }).map(function(row) {
     return {
       email:     row[0] || '',
       name:      row[1] || '',
       role:      row[2] || '',
       status:    row[3] || '',
-      dateAdded: row[4] instanceof Date ? row[4].toISOString().slice(0,10) : row[4] || '',
-      lastLogin: row[5] instanceof Date ? row[5].toISOString() : row[5] || '',
-      addedBy:   row[6] || ''
+      program:   row[4] || '',
+      dateAdded: row[5] instanceof Date ? row[5].toISOString().slice(0,10) : row[5] || '',
+      lastLogin: row[6] instanceof Date ? row[6].toISOString() : row[6] || '',
+      addedBy:   row[7] || ''
     };
   });
 }

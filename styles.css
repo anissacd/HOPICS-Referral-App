@@ -1093,3 +1093,32 @@ h1, h2, h3 {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* ── Toast notifications ── */
+#_hopics_toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1c1c1e;
+    color: #f5f5f7;
+    padding: 0.7rem 1.5rem;
+    border-radius: 30px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    z-index: 99999;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+#_hopics_toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+#_hopics_toast.toast-success { background: #166534; }
+#_hopics_toast.toast-error   { background: #991b1b; }
+#_hopics_toast.toast-info    { background: #1c1c1e; }

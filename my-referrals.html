@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HOPICS — My Referrals</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="hopics-utils.js"></script>
     <style>
         /* ── Modal ── */
         .modal-overlay {
@@ -154,7 +155,7 @@
 </head>
 <body>
 <!-- Fixed profile button top-right -->
-<div id="profileBtn" onclick="openProfileModal()">
+<div id="profileBtn" onclick="window.location.href='staff-profile.html'">
     <div id="sidebarAvatar" style="width:30px;height:30px;border-radius:50%;background:#ffd700;display:grid;place-items:center;font-weight:800;font-size:0.7rem;color:#111;flex-shrink:0;overflow:hidden;">?</div>
     <span id="sidebarName" style="font-size:0.78rem;font-weight:600;color:#f5f5f7;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
 </div>
@@ -475,8 +476,11 @@
         let referralsData = [];
 
         const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
-        const currentUserEmail = _sess.email || '';
-        const currentUserName  = _sess.name  || '';
+        const currentUserEmail = _sess.email   || '';
+        const currentUserName  = _sess.name    || '';
+        const currentUserRole  = _sess.role    || '';
+        const currentProgram   = _sess.program || '';
+        const isAdmin = currentUserRole === 'admin' || currentUserRole === 'supervisor';
 
         const urgencyStyles = {
             low:      { bg: '#fff8e1', color: '#b45309' },
@@ -540,6 +544,9 @@
             tbody.innerHTML = list.map(r => {
                 const urg = urgencyStyles[r.urgency] || urgencyStyles.medium;
                 const source = r.fromProgram || r.referralSource || '—';
+                const deleteBtn = isAdmin
+                    ? `<button class="table-action" style="background:#fee2e2;color:#991b1b;margin-left:0.35rem;" onclick="deleteReferral('${r.id}','${(r.clientName||'').replace(/'/g,"\\'")}')">Delete</button>`
+                    : '';
                 return `<tr>
                     <td><strong>${r.clientName || '—'}</strong></td>
                     <td>${toTitle(r.serviceCategory || '')}</td>
@@ -547,7 +554,10 @@
                     <td><span class="status-pill" style="background:${urg.bg};color:${urg.color};">${toTitle(r.urgency || 'medium')}</span></td>
                     <td><span class="status-pill ${statusClass[r.status] || 'status-pending'}">${statusLabel[r.status] || toTitle(r.status || '')}</span></td>
                     <td>${fmtDate(r.timestamp || r.created)}</td>
-                    <td><button class="table-action" onclick="openEdit('${r.id}')">Edit</button></td>
+                    <td style="white-space:nowrap;">
+                        <button class="table-action" onclick="openEdit('${r.id}')">Edit</button>
+                        ${deleteBtn}
+                    </td>
                 </tr>`;
             }).join('');
         }
@@ -577,10 +587,20 @@
                 renderReferrals(data);
             };
 
+            // Admin/supervisor: all referrals; staff with program: filter by program; else by email
+            let filterParam = '';
+            if (!isAdmin) {
+                if (currentProgram) {
+                    filterParam = '&program=' + encodeURIComponent(currentProgram);
+                } else {
+                    filterParam = '&staffEmail=' + encodeURIComponent(currentUserEmail);
+                }
+            }
+
             const script = document.createElement('script');
             script.src = GOOGLE_SCRIPT_URL +
                 '?action=listReferrals' +
-                '&staffEmail=' + encodeURIComponent(currentUserEmail) +
+                filterParam +
                 '&callback=' + cbName;
             script.onerror = function() {
                 try { delete window[cbName]; } catch(e) {}
@@ -596,6 +616,17 @@
             }, 20000);
 
             document.head.appendChild(script);
+        }
+
+        function deleteReferral(id, clientName) {
+            if (!confirm('Delete referral for ' + clientName + '? This cannot be undone.')) return;
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST', mode: 'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ action: 'deleteReferral', id, deletedBy: currentUserName, staffEmail: currentUserEmail }).toString()
+            }).catch(() => {});
+            referralsData = referralsData.filter(r => r.id !== id);
+            renderReferralTable();
         }
 
         function openEdit(id) {

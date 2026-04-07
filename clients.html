@@ -261,6 +261,15 @@
                     </svg>
                     <span>Messages</span>
                 </a>
+                <a href="community.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/>
+                        <circle cx="12" cy="9" r="3"/>
+                        <path d="M22 20a10 10 0 1 0-20 0"/>
+                    </svg>
+                    <span>Community</span>
+                </a>
                 <a href="admin.html" id="adminLink" style="display:none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -344,10 +353,6 @@
                 </select>
                 <select class="filter-select" id="caseManagerFilter" onchange="filterClients()">
                     <option value="">All Case Managers</option>
-                    <option value="ashley">Ashley R.</option>
-                    <option value="carlos">Carlos M.</option>
-                    <option value="elena">Elena V.</option>
-                    <option value="marcus">Marcus D.</option>
                 </select>
             </div>
 
@@ -382,13 +387,6 @@
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
 
         let allClients = [];
-
-        const caseManagerLabel = {
-            ashley: 'Ashley R.',
-            carlos: 'Carlos M.',
-            elena:  'Elena V.',
-            marcus: 'Marcus D.'
-        };
 
         const housingClass = {
             'Active':       'housing-active',
@@ -453,7 +451,7 @@
 
             tbody.innerHTML = clients.map(c => {
                 const hClass = housingClass[c.status] || 'housing-inactive';
-                const cmLabel = caseManagerLabel[c.caseManager] || c.caseManager || '—';
+                const cmLabel = c.caseManager || '—';
                 const profileUrl = 'client-profile.html?hmisId=' + encodeURIComponent(c.hmisId) + '&name=' + encodeURIComponent(c.name);
                 return `<tr>
                     <td><span class="hmis-badge">${c.hmisId}</span></td>
@@ -503,6 +501,17 @@
                 allClients = [];
             }
             computeStats(allClients);
+            // Populate case manager filter from real data
+            const cmSel = document.getElementById('caseManagerFilter');
+            if (cmSel) {
+                const cms = [...new Set(allClients.map(c => c.caseManager).filter(Boolean))].sort();
+                while (cmSel.options.length > 1) cmSel.remove(1);
+                cms.forEach(function(cm) {
+                    const opt = document.createElement('option');
+                    opt.value = cm; opt.textContent = cm;
+                    cmSel.appendChild(opt);
+                });
+            }
             renderClients(allClients);
         }
 

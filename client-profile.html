@@ -527,6 +527,15 @@
                     </svg>
                     <span>Messages</span>
                 </a>
+                <a href="community.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/>
+                        <circle cx="12" cy="9" r="3"/>
+                        <path d="M22 20a10 10 0 1 0-20 0"/>
+                    </svg>
+                    <span>Community</span>
+                </a>
                 <a href="admin.html" id="adminLink" style="display:none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -585,13 +594,13 @@
 
             <!-- Client Header -->
             <div class="client-header">
-                <div class="client-avatar" id="clientInitials">ML</div>
+                <div class="client-avatar" id="clientInitials">—</div>
                 <div class="client-header-info">
-                    <div class="client-name" id="headerClientName">Maria Lopez</div>
+                    <div class="client-name" id="headerClientName">—</div>
                     <div class="client-meta">
-                        <div class="hmis-badge"><span>HMIS</span> <span id="headerHmisId">HTX-2024-00471</span></div>
+                        <div class="hmis-badge"><span>HMIS</span> <span id="headerHmisId">—</span></div>
                         <div class="status-active">Active</div>
-                        <div class="meta-pill" id="headerIntake">Intake: Mar 12, 2024</div>
+                        <div class="meta-pill" id="headerIntake"></div>
                     </div>
                 </div>
                 <div class="client-header-actions" id="editingActions">
@@ -629,23 +638,23 @@
             <div class="profile-stats">
                 <div class="profile-stat">
                     <div class="profile-stat-label">Total Referrals</div>
-                    <div class="profile-stat-value">4</div>
+                    <div class="profile-stat-value" id="statTotalReferrals">—</div>
                     <div class="profile-stat-sub">Since intake</div>
                 </div>
                 <div class="profile-stat">
                     <div class="profile-stat-label">Active Referrals</div>
-                    <div class="profile-stat-value">2</div>
+                    <div class="profile-stat-value" id="statActiveReferrals">—</div>
                     <div class="profile-stat-sub">In progress</div>
                 </div>
                 <div class="profile-stat">
                     <div class="profile-stat-label">Goals</div>
-                    <div class="profile-stat-value">1<span style="font-size:1rem;color:#aeaeb2;font-weight:500;">/3</span></div>
+                    <div class="profile-stat-value" id="statGoals">—</div>
                     <div class="profile-stat-sub">Completed</div>
                 </div>
                 <div class="profile-stat">
                     <div class="profile-stat-label">Days in Program</div>
-                    <div class="profile-stat-value">25</div>
-                    <div class="profile-stat-sub">Since Mar 12, 2024</div>
+                    <div class="profile-stat-value" id="statDaysInProgram">—</div>
+                    <div class="profile-stat-sub" id="statIntakeSub"></div>
                 </div>
             </div>
 
@@ -674,8 +683,8 @@
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Insurance Type</span>
-                                <span class="field-value" data-f="insuranceId">Medi-Cal</span>
-                                <input class="field-input" data-f="insuranceId" value="Medi-Cal" placeholder="Insurance type">
+                                <span class="field-value empty" data-f="insuranceId">—</span>
+                                <input class="field-input" data-f="insuranceId" value="" placeholder="Insurance type">
                             </div>
                         </div>
 
@@ -684,18 +693,19 @@
                         <div class="profile-fields" style="margin-top:0.75rem;">
                             <div class="profile-field">
                                 <span class="field-label">Full Name</span>
-                                <span class="field-value" data-f="fullName">Maria Lopez</span>
-                                <input class="field-input" data-f="fullName" value="Maria Lopez" placeholder="Full name">
+                                <span class="field-value" data-f="fullName">—</span>
+                                <input class="field-input" data-f="fullName" value="" placeholder="Full name">
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Date of Birth</span>
-                                <span class="field-value" data-f="dob">June 14, 1989</span>
-                                <input class="field-input" type="date" data-f="dob" value="1989-06-14">
+                                <span class="field-value" data-f="dob">—</span>
+                                <input class="field-input" type="date" data-f="dob" value="">
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Gender</span>
-                                <span class="field-value" data-f="gender">Female</span>
+                                <span class="field-value" data-f="gender">—</span>
                                 <select class="field-input" data-f="gender">
+                                    <option value="">— Select —</option>
                                     <option>Female</option><option>Male</option>
                                     <option>Non-binary</option><option>Transgender Female</option>
                                     <option>Transgender Male</option><option>Prefer not to say</option>
@@ -703,13 +713,14 @@
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Pronouns</span>
-                                <span class="field-value" data-f="pronouns">She / Her</span>
-                                <input class="field-input" data-f="pronouns" value="She / Her" placeholder="e.g. She/Her">
+                                <span class="field-value" data-f="pronouns">—</span>
+                                <input class="field-input" data-f="pronouns" value="" placeholder="e.g. She/Her">
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Race</span>
-                                <span class="field-value" data-f="race">Hispanic / Latino</span>
+                                <span class="field-value" data-f="race">—</span>
                                 <select class="field-input" data-f="race">
+                                    <option value="">— Select —</option>
                                     <option>Hispanic / Latino</option>
                                     <option>Black / African American</option>
                                     <option>White</option>
@@ -722,8 +733,8 @@
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Primary Language</span>
-                                <span class="field-value" data-f="language">Spanish</span>
-                                <input class="field-input" data-f="language" value="Spanish" placeholder="Language">
+                                <span class="field-value" data-f="language">—</span>
+                                <input class="field-input" data-f="language" value="" placeholder="Language">
                             </div>
                         </div>
 
@@ -732,8 +743,8 @@
                         <div class="profile-fields" style="margin-top:0.75rem;">
                             <div class="profile-field">
                                 <span class="field-label">Phone</span>
-                                <span class="field-value" data-f="phone">(213) 555-0182</span>
-                                <input class="field-input" type="tel" data-f="phone" value="(213) 555-0182" placeholder="Phone number">
+                                <span class="field-value" data-f="phone">—</span>
+                                <input class="field-input" type="tel" data-f="phone" value="" placeholder="Phone number">
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Email</span>
@@ -742,8 +753,8 @@
                             </div>
                             <div class="profile-field field-span-2">
                                 <span class="field-label">Current Address</span>
-                                <span class="field-value" data-f="address">1234 S. Figueroa St, Los Angeles, CA 90015</span>
-                                <input class="field-input" data-f="address" value="1234 S. Figueroa St, Los Angeles, CA 90015" placeholder="Full address">
+                                <span class="field-value" data-f="address">—</span>
+                                <input class="field-input" data-f="address" value="" placeholder="Full address">
                             </div>
                         </div>
 
@@ -752,8 +763,9 @@
                         <div class="profile-fields" style="margin-top:0.75rem;">
                             <div class="profile-field">
                                 <span class="field-label">Housing Status</span>
-                                <span class="field-value" data-f="housing">Literally Homeless</span>
+                                <span class="field-value" data-f="housing">—</span>
                                 <select class="field-input" data-f="housing">
+                                    <option value="">— Select —</option>
                                     <option>Literally Homeless</option>
                                     <option>At Risk of Homelessness</option>
                                     <option>Unstably Housed</option>
@@ -763,8 +775,9 @@
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Veteran Status</span>
-                                <span class="field-value" data-f="veteran">Non-Veteran</span>
+                                <span class="field-value" data-f="veteran">—</span>
                                 <select class="field-input" data-f="veteran">
+                                    <option value="">— Select —</option>
                                     <option>Non-Veteran</option>
                                     <option>Veteran</option>
                                     <option>Unknown</option>
@@ -772,7 +785,7 @@
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Disability Status</span>
-                                <span class="field-value" data-f="disability">Physical</span>
+                                <span class="field-value" data-f="disability">—</span>
                                 <select class="field-input" data-f="disability">
                                     <option value="">None</option>
                                     <option>Physical</option>
@@ -784,8 +797,9 @@
                             </div>
                             <div class="profile-field">
                                 <span class="field-label">Monthly Income</span>
-                                <span class="field-value" data-f="income">No income</span>
+                                <span class="field-value" data-f="income">—</span>
                                 <select class="field-input" data-f="income">
+                                    <option value="">— Select —</option>
                                     <option>No income</option>
                                     <option>&lt;$500/mo</option>
                                     <option>$500-$1000/mo</option>
@@ -1148,10 +1162,10 @@
 
             // Update stats
             const active = refs.filter(r => r.status === 'In Progress' || r.status === 'Pending').length;
-            const el1 = document.querySelector('.profile-stat-value:nth-of-type(1)');
-            const statVals = document.querySelectorAll('.profile-stat-value');
-            if (statVals[0]) statVals[0].textContent = refs.length;
-            if (statVals[1]) statVals[1].textContent = active;
+            const statTotal = document.getElementById('statTotalReferrals');
+            const statActive = document.getElementById('statActiveReferrals');
+            if (statTotal) statTotal.textContent = refs.length;
+            if (statActive) statActive.textContent = active;
         }
 
         // ── Edit Referral ───────────────────────────────────────

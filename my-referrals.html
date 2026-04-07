@@ -151,6 +151,109 @@
         @media (max-width: 640px) {
             .modal-form-row { grid-template-columns: 1fr; }
         }
+
+        /* ── Referral Cards ── */
+        .referrals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 1.125rem;
+            padding: 0.25rem 0;
+        }
+
+        .referral-card {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e5e5ea;
+            padding: 1.125rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .referral-card:hover {
+            box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .referral-card-top {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+        }
+
+        .referral-avatar {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            color: #1a1a1a;
+        }
+
+        .referral-card-identity { flex: 1; min-width: 0; }
+
+        .referral-client-name {
+            font-size: 0.975rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            text-decoration: none;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color 0.15s;
+        }
+
+        .referral-client-name:hover { color: #b45309; }
+
+        .referral-hmis {
+            font-size: 0.72rem;
+            color: #aeaeb2;
+            margin-top: 0.15rem;
+        }
+
+        .referral-card-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .referral-card-program {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            flex-wrap: wrap;
+        }
+
+        .referral-card-program .prog-name {
+            background: #f5f5f7;
+            border-radius: 6px;
+            padding: 0.15rem 0.55rem;
+            font-weight: 500;
+            color: #1d1d1f;
+            font-size: 0.75rem;
+        }
+
+        .referral-card-program .prog-arrow { color: #aeaeb2; font-size: 0.875rem; }
+
+        .referral-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 0.625rem;
+            border-top: 1px solid #f5f5f7;
+            gap: 0.5rem;
+        }
+
+        .referral-card-date { font-size: 0.75rem; color: #aeaeb2; }
+
+        .referral-card-actions { display: flex; gap: 0.375rem; }
     </style>
 </head>
 <body>
@@ -210,6 +313,15 @@
                     </svg>
                     <span>Messages</span>
                 </a>
+                <a href="community.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/>
+                        <circle cx="12" cy="9" r="3"/>
+                        <path d="M22 20a10 10 0 1 0-20 0"/>
+                    </svg>
+                    <span>Community</span>
+                </a>
                 <a href="admin.html" id="adminLink" style="display:none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -236,7 +348,7 @@
                     <h1>My Referrals</h1>
                     <p>Referrals assigned to you for follow-up and management.</p>
                 </div>
-                <div class="quick-actions">
+                <div class="quick-actions" style="flex-wrap:wrap;gap:0.5rem;">
                     <div class="filter-bar">
                         <label for="statusFilter">Status:</label>
                         <select class="filter-select" id="statusFilter">
@@ -245,6 +357,17 @@
                             <option value="in-progress">In Progress</option>
                             <option value="completed">Completed</option>
                             <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                    <!-- Admin-only filters -->
+                    <div id="adminFilters" style="display:none;align-items:center;gap:.75rem;flex-wrap:wrap;">
+                        <label class="filter-bar" style="font-size:0.875rem;font-weight:600;color:#6e6e73;">Program:</label>
+                        <select class="filter-select" id="programFilter">
+                            <option value="">All Programs</option>
+                        </select>
+                        <label style="font-size:0.875rem;font-weight:600;color:#6e6e73;">Staff:</label>
+                        <select class="filter-select" id="staffFilter">
+                            <option value="">All Staff</option>
                         </select>
                     </div>
                     <a class="btn btn-primary" href="referral.html">
@@ -267,22 +390,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="table-wrapper">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Client</th>
-                                <th>Category</th>
-                                <th>Source</th>
-                                <th>Urgency</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="referralsTable"></tbody>
-                    </table>
-                </div>
+                <div class="referrals-grid" id="referralsGrid"></div>
             </section>
         </main>
     </div>
@@ -539,60 +647,98 @@
             return s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         }
 
-        function showLoading() {
-            const tbody = document.getElementById('referralsTable');
-            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>Loading referrals…</p></div></td></tr>`;
+        function getInitials(name) {
+            if (!name || name === '?') return '?';
+            const p = name.trim().split(' ');
+            return p.length >= 2 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : name.slice(0,2).toUpperCase();
         }
 
-        function hideLoading() { /* handled by renderReferralTable */ }
+        function avatarColor(name) {
+            const palettes = ['#ffd700','#a7f3d0','#bfdbfe','#fde68a','#e9d5ff','#fbcfe8','#fed7aa','#d1fae5','#cffafe','#f0abfc'];
+            return palettes[(name || '?').charCodeAt(0) % palettes.length];
+        }
+
+        function showLoading() {
+            const grid = document.getElementById('referralsGrid');
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>Loading referrals…</p></div>`;
+        }
+
+        function hideLoading() { /* handled by renderReferralCards */ }
 
         function showEmpty(msg) {
-            const tbody = document.getElementById('referralsTable');
-            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>${msg}</p></div></td></tr>`;
+            const grid = document.getElementById('referralsGrid');
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">${msg}</div>`;
             document.getElementById('referralCount').textContent = '0 referrals';
         }
 
-        function renderReferralTable() {
-            const tbody = document.getElementById('referralsTable');
+        function renderReferralCards() {
+            const grid  = document.getElementById('referralsGrid');
             const count = document.getElementById('referralCount');
-            const statusFilter = document.getElementById('statusFilter');
-            const selectedStatus = statusFilter ? statusFilter.value : '';
+            const selectedStatus  = document.getElementById('statusFilter')?.value  || '';
+            const selectedProgram = document.getElementById('programFilter')?.value || '';
+            const selectedStaff   = document.getElementById('staffFilter')?.value   || '';
+
             const list = referralsData.filter(r => {
                 const ns = normalizeStatus(r.status);
-                if (selectedStatus && ns !== selectedStatus) return false;
+                if (selectedStatus  && ns !== selectedStatus) return false;
+                if (selectedProgram && (r.fromProgram || '') !== selectedProgram && (r.toProgram || '') !== selectedProgram) return false;
+                if (selectedStaff   && (r.submittedBy || r.staffEmail || '') !== selectedStaff) return false;
                 return true;
             });
             count.textContent = `${list.length} referral${list.length !== 1 ? 's' : ''}`;
 
             if (list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><p>No referrals assigned to this staff member.</p></div></td></tr>`;
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>No referrals found.</p></div>`;
                 return;
             }
 
-            tbody.innerHTML = list.map(r => {
+            grid.innerHTML = list.map(r => {
                 r.status = normalizeStatus(r.status);
                 const urg = urgencyStyles[r.urgency] || urgencyStyles.medium;
-                const source = r.fromProgram || r.referralSource || '—';
-                const deleteBtn = isAdmin
-                    ? `<button class="table-action" style="background:#fee2e2;color:#991b1b;margin-left:0.35rem;" onclick="deleteReferral('${r.id}','${(r.clientName||'').replace(/'/g,"\\'")}')">Delete</button>`
-                    : '';
+                const source    = r.fromProgram || r.referralSource || '—';
+                const toProgram = r.toProgram   || '—';
                 const profileUrl = r.hmisId
                     ? `client-profile.html?hmisId=${encodeURIComponent(r.hmisId)}&name=${encodeURIComponent(r.clientName || '')}`
                     : `client-profile.html?name=${encodeURIComponent(r.clientName || '')}`;
-                return `<tr>
-                    <td><a href="${profileUrl}" style="color:#1d1d1f;font-weight:600;text-decoration:none;border-bottom:1px solid #d2d2d7;">${r.clientName || '—'}</a></td>
-                    <td>${toTitle(r.serviceCategory || '')}</td>
-                    <td>${source}</td>
-                    <td><span class="status-pill" style="background:${urg.bg};color:${urg.color};">${toTitle(r.urgency || 'medium')}</span></td>
-                    <td><span class="status-pill ${statusClass[r.status] || 'status-pending'}">${statusLabel[r.status] || toTitle(r.status || '')}</span></td>
-                    <td>${fmtDate(r.timestamp || r.created)}</td>
-                    <td style="white-space:nowrap;">
-                        <button class="table-action" onclick="openEdit('${r.id}')">Edit</button>
-                        ${deleteBtn}
-                    </td>
-                </tr>`;
+                const initials  = getInitials(r.clientName || '?');
+                const avatarBg  = avatarColor(r.clientName);
+                const submitted = r.submittedBy || r.staffName || '';
+                const safeId    = (r.id || '').replace(/'/g, "\\'");
+                const safeName  = (r.clientName || '').replace(/'/g, "\\'");
+                const deleteBtn = isAdmin
+                    ? `<button class="btn btn-secondary" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5;font-size:0.75rem;padding:0.3rem 0.7rem;" onclick="deleteReferral('${safeId}','${safeName}')">Delete</button>`
+                    : '';
+                return `<div class="referral-card">
+                    <div class="referral-card-top">
+                        <div class="referral-avatar" style="background:${avatarBg};">${initials}</div>
+                        <div class="referral-card-identity">
+                            <a href="${profileUrl}" class="referral-client-name">${r.clientName || '—'}</a>
+                            <div class="referral-hmis">${r.hmisId ? 'HMIS: ' + r.hmisId : (submitted ? 'By: ' + submitted : '')}</div>
+                        </div>
+                    </div>
+                    <div class="referral-card-pills">
+                        <span class="status-pill" style="background:#f5f5f7;color:#1d1d1f;font-size:0.72rem;">${toTitle(r.serviceCategory || 'Unknown')}</span>
+                        <span class="status-pill" style="background:${urg.bg};color:${urg.color};font-size:0.72rem;">${toTitle(r.urgency || 'Medium')}</span>
+                        <span class="status-pill ${statusClass[r.status] || 'status-pending'}" style="font-size:0.72rem;">${statusLabel[r.status] || toTitle(r.status || '')}</span>
+                    </div>
+                    <div class="referral-card-program">
+                        <span class="prog-name">${source}</span>
+                        <span class="prog-arrow">→</span>
+                        <span class="prog-name">${toProgram}</span>
+                    </div>
+                    <div class="referral-card-footer">
+                        <span class="referral-card-date">${fmtDate(r.timestamp || r.created)}</span>
+                        <div class="referral-card-actions">
+                            <button class="btn btn-secondary" style="font-size:0.75rem;padding:0.3rem 0.7rem;" onclick="openEdit('${safeId}')">Edit</button>
+                            ${deleteBtn}
+                        </div>
+                    </div>
+                </div>`;
             }).join('');
         }
+
+        // Keep old name as alias for any remaining internal references
+        function renderReferralTable() { renderReferralCards(); }
 
         function renderReferrals(data) {
             if (Array.isArray(data)) {
@@ -739,10 +885,60 @@
         }
 
         const statusFilterEl = document.getElementById('statusFilter');
-        if (statusFilterEl) {
-            statusFilterEl.addEventListener('change', function() {
-                renderReferralTable();
-            });
+        if (statusFilterEl) statusFilterEl.addEventListener('change', renderReferralCards);
+
+        // Show admin filters and populate them
+        if (isAdmin) {
+            const af = document.getElementById('adminFilters');
+            if (af) af.style.display = 'flex';
+
+            document.getElementById('programFilter').addEventListener('change', renderReferralCards);
+            document.getElementById('staffFilter').addEventListener('change', renderReferralCards);
+
+            // Load programs for filter
+            (function() {
+                const cb = '_progFiltCb' + Date.now();
+                window[cb] = function(data) {
+                    try { delete window[cb]; } catch(e) {}
+                    if (!data || !data.success || !Array.isArray(data.programs)) return;
+                    const sel = document.getElementById('programFilter');
+                    if (!sel) return;
+                    data.programs.forEach(function(p) {
+                        const name = p.programName || p.name || '';
+                        if (!name) return;
+                        const opt = document.createElement('option');
+                        opt.value = name; opt.textContent = name;
+                        sel.appendChild(opt);
+                    });
+                };
+                const s = document.createElement('script');
+                s.src = GOOGLE_SCRIPT_URL + '?action=listPrograms&callback=' + cb;
+                s.onerror = function() { try { delete window[cb]; } catch(e) {} };
+                document.head.appendChild(s);
+            })();
+
+            // Load staff list for filter
+            (function() {
+                const cb = '_staffFiltCb' + Date.now();
+                window[cb] = function(data) {
+                    try { delete window[cb]; } catch(e) {}
+                    if (!data || !data.success || !Array.isArray(data.users)) return;
+                    const sel = document.getElementById('staffFilter');
+                    if (!sel) return;
+                    data.users.forEach(function(u) {
+                        const email = u.email || '';
+                        const name  = u.name  || email;
+                        if (!email) return;
+                        const opt = document.createElement('option');
+                        opt.value = email; opt.textContent = name;
+                        sel.appendChild(opt);
+                    });
+                };
+                const s = document.createElement('script');
+                s.src = GOOGLE_SCRIPT_URL + '?action=listUsers&callback=' + cb;
+                s.onerror = function() { try { delete window[cb]; } catch(e) {} };
+                document.head.appendChild(s);
+            })();
         }
 
         document.getElementById('editForm').addEventListener('submit', function(e) {
@@ -780,8 +976,8 @@
 
         loadReferrals();
 
-        // Show admin link if user is admin
-        if (_sess.role === 'admin') {
+        // Show admin link if user is admin/supervisor
+        if (isAdmin) {
             const al = document.getElementById('adminLink');
             if (al) al.style.display = 'flex';
         }

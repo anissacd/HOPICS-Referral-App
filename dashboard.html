@@ -285,6 +285,15 @@
                     </svg>
                     <span>Messages</span>
                 </a>
+                <a href="community.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/>
+                        <circle cx="12" cy="9" r="3"/>
+                        <path d="M22 20a10 10 0 1 0-20 0"/>
+                    </svg>
+                    <span>Community</span>
+                </a>
                 <a href="admin.html" id="adminLink" style="display:none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -372,7 +381,7 @@
                     </div>
                     <div>
                         <div class="flow-card-label">Referrals Sent Out</div>
-                        <div class="flow-card-value">97</div>
+                        <div class="flow-card-value" id="flowSent">—</div>
                     </div>
                 </div>
                 <div class="flow-card">
@@ -385,7 +394,7 @@
                     </div>
                     <div>
                         <div class="flow-card-label">Referrals Received</div>
-                        <div class="flow-card-value">87</div>
+                        <div class="flow-card-value" id="flowReceived">—</div>
                     </div>
                 </div>
                 <div class="flow-card">
@@ -400,7 +409,7 @@
                     </div>
                     <div>
                         <div class="flow-card-label">Programs Active</div>
-                        <div class="flow-card-value">8</div>
+                        <div class="flow-card-value" id="flowPrograms">—</div>
                     </div>
                 </div>
             </div>
@@ -723,6 +732,18 @@
                 }).join('');
             }
 
+            // Flow summary cards
+            let totalSent = 0, totalReceived = 0;
+            referrals.forEach(r => {
+                if (r.fromProgram) totalSent++;
+                if (r.toProgram) totalReceived++;
+            });
+            const flowSentEl = document.getElementById('flowSent');
+            const flowReceivedEl = document.getElementById('flowReceived');
+            const flowProgramsEl = document.getElementById('flowPrograms');
+            if (flowSentEl) flowSentEl.textContent = totalSent;
+            if (flowReceivedEl) flowReceivedEl.textContent = totalReceived;
+
             // Program flow
             const programMap = {};
             referrals.forEach(r => {
@@ -738,6 +759,7 @@
             });
             const flowBody = document.getElementById('programFlowBody');
             const flowBars = document.getElementById('programFlowBars');
+            if (flowProgramsEl) flowProgramsEl.textContent = Object.keys(programMap).length;
             if (flowBars && Object.keys(programMap).length > 0) {
                 const maxVal = Math.max(...Object.values(programMap).map(p => Math.max(p.sent, p.received)), 1);
                 flowBars.innerHTML = Object.entries(programMap).map(([prog, p]) => {

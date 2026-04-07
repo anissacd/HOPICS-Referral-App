@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPICS — Staff Hub</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="hopics-utils.js"></script>
+    <style>
+        /* ── Community / Staff Hub layout ── */
+        .community-main {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            background: #f5f5f7;
+        }
+
+        /* ── Top Bar ── */
+        .top-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e5ea;
+            padding: 0 2rem;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .top-bar-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            letter-spacing: -0.015em;
+        }
+
+        .top-bar-user {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .top-bar-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ffd700;
+        }
+
+        .top-bar-initials {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #ffd700;
+            color: #111;
+            font-weight: 800;
+            font-size: 0.75rem;
+            display: none;
+            place-items: center;
+        }
+
+        .top-bar-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        /* ── Feed container ── */
+        .feed-wrap {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.75rem 1rem 3rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .feed-col {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* ── Compose card ── */
+        .compose-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+        }
+
+        .compose-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .compose-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ffd700;
+            flex-shrink: 0;
+        }
+
+        .compose-avatar-initials {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ffd700;
+            color: #111;
+            font-weight: 800;
+            font-size: 0.85rem;
+            display: none;
+            place-items: center;
+            flex-shrink: 0;
+        }
+
+        .compose-textarea {
+            flex: 1;
+            border: 1px solid #e5e5ea;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 0.925rem;
+            color: #1d1d1f;
+            background: #f5f5f7;
+            resize: none;
+            min-height: 72px;
+            line-height: 1.6;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            width: 100%;
+        }
+
+        .compose-textarea::placeholder { color: #aeaeb2; }
+
+        .compose-textarea:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
+        }
+
+        .compose-extras {
+            margin-top: 0.875rem;
+            padding-top: 0.875rem;
+            border-top: 1px solid #f5f5f7;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .compose-field-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .compose-field-icon {
+            color: #aeaeb2;
+            flex-shrink: 0;
+            width: 16px;
+        }
+
+        .compose-input {
+            flex: 1;
+            border: 1px solid #e5e5ea;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        .compose-input::placeholder { color: #aeaeb2; }
+
+        .compose-input:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
+        }
+
+        .compose-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.875rem;
+        }
+
+        .compose-toggle-img {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #6e6e73;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.35rem 0.6rem;
+            border-radius: 8px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .compose-toggle-img:hover {
+            background: #f5f5f7;
+            color: #1d1d1f;
+        }
+
+        .compose-image-row {
+            display: none;
+        }
+
+        .compose-image-row.open {
+            display: flex;
+        }
+
+        .post-btn {
+            padding: 0.55rem 1.25rem;
+            border-radius: 10px;
+            border: none;
+            background: #ffd700;
+            color: #111;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+        }
+
+        .post-btn:hover {
+            background: #f5cc00;
+            box-shadow: 0 6px 18px rgba(245, 204, 0, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .post-btn:active { transform: translateY(0); }
+
+        .post-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ── Post Card ── */
+        .post-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+            overflow: hidden;
+            transition: box-shadow 0.2s ease;
+            animation: fadeSlideIn 0.3s ease;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .post-card:hover {
+            box-shadow: 0 4px 24px rgba(0,0,0,0.09);
+        }
+
+        .post-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 1.125rem 1.25rem 0;
+        }
+
+        .post-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ffd700;
+            flex-shrink: 0;
+        }
+
+        .post-avatar-initials {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #ffd700;
+            color: #111;
+            font-weight: 800;
+            font-size: 0.875rem;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+
+        .post-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .post-author-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .post-author-name {
+            font-size: 0.925rem;
+            font-weight: 700;
+            color: #1d1d1f;
+        }
+
+        .post-program-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: #fff8e1;
+            color: #b45309;
+            border-radius: 99px;
+            padding: 0.15rem 0.5rem;
+            white-space: nowrap;
+        }
+
+        .post-timestamp {
+            font-size: 0.775rem;
+            color: #aeaeb2;
+            margin-top: 0.15rem;
+        }
+
+        .post-delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #aeaeb2;
+            padding: 0.3rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s, background 0.2s;
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        .post-delete-btn:hover {
+            color: #ef4444;
+            background: #fff0f0;
+        }
+
+        .post-body {
+            padding: 0.875rem 1.25rem 0;
+        }
+
+        .post-content {
+            font-size: 0.925rem;
+            color: #1d1d1f;
+            line-height: 1.65;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .post-image {
+            margin-top: 0.875rem;
+            width: 100%;
+            max-height: 420px;
+            object-fit: cover;
+            border-radius: 12px;
+            display: block;
+        }
+
+        .post-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.75rem;
+        }
+
+        .tag-pill {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 99px;
+            background: #f0f9ff;
+            color: #0369a1;
+        }
+
+        .tag-pill:nth-child(3n+1) { background: #f0f9ff; color: #0369a1; }
+        .tag-pill:nth-child(3n+2) { background: #f0fdf4; color: #166534; }
+        .tag-pill:nth-child(3n)   { background: #fdf4ff; color: #7c3aed; }
+
+        /* ── Post Action Bar ── */
+        .post-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.75rem 1rem;
+            margin-top: 0.5rem;
+            border-top: 1px solid #f5f5f7;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #6e6e73;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #f5f5f7;
+            color: #1d1d1f;
+        }
+
+        .action-btn.liked {
+            color: #2563eb;
+        }
+
+        .action-btn.liked:hover {
+            background: #eff6ff;
+        }
+
+        .action-btn .action-count {
+            font-size: 0.8rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ── Comments Section ── */
+        .comments-section {
+            border-top: 1px solid #f5f5f7;
+            background: #fafafa;
+            padding: 1rem 1.25rem;
+            display: none;
+        }
+
+        .comments-section.open {
+            display: block;
+        }
+
+        .comment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 0.6rem;
+            align-items: flex-start;
+            animation: fadeSlideIn 0.2s ease;
+        }
+
+        .comment-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ffd700;
+            flex-shrink: 0;
+        }
+
+        .comment-avatar-initials {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #ffd700;
+            color: #111;
+            font-weight: 800;
+            font-size: 0.65rem;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+
+        .comment-bubble {
+            flex: 1;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 0.625rem 0.875rem;
+            border: 1px solid #e5e5ea;
+        }
+
+        .comment-author {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin-bottom: 0.2rem;
+        }
+
+        .comment-text {
+            font-size: 0.875rem;
+            color: #1d1d1f;
+            line-height: 1.55;
+            word-break: break-word;
+        }
+
+        .comment-time {
+            font-size: 0.7rem;
+            color: #aeaeb2;
+            margin-top: 0.25rem;
+        }
+
+        .comment-loading {
+            font-size: 0.85rem;
+            color: #aeaeb2;
+            text-align: center;
+            padding: 0.75rem 0;
+        }
+
+        /* ── Add Comment ── */
+        .add-comment-row {
+            display: flex;
+            gap: 0.6rem;
+            align-items: flex-end;
+        }
+
+        .comment-input {
+            flex: 1;
+            border: 1px solid #e5e5ea;
+            border-radius: 10px;
+            padding: 0.55rem 0.875rem;
+            font-size: 0.875rem;
+            background: #ffffff;
+            color: #1d1d1f;
+            resize: none;
+            min-height: 40px;
+            max-height: 100px;
+            line-height: 1.5;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .comment-input::placeholder { color: #aeaeb2; }
+
+        .comment-input:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
+        }
+
+        .comment-submit-btn {
+            background: #ffd700;
+            border: none;
+            border-radius: 10px;
+            padding: 0.55rem 1rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #111;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+        }
+
+        .comment-submit-btn:hover {
+            background: #f5cc00;
+            box-shadow: 0 4px 12px rgba(245, 204, 0, 0.4);
+        }
+
+        .comment-submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── Skeleton Loader ── */
+        .skeleton-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+        }
+
+        .skel {
+            background: linear-gradient(90deg, #f5f5f7 25%, #ebebed 50%, #f5f5f7 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 6px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skel-header {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .skel-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; }
+        .skel-lines { flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+        .skel-line { height: 12px; }
+        .skel-line.w60 { width: 60%; }
+        .skel-line.w40 { width: 40%; }
+        .skel-body { height: 14px; margin-bottom: 0.4rem; }
+        .skel-body.w100 { width: 100%; }
+        .skel-body.w80 { width: 80%; }
+
+        /* ── Empty State ── */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .empty-state-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            background: #fff8e1;
+            display: grid;
+            place-items: center;
+            font-size: 2rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1d1d1f;
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            color: #6e6e73;
+            max-width: 320px;
+            line-height: 1.6;
+        }
+
+        /* ── Error Banner ── */
+        .feed-error {
+            background: #fff0f0;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            font-size: 0.875rem;
+            color: #b91c1c;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .top-bar { padding: 0 1rem; }
+            .feed-wrap { padding: 1rem 0.5rem 3rem; }
+        }
+
+        @media (max-width: 480px) {
+            .top-bar-name { display: none; }
+            .compose-card { border-radius: 12px; }
+            .post-card { border-radius: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <!-- ── Sidebar ── -->
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-mark">H</div>
+                <h2>HOPICS</h2>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="clients.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Clients</span>
+                </a>
+                <a href="referral.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    <span>New Referral</span>
+                </a>
+                <a href="my-referrals.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h.01"/><path d="M16 20h.01"/><path d="M8 4h.01"/><path d="M8 20h.01"/>
+                        <path d="M12 4h.01"/><path d="M12 20h.01"/><path d="M4 8h.01"/><path d="M4 12h.01"/>
+                        <path d="M4 16h.01"/><path d="M20 8h.01"/><path d="M20 12h.01"/><path d="M20 16h.01"/>
+                    </svg>
+                    <span>My Referrals</span>
+                </a>
+                <a href="messages.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Messages</span>
+                </a>
+                <a href="community.html" class="active">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/>
+                        <circle cx="12" cy="9" r="3"/>
+                        <path d="M22 20a10 10 0 1 0-20 0"/>
+                    </svg>
+                    <span>Community</span>
+                </a>
+                <a href="admin.html" id="adminLink" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    <span>Admin</span>
+                </a>
+                <a href="index.html" onclick="sessionStorage.removeItem('hopics_user')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Sign Out</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- ── Main Content ── -->
+        <main class="app-main community-main">
+
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="top-bar-title">Staff Hub</div>
+                <div class="top-bar-user">
+                    <img class="top-bar-avatar" id="tbAvatar" src="" onerror="this.style.display='none';document.getElementById('tbInitials').style.display='grid';">
+                    <div class="top-bar-initials" id="tbInitials"></div>
+                    <span class="top-bar-name" id="tbName"></span>
+                </div>
+            </div>
+
+            <!-- Feed -->
+            <div class="feed-wrap">
+                <div class="feed-col">
+
+                    <!-- Compose Card -->
+                    <div class="compose-card" id="composeCard">
+                        <div class="compose-top">
+                            <img class="compose-avatar" id="composeAvatarImg" src="" alt=""
+                                 onerror="this.style.display='none';document.getElementById('composeAvatarInit').style.display='grid';">
+                            <div class="compose-avatar-initials" id="composeAvatarInit"></div>
+                            <textarea class="compose-textarea" id="composeText"
+                                      placeholder="What's on your mind? Share a client routing challenge, ask a question, or post an update…"
+                                      rows="3"></textarea>
+                        </div>
+
+                        <div class="compose-extras">
+                            <!-- Tags row -->
+                            <div class="compose-field-row">
+                                <svg class="compose-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                                </svg>
+                                <input class="compose-input" id="composeTags" type="text"
+                                       placeholder="Tags (comma-separated): housing, shelter, mental-health…">
+                            </div>
+
+                            <!-- Image URL row (collapsible) -->
+                            <div class="compose-field-row compose-image-row" id="composeImageRow">
+                                <svg class="compose-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                                <input class="compose-input" id="composeImageUrl" type="url"
+                                       placeholder="Image URL (optional)">
+                            </div>
+                        </div>
+
+                        <div class="compose-actions">
+                            <button class="compose-toggle-img" id="toggleImageBtn" type="button"
+                                    onclick="toggleImageInput()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                                Add Image URL
+                            </button>
+                            <button class="post-btn" id="postBtn" type="button" onclick="submitPost()">Post</button>
+                        </div>
+                    </div>
+
+                    <!-- Feed Posts -->
+                    <div id="feedContainer">
+                        <!-- Skeleton placeholders -->
+                        <div class="skeleton-card" id="skel1">
+                            <div class="skel-header">
+                                <div class="skel skel-avatar"></div>
+                                <div class="skel-lines">
+                                    <div class="skel skel-line w60"></div>
+                                    <div class="skel skel-line w40"></div>
+                                </div>
+                            </div>
+                            <div class="skel skel-body w100" style="margin-bottom:0.4rem;"></div>
+                            <div class="skel skel-body w80" style="margin-bottom:0.4rem;"></div>
+                            <div class="skel skel-body w100"></div>
+                        </div>
+                        <div class="skeleton-card" id="skel2">
+                            <div class="skel-header">
+                                <div class="skel skel-avatar"></div>
+                                <div class="skel-lines">
+                                    <div class="skel skel-line w60"></div>
+                                    <div class="skel skel-line w40"></div>
+                                </div>
+                            </div>
+                            <div class="skel skel-body w100" style="margin-bottom:0.4rem;"></div>
+                            <div class="skel skel-body w80"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+    // ── Constants ──────────────────────────────────────────────
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+    var TIMEOUT_MS = 20000;
+
+    // ── Session ────────────────────────────────────────────────
+    var _sess = {};
+    try { _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}'); } catch(e) {}
+
+    if (!_sess.email) {
+        window.location.href = 'index.html';
+    }
+
+    var _isAdmin = (_sess.role === 'admin' || _sess.role === 'Admin' || _sess.role === 'administrator');
+
+    // ── UI init (top bar + compose avatar) ────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        // Admin link
+        if (_isAdmin) {
+            var al = document.getElementById('adminLink');
+            if (al) al.style.display = 'flex';
+        }
+
+        // Top bar
+        var tbAvatar   = document.getElementById('tbAvatar');
+        var tbInitials = document.getElementById('tbInitials');
+        var tbName     = document.getElementById('tbName');
+
+        if (_sess.picture) {
+            tbAvatar.src = _sess.picture;
+            tbAvatar.style.display = 'block';
+        } else {
+            tbAvatar.style.display = 'none';
+            tbInitials.style.display = 'grid';
+        }
+        tbInitials.textContent = initials(_sess.name || _sess.email || '?');
+        tbName.textContent = _sess.name || '';
+
+        // Compose avatar
+        var caImg  = document.getElementById('composeAvatarImg');
+        var caInit = document.getElementById('composeAvatarInit');
+        if (_sess.picture) {
+            caImg.src = _sess.picture;
+            caImg.style.display = 'block';
+        } else {
+            caImg.style.display = 'none';
+            caInit.style.display = 'grid';
+        }
+        caInit.textContent = initials(_sess.name || _sess.email || '?');
+
+        // Load posts
+        loadPosts(false);
+    });
+
+    // ── Helpers ────────────────────────────────────────────────
+    function initials(str) {
+        if (!str) return '?';
+        var parts = str.trim().split(/\s+/);
+        if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+        return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+
+    function relativeTime(ts) {
+        if (!ts) return '';
+        var now  = Date.now();
+        var then = new Date(ts).getTime();
+        if (isNaN(then)) return ts;
+        var diff = Math.floor((now - then) / 1000);
+        if (diff < 60)   return 'Just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+        return new Date(then).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;')
+            .replace(/'/g,'&#39;');
+    }
+
+    // ── JSONP helper ───────────────────────────────────────────
+    var _cbCounter = 0;
+    function jsonpGet(params, timeout) {
+        return new Promise(function(resolve, reject) {
+            var cbName = '__hopics_cb_' + (++_cbCounter) + '_' + Date.now();
+            var script = document.createElement('script');
+            var timer  = setTimeout(function() {
+                cleanup();
+                reject(new Error('JSONP timeout'));
+            }, timeout || TIMEOUT_MS);
+
+            window[cbName] = function(data) {
+                cleanup();
+                resolve(data);
+            };
+
+            var qs = Object.keys(params).map(function(k) {
+                return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+            }).join('&');
+
+            script.src = GAS_URL + '?' + qs + '&callback=' + cbName;
+            script.onerror = function() { cleanup(); reject(new Error('Script load error')); };
+            document.head.appendChild(script);
+
+            function cleanup() {
+                clearTimeout(timer);
+                delete window[cbName];
+                if (script.parentNode) script.parentNode.removeChild(script);
+            }
+        });
+    }
+
+    // ── Fetch POST (no-cors) ───────────────────────────────────
+    function gasPost(fields) {
+        var body = new URLSearchParams();
+        Object.keys(fields).forEach(function(k) { body.append(k, fields[k] || ''); });
+        return fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString()
+        });
+    }
+
+    // ── Load Posts ─────────────────────────────────────────────
+    function loadPosts(isRetry) {
+        jsonpGet({ action: 'listPosts' }, TIMEOUT_MS)
+            .then(function(data) {
+                removeSkeleons();
+                if (!data.success) throw new Error(data.error || 'GAS error');
+                renderFeed(data.posts || []);
+            })
+            .catch(function(err) {
+                if (!isRetry) {
+                    // One retry after 3s (GAS cold start)
+                    setTimeout(function() { loadPosts(true); }, 3000);
+                } else {
+                    removeSkeleons();
+                    showFeedError('Could not load posts. Please refresh to try again.');
+                    console.error('[Community] loadPosts error:', err);
+                }
+            });
+    }
+
+    function removeSkeleons() {
+        ['skel1','skel2'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.parentNode.removeChild(el);
+        });
+    }
+
+    function showFeedError(msg) {
+        var fc = document.getElementById('feedContainer');
+        var div = document.createElement('div');
+        div.className = 'feed-error';
+        div.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' + escHtml(msg);
+        fc.appendChild(div);
+    }
+
+    // ── Render Feed ────────────────────────────────────────────
+    function renderFeed(posts) {
+        var fc = document.getElementById('feedContainer');
+
+        if (!posts.length) {
+            fc.innerHTML = '';
+            fc.appendChild(buildEmptyState());
+            return;
+        }
+
+        fc.innerHTML = '';
+        // Sort by lastActivity desc, then timestamp desc
+        posts.sort(function(a, b) {
+            var ta = new Date(a.lastActivity || a.timestamp).getTime();
+            var tb = new Date(b.lastActivity || b.timestamp).getTime();
+            return tb - ta;
+        });
+        posts.forEach(function(post) {
+            fc.appendChild(buildPostCard(post));
+        });
+    }
+
+    function buildEmptyState() {
+        var div = document.createElement('div');
+        div.className = 'empty-state';
+        div.innerHTML = [
+            '<div class="empty-state-icon">💬</div>',
+            '<h3>No posts yet</h3>',
+            '<p>Be the first to post! Share a client routing challenge, ask a question, or start a conversation with your colleagues.</p>'
+        ].join('');
+        return div;
+    }
+
+    // ── Build Post Card ────────────────────────────────────────
+    function buildPostCard(post) {
+        var canDelete = _isAdmin || (post.authorEmail && post.authorEmail === _sess.email);
+        var tags = parseTags(post.tags);
+        var likeCount = parseInt(post.likes) || 0;
+
+        var card = document.createElement('div');
+        card.className = 'post-card';
+        card.dataset.postId = post.postId;
+
+        // Header
+        var headerHtml = '<div class="post-header">' +
+            avatarHtml(post.authorPhoto, post.authorName, 'post-avatar', 'post-avatar-initials') +
+            '<div class="post-meta">' +
+                '<div class="post-author-row">' +
+                    '<span class="post-author-name">' + escHtml(post.authorName || 'Staff') + '</span>' +
+                    (post.program ? '<span class="post-program-badge">' + escHtml(post.program) + '</span>' : '') +
+                '</div>' +
+                '<div class="post-timestamp">' + relativeTime(post.timestamp) + '</div>' +
+            '</div>' +
+            (canDelete ? '<button class="post-delete-btn" title="Delete post" onclick="deletePost(this,\'' + escHtml(post.postId) + '\')">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>' +
+            '</button>' : '') +
+        '</div>';
+
+        // Body
+        var bodyHtml = '<div class="post-body">' +
+            '<p class="post-content">' + escHtml(post.content) + '</p>' +
+            (post.imageUrl ? '<img class="post-image" src="' + escHtml(post.imageUrl) + '" alt="Post image" loading="lazy" onerror="this.style.display=\'none\'">' : '') +
+            (tags.length ? '<div class="post-tags">' + tags.map(function(t) { return '<span class="tag-pill">' + escHtml(t) + '</span>'; }).join('') + '</div>' : '') +
+        '</div>';
+
+        // Action bar
+        var actionsHtml = '<div class="post-actions">' +
+            '<button class="action-btn like-btn" onclick="likePost(this,\'' + escHtml(post.postId) + '\')">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>' +
+                '<span class="action-count like-count">' + likeCount + '</span> Like' +
+            '</button>' +
+            '<button class="action-btn comment-btn" onclick="toggleComments(this,\'' + escHtml(post.postId) + '\')">' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+                '<span class="action-count comment-count">0</span> Comment' +
+            '</button>' +
+        '</div>';
+
+        // Comments section
+        var commentsHtml = '<div class="comments-section" id="comments-' + escHtml(post.postId) + '">' +
+            '<div class="comment-list" id="comment-list-' + escHtml(post.postId) + '">' +
+                '<div class="comment-loading">Loading comments…</div>' +
+            '</div>' +
+            '<div class="add-comment-row">' +
+                avatarHtml(_sess.picture, _sess.name, 'comment-avatar', 'comment-avatar-initials') +
+                '<textarea class="comment-input" placeholder="Write a comment…" rows="1" ' +
+                    'oninput="autoGrow(this)" id="comment-input-' + escHtml(post.postId) + '"></textarea>' +
+                '<button class="comment-submit-btn" onclick="submitComment(\'' + escHtml(post.postId) + '\')">Send</button>' +
+            '</div>' +
+        '</div>';
+
+        card.innerHTML = headerHtml + bodyHtml + actionsHtml + commentsHtml;
+        return card;
+    }
+
+    // ── Avatar HTML helper ─────────────────────────────────────
+    function avatarHtml(photoUrl, name, imgClass, initClass) {
+        var init = initials(name || '?');
+        if (photoUrl) {
+            return '<img class="' + imgClass + '" src="' + escHtml(photoUrl) + '" alt="' + escHtml(name) + '" ' +
+                'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'">' +
+                '<div class="' + initClass + '" style="display:none">' + escHtml(init) + '</div>';
+        }
+        return '<div class="' + initClass + '" style="display:grid">' + escHtml(init) + '</div>';
+    }
+
+    function parseTags(tagsStr) {
+        if (!tagsStr) return [];
+        return tagsStr.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+    }
+
+    // ── Toggle Image Input ─────────────────────────────────────
+    function toggleImageInput() {
+        var row = document.getElementById('composeImageRow');
+        var btn = document.getElementById('toggleImageBtn');
+        var isOpen = row.classList.toggle('open');
+        btn.style.color = isOpen ? '#ffd700' : '';
+        if (!isOpen) {
+            document.getElementById('composeImageUrl').value = '';
+        }
+    }
+
+    // ── Auto-grow textarea ─────────────────────────────────────
+    function autoGrow(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    // ── Submit Post ────────────────────────────────────────────
+    function submitPost() {
+        var content = document.getElementById('composeText').value.trim();
+        if (!content) { showToast('Please write something before posting.', 'info'); return; }
+
+        var imageUrl = document.getElementById('composeImageUrl').value.trim();
+        var tags     = document.getElementById('composeTags').value.trim();
+
+        var btn = document.getElementById('postBtn');
+        btn.disabled = true;
+        btn.textContent = 'Posting…';
+
+        var tempId = 'temp-' + Date.now();
+        var tempPost = {
+            postId: tempId,
+            timestamp: new Date().toISOString(),
+            authorName: _sess.name || _sess.email,
+            authorEmail: _sess.email,
+            authorPhoto: _sess.picture || '',
+            program: _sess.program || '',
+            content: content,
+            imageUrl: imageUrl,
+            tags: tags,
+            likes: 0,
+            lastActivity: new Date().toISOString()
+        };
+
+        // Optimistic render
+        var fc = document.getElementById('feedContainer');
+        var emptyState = fc.querySelector('.empty-state');
+        if (emptyState) fc.removeChild(emptyState);
+        var errBanner = fc.querySelector('.feed-error');
+        if (errBanner) fc.removeChild(errBanner);
+
+        var card = buildPostCard(tempPost);
+        card.style.opacity = '0.6';
+        fc.insertBefore(card, fc.firstChild);
+
+        // Reset compose
+        document.getElementById('composeText').value = '';
+        document.getElementById('composeTags').value = '';
+        document.getElementById('composeImageUrl').value = '';
+        document.getElementById('composeImageRow').classList.remove('open');
+        document.getElementById('toggleImageBtn').style.color = '';
+
+        gasPost({
+            action: 'addPost',
+            authorName: _sess.name || _sess.email || '',
+            authorEmail: _sess.email || '',
+            authorPhoto: _sess.picture || '',
+            content: content,
+            imageUrl: imageUrl,
+            tags: tags
+        }).then(function() {
+            card.style.opacity = '1';
+            showToast('Post published!', 'success');
+        }).catch(function(err) {
+            card.style.opacity = '1';
+            showToast('Post sent (sync may take a moment).', 'info');
+            console.warn('[Community] addPost:', err);
+        }).finally(function() {
+            btn.disabled = false;
+            btn.textContent = 'Post';
+        });
+    }
+
+    // ── Like Post ──────────────────────────────────────────────
+    function likePost(btn, postId) {
+        var countEl = btn.querySelector('.like-count');
+        var current = parseInt(countEl.textContent) || 0;
+
+        btn.classList.toggle('liked');
+        var isLiked = btn.classList.contains('liked');
+        countEl.textContent = isLiked ? current + 1 : Math.max(0, current - 1);
+
+        gasPost({ action: 'likePost', postId: postId })
+            .catch(function(err) {
+                // Revert optimistic on error
+                btn.classList.toggle('liked');
+                countEl.textContent = current;
+                console.warn('[Community] likePost:', err);
+            });
+    }
+
+    // ── Toggle Comments ────────────────────────────────────────
+    var _commentsLoaded = {};
+
+    function toggleComments(btn, postId) {
+        var section = document.getElementById('comments-' + postId);
+        if (!section) return;
+        var isOpen = section.classList.toggle('open');
+
+        if (isOpen && !_commentsLoaded[postId]) {
+            _commentsLoaded[postId] = 'loading';
+            loadComments(postId);
+        }
+    }
+
+    function loadComments(postId, isRetry) {
+        jsonpGet({ action: 'listComments', postId: postId }, TIMEOUT_MS)
+            .then(function(data) {
+                _commentsLoaded[postId] = 'done';
+                if (!data.success) throw new Error(data.error || 'GAS error');
+                renderComments(postId, data.comments || []);
+            })
+            .catch(function(err) {
+                if (!isRetry) {
+                    setTimeout(function() { loadComments(postId, true); }, 3000);
+                } else {
+                    _commentsLoaded[postId] = 'error';
+                    var listEl = document.getElementById('comment-list-' + postId);
+                    if (listEl) listEl.innerHTML = '<div class="comment-loading" style="color:#b91c1c">Could not load comments.</div>';
+                    console.error('[Community] loadComments:', err);
+                }
+            });
+    }
+
+    function renderComments(postId, comments) {
+        var listEl = document.getElementById('comment-list-' + postId);
+        if (!listEl) return;
+        listEl.innerHTML = '';
+
+        if (!comments.length) {
+            listEl.innerHTML = '<div class="comment-loading">No comments yet. Be the first!</div>';
+        } else {
+            comments.forEach(function(c) {
+                listEl.appendChild(buildCommentItem(c));
+            });
+        }
+
+        // Update comment count on action bar
+        var card = document.querySelector('[data-post-id="' + postId + '"]');
+        if (card) {
+            var countEl = card.querySelector('.comment-count');
+            if (countEl) countEl.textContent = comments.length;
+        }
+    }
+
+    function buildCommentItem(comment) {
+        var div = document.createElement('div');
+        div.className = 'comment-item';
+        div.innerHTML =
+            avatarHtml(comment.authorPhoto, comment.authorName, 'comment-avatar', 'comment-avatar-initials') +
+            '<div class="comment-bubble">' +
+                '<div class="comment-author">' + escHtml(comment.authorName || 'Staff') + '</div>' +
+                '<div class="comment-text">' + escHtml(comment.content) + '</div>' +
+                '<div class="comment-time">' + relativeTime(comment.timestamp) + '</div>' +
+            '</div>';
+        return div;
+    }
+
+    // ── Submit Comment ─────────────────────────────────────────
+    function submitComment(postId) {
+        var input = document.getElementById('comment-input-' + postId);
+        if (!input) return;
+        var content = input.value.trim();
+        if (!content) return;
+
+        var submitBtn = input.nextElementSibling;
+        submitBtn.disabled = true;
+        submitBtn.textContent = '…';
+
+        // Optimistic render
+        var listEl = document.getElementById('comment-list-' + postId);
+        if (listEl) {
+            var emptyMsg = listEl.querySelector('.comment-loading');
+            if (emptyMsg) listEl.removeChild(emptyMsg);
+
+            var tempComment = {
+                commentId: 'temp-' + Date.now(),
+                postId: postId,
+                timestamp: new Date().toISOString(),
+                authorName: _sess.name || _sess.email,
+                authorEmail: _sess.email,
+                authorPhoto: _sess.picture || '',
+                content: content
+            };
+            var item = buildCommentItem(tempComment);
+            item.style.opacity = '0.6';
+            listEl.appendChild(item);
+
+            // Update comment count
+            var card = document.querySelector('[data-post-id="' + postId + '"]');
+            if (card) {
+                var countEl = card.querySelector('.comment-count');
+                if (countEl) countEl.textContent = parseInt(countEl.textContent || 0) + 1;
+            }
+
+            // Scroll to new comment
+            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            input.value = '';
+            input.style.height = 'auto';
+
+            gasPost({
+                action: 'addComment',
+                postId: postId,
+                authorName: _sess.name || _sess.email || '',
+                authorEmail: _sess.email || '',
+                authorPhoto: _sess.picture || '',
+                content: content
+            }).then(function() {
+                item.style.opacity = '1';
+            }).catch(function(err) {
+                item.style.opacity = '1';
+                console.warn('[Community] addComment:', err);
+            }).finally(function() {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send';
+            });
+        }
+    }
+
+    // ── Delete Post ────────────────────────────────────────────
+    function deletePost(btn, postId) {
+        if (!confirm('Delete this post? This cannot be undone.')) return;
+
+        var card = document.querySelector('[data-post-id="' + postId + '"]');
+        if (card) {
+            card.style.opacity = '0.4';
+            card.style.pointerEvents = 'none';
+        }
+
+        gasPost({ action: 'deletePost', postId: postId })
+            .then(function() {
+                if (card && card.parentNode) {
+                    card.style.transition = 'opacity 0.3s ease, transform 0.3s ease, max-height 0.35s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.97)';
+                    setTimeout(function() {
+                        if (card.parentNode) card.parentNode.removeChild(card);
+                        // Show empty state if no posts left
+                        var fc = document.getElementById('feedContainer');
+                        if (fc && !fc.querySelector('.post-card')) {
+                            fc.appendChild(buildEmptyState());
+                        }
+                    }, 320);
+                }
+                showToast('Post deleted.', 'info');
+            })
+            .catch(function(err) {
+                if (card) {
+                    card.style.opacity = '1';
+                    card.style.pointerEvents = '';
+                }
+                showToast('Delete may take a moment to sync.', 'info');
+                console.warn('[Community] deletePost:', err);
+            });
+    }
+    </script>
+</body>
+</html>

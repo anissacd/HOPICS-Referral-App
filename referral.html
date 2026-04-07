@@ -308,6 +308,15 @@
                     </svg>
                     <span>Messages</span>
                 </a>
+                <a href="community.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/>
+                        <circle cx="12" cy="9" r="3"/>
+                        <path d="M22 20a10 10 0 1 0-20 0"/>
+                    </svg>
+                    <span>Community</span>
+                </a>
                 <a href="admin.html" id="adminLink" style="display:none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -438,17 +447,6 @@
                             <label class="input-label" for="fromProgram">Referring From Program</label>
                             <select class="input-field" id="fromProgram" name="fromProgram" required>
                                 <option value="" disabled selected>Select sending program</option>
-                                <option>Street Outreach</option>
-                                <option>Emergency Shelter</option>
-                                <option>Drop-In Center</option>
-                                <option>Transitional Housing</option>
-                                <option>Rapid Rehousing</option>
-                                <option>Permanent Supportive Housing</option>
-                                <option>Mental Health Services</option>
-                                <option>Substance Abuse Recovery</option>
-                                <option>Employment Services</option>
-                                <option>Medical Outreach</option>
-                                <option>External / Community Partner</option>
                             </select>
                         </div>
 
@@ -465,17 +463,6 @@
                             <label class="input-label" for="toProgram">Referring To Program</label>
                             <select class="input-field" id="toProgram" name="toProgram" required>
                                 <option value="" disabled selected>Select receiving program</option>
-                                <option>Street Outreach</option>
-                                <option>Emergency Shelter</option>
-                                <option>Drop-In Center</option>
-                                <option>Transitional Housing</option>
-                                <option>Rapid Rehousing</option>
-                                <option>Permanent Supportive Housing</option>
-                                <option>Mental Health Services</option>
-                                <option>Substance Abuse Recovery</option>
-                                <option>Employment Services</option>
-                                <option>Medical Outreach</option>
-                                <option>External / Community Partner</option>
                             </select>
                         </div>
                     </div>
@@ -545,14 +532,8 @@
     <iframe id="submissionFrame" name="submissionFrame" style="display:none;"></iframe>
 
     <script>
-        /* ── Client Database (mock — replace with real API/Sheets data) ── */
-        const CLIENTS = [
-            { id: 'HTX-2024-00471', name: 'Maria Lopez',  dob: '1985-03-15', housing: 'Literally Homeless',  program: 'Emergency Housing' },
-            { id: 'HTX-2024-00382', name: 'Jason White',  dob: '1990-07-22', housing: 'Transitional Housing', program: 'Mental Health Services' },
-            { id: 'HTX-2024-00291', name: 'Angela Kim',   dob: '1978-11-04', housing: 'Shelter',              program: 'Medical Outreach' },
-            { id: 'HTX-2024-00184', name: 'David Torres', dob: '1995-02-18', housing: 'At Risk',              program: 'Employment Services' },
-            { id: 'HTX-2024-00103', name: 'Priya Patel',  dob: '1988-09-30', housing: 'Literally Homeless',  program: 'Substance Abuse Recovery' },
-        ];
+        /* ── Client Database (loaded from Google Sheets via GAS) ── */
+        let CLIENTS = [];
 
         let selectedClient = null;
 
@@ -700,6 +681,23 @@
 
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
         const _sess   = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+
+        // ── Load clients from GAS for search ──
+        (function loadClientsForSearch() {
+            var cb = '_clientSearchCb' + Date.now();
+            window[cb] = function(data) {
+                try { delete window[cb]; } catch(e) {}
+                if (data && data.success && Array.isArray(data.clients)) {
+                    CLIENTS = data.clients.map(function(c) {
+                        return { id: c.hmisId || '', name: c.name || '', dob: c.dob || '', housing: c.status || '', program: c.program || '' };
+                    });
+                }
+            };
+            var s = document.createElement('script');
+            s.src = GAS_URL + '?action=listClients&callback=' + cb;
+            s.onerror = function() { try { delete window[cb]; } catch(e) {} };
+            document.head.appendChild(s);
+        })();
 
         // ── Load programs from GAS into From/To dropdowns ──
         function populateProgramDropdowns(programs) {

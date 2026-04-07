@@ -251,6 +251,15 @@
                     </svg>
                     <span>Messages</span>
                 </a>
+                <a href="community.html">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/>
+                        <circle cx="12" cy="9" r="3"/>
+                        <path d="M22 20a10 10 0 1 0-20 0"/>
+                    </svg>
+                    <span>Community</span>
+                </a>
                 <a href="admin.html" id="adminLink" class="active">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -293,19 +302,19 @@
             <div class="data-grid" id="adminStats">
                 <div class="stat-card">
                     <h3>Total Users</h3>
-                    <div class="card-value">6</div>
+                    <div class="card-value" id="statTotalUsers">—</div>
                 </div>
                 <div class="stat-card">
                     <h3>Active</h3>
-                    <div class="card-value" style="color:#166534;">5</div>
+                    <div class="card-value" id="statActiveUsers" style="color:#166534;">—</div>
                 </div>
                 <div class="stat-card">
                     <h3>Admins</h3>
-                    <div class="card-value" style="color:#9d174d;">1</div>
+                    <div class="card-value" id="statAdmins" style="color:#9d174d;">—</div>
                 </div>
                 <div class="stat-card">
                     <h3>Case Managers</h3>
-                    <div class="card-value" style="color:#1e40af;">3</div>
+                    <div class="card-value" id="statCaseManagers" style="color:#1e40af;">—</div>
                 </div>
             </div>
 
@@ -393,12 +402,6 @@
                             <input type="date" id="logDateTo" title="To date">
                             <select id="logUserFilter">
                                 <option value="">All Users</option>
-                                <option>Ashley R.</option>
-                                <option>Carlos M.</option>
-                                <option>Elena V.</option>
-                                <option>Marcus D.</option>
-                                <option>Jordan K.</option>
-                                <option>Sam T.</option>
                             </select>
                             <button class="btn btn-secondary" style="font-size:0.825rem;padding:0.45rem 0.875rem;" onclick="filterLog()">Filter</button>
                         </div>
@@ -598,18 +601,7 @@
 
         let programs = [];
 
-        const activityLog = [
-            { ts: 'Apr 6, 2026, 9:18 AM',  user: 'Ashley R.',  action: 'created',     detail: 'New referral for Maria Lopez — Housing' },
-            { ts: 'Apr 6, 2026, 8:55 AM',  user: 'Elena V.',   action: 'login',       detail: 'Signed in via Google SSO' },
-            { ts: 'Apr 5, 2026, 4:22 PM',  user: 'Carlos M.',  action: 'edited',      detail: 'Updated referral REF_1711944120000 status → In Progress' },
-            { ts: 'Apr 5, 2026, 3:40 PM',  user: 'Ashley R.',  action: 'added',       detail: 'Added user Jordan Kim (Intake Coordinator)' },
-            { ts: 'Apr 5, 2026, 2:15 PM',  user: 'Marcus D.',  action: 'created',     detail: 'New referral for David Torres — Employment' },
-            { ts: 'Apr 4, 2026, 11:05 AM', user: 'Jordan K.',  action: 'login',       detail: 'Signed in via Google SSO' },
-            { ts: 'Apr 3, 2026, 3:50 PM',  user: 'Ashley R.',  action: 'deactivated', detail: 'Deactivated user Sam Thompson' },
-            { ts: 'Apr 3, 2026, 1:30 PM',  user: 'Elena V.',   action: 'created',     detail: 'New referral for Angela Kim — Medical' },
-            { ts: 'Apr 2, 2026, 10:45 AM', user: 'Carlos M.',  action: 'edited',      detail: 'Updated referral REF_1711855320000 status → Completed' },
-            { ts: 'Apr 1, 2026, 9:00 AM',  user: 'Ashley R.',  action: 'login',       detail: 'Signed in via Google SSO' }
-        ];
+        const activityLog = [];
 
         // ── Tab switching ─────────────────────────────────────────────
         function switchTab(name, btn) {
@@ -712,6 +704,10 @@
 
         function renderActivity(list) {
             const tbody = document.getElementById('activityTableBody');
+            if (!list || list.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:#aeaeb2;">No activity to display.</td></tr>';
+                return;
+            }
             tbody.innerHTML = list.map(a => `
                 <tr>
                     <td style="color:#6e6e73;font-size:0.83rem;white-space:nowrap;">${a.ts}</td>
@@ -724,10 +720,8 @@
 
         function filterLog() {
             const user = document.getElementById('logUserFilter').value;
-            const from = document.getElementById('logDateFrom').value;
-            const to   = document.getElementById('logDateTo').value;
             let list = activityLog;
-            if (user) list = list.filter(a => a.user.startsWith(user.split(' ')[0]));
+            if (user) list = list.filter(a => a.user === user || (a.user || '').startsWith(user.split(' ')[0]));
             renderActivity(list);
         }
 
@@ -849,11 +843,14 @@
 
         // ── Update stats ──────────────────────────────────────────────
         function updateAdminStats() {
-            const cards = document.querySelectorAll('#adminStats .card-value');
-            cards[0].textContent = users.length;
-            cards[1].textContent = users.filter(u => u.status).length;
-            cards[2].textContent = users.filter(u => u.role === 'admin').length;
-            cards[3].textContent = users.filter(u => u.role === 'case_manager').length;
+            const el0 = document.getElementById('statTotalUsers');
+            const el1 = document.getElementById('statActiveUsers');
+            const el2 = document.getElementById('statAdmins');
+            const el3 = document.getElementById('statCaseManagers');
+            if (el0) el0.textContent = users.length;
+            if (el1) el1.textContent = users.filter(u => u.status).length;
+            if (el2) el2.textContent = users.filter(u => u.role === 'admin').length;
+            if (el3) el3.textContent = users.filter(u => u.role === 'case_manager').length;
         }
 
         // ── Modal helpers ─────────────────────────────────────────────
@@ -925,6 +922,16 @@
                 });
                 renderUsers(users);
                 updateAdminStats();
+                // Populate log user filter with real users
+                const logSel = document.getElementById('logUserFilter');
+                if (logSel) {
+                    while (logSel.options.length > 1) logSel.remove(1);
+                    users.forEach(function(u) {
+                        const opt = document.createElement('option');
+                        opt.value = u.name; opt.textContent = u.name;
+                        logSel.appendChild(opt);
+                    });
+                }
             }
         }
 

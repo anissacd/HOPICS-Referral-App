@@ -219,6 +219,9 @@
         <!-- Loading / Error states -->
         <div class="login-loading" id="loginLoading">Verifying your account, please wait...</div>
         <div class="login-error" id="loginError"></div>
+        <button class="btn-google-sso" id="retryBtn" type="button" onclick="retryVerify()" style="display:none; margin-bottom:0.5rem;">
+            Try Again
+        </button>
 
         <!-- Google Sign-In Button -->
         <button class="btn-google-sso" id="googleSignInBtn" type="button" onclick="triggerGoogleSignIn()">
@@ -345,7 +348,7 @@
                     console.error('[HOPICS] verifyUser timed out after 45s for:', email);
                     window._authDone = true;
                     hideLoading();
-                    showError('Verification timed out. Please refresh the page and try again.');
+                    showRetry();
                 }
             }, 45000);
 
@@ -358,6 +361,20 @@
             if (window._authDone) return;
             document.getElementById('loginLoading').textContent =
                 'Still verifying… Google servers are warming up. Please wait.';
+        }
+
+        function showRetry() {
+            showError('Verification timed out. The server is now awake — click Try Again to sign in.');
+            document.getElementById('retryBtn').style.display = 'block';
+        }
+
+        function retryVerify() {
+            const auth = window._pendingAuth;
+            if (!auth || !auth.email) { window.location.reload(); return; }
+            document.getElementById('retryBtn').style.display = 'none';
+            document.getElementById('loginError').classList.remove('visible');
+            showLoading();
+            verifyAccess(auth.email, auth.name, auth.picture);
         }
 
         // ── JSONP callback ──────────────────────────────────────────

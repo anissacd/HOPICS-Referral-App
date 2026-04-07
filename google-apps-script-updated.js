@@ -22,12 +22,10 @@ var REFERRAL_HEADERS = [
   'Submitted By', 'Staff Email', 'Assessment Notes', 'Status', 'Last Updated'
 ];
 
-// Clients (8 cols):
-//   HMIS ID | Name | DOB | Date Added | Status | Case Manager |
-//   Total Referrals | Last Activity
+// Clients (7 cols):
+//   HMIS ID | Name | DOB | Date Added | Status | Total Referrals | Last Activity
 var CLIENT_HEADERS = [
-  'HMIS ID', 'Name', 'DOB', 'Date Added', 'Status',
-  'Case Manager', 'Total Referrals', 'Last Activity'
+  'HMIS ID', 'Name', 'DOB', 'Date Added', 'Status', 'Total Referrals', 'Last Activity'
 ];
 
 // Messages (8 cols):
@@ -387,7 +385,6 @@ function handleNewReferral(data) {
     dob:         data.clientDOB   || '',
     dateAdded:   now,
     status:      'Active',
-    caseManager: data.submittedBy || '',
     lastActivity: now
   });
 
@@ -523,10 +520,13 @@ function handleUpdateUserRole(data) {
   for (var i = 1; i < values.length; i++) {
     if (String(values[i][0]).toLowerCase() === email) {
       sheet.getRange(i + 1, 3).setValue(newRole); // Column C = Role
+      if (data.name) {
+        sheet.getRange(i + 1, 2).setValue(data.name); // Column B = Name
+      }
       if (data.program !== undefined) {
         sheet.getRange(i + 1, 5).setValue(data.program); // Column E = Program
       }
-      logActivity(data.changedBy || '', '', 'Updated Role', 'User', email, 'New role: ' + newRole);
+      logActivity(data.changedBy || '', '', 'Updated User', 'User', email, 'Name: ' + (data.name || '(unchanged)') + ', Role: ' + newRole);
       return createJsonOutput({ success: true });
     }
   }
@@ -996,9 +996,8 @@ function getClientsFromSheet() {
       dob:           row[2] instanceof Date ? row[2].toISOString().slice(0,10) : row[2] || '',
       dateAdded:     row[3] instanceof Date ? row[3].toISOString().slice(0,10) : row[3] || '',
       status:        row[4] || '',
-      caseManager:   row[5] || '',
-      totalReferrals:row[6] || 0,
-      lastActivity:  row[7] instanceof Date ? row[7].toISOString().slice(0,10) : row[7] || ''
+      totalReferrals:row[5] || 0,
+      lastActivity:  row[6] instanceof Date ? row[6].toISOString().slice(0,10) : row[6] || ''
     };
   });
 }
@@ -1238,15 +1237,14 @@ function upsertClient(sheet, clientData) {
     }
   }
 
-  var totalReferrals = rowIndex > 0 ? (parseInt(values[rowIndex - 1][6]) || 0) + 1 : 1;
+  var totalReferrals = rowIndex > 0 ? (parseInt(values[rowIndex - 1][5]) || 0) + 1 : 1;
 
   var row = [
     clientData.hmisId,
     clientData.name,
     clientData.dob,
     clientData.dateAdded,
-    clientData.status       || 'Active',
-    clientData.caseManager  || '',
+    clientData.status || 'Active',
     totalReferrals,
     clientData.lastActivity
   ];

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOPICS — My Referrals</title>
+    <title>HOPICS — All Referrals</title>
     <link rel="stylesheet" href="styles.css">
     <script src="hopics-utils.js"></script>
     <style>
@@ -90,41 +90,87 @@
             border-top: 1px solid #f5f5f7;
         }
 
-        /* ── Filter bar ── */
-        .filter-bar {
+        /* ── Filter panel ── */
+        .filter-panel {
+            background: #f5f5f7;
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 0.75rem;
         }
 
-        .filter-bar label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #6e6e73;
-            white-space: nowrap;
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
 
-        .filter-select {
-            padding: 0.6rem 2.25rem 0.6rem 0.875rem;
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            min-width: 140px;
+        }
+
+        .filter-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6e6e73;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .filter-select, .filter-input {
+            padding: 0.55rem 0.875rem;
             border-radius: 10px;
             border: 1px solid #d2d2d7;
             background: #ffffff;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             font-weight: 500;
             color: #1d1d1f;
             appearance: none;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+            width: 100%;
+        }
+
+        .filter-select {
+            padding-right: 2.25rem;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23aeaeb2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 0.75rem center;
-            cursor: pointer;
-            transition: border-color 0.2s ease;
         }
 
-        .filter-select:focus {
+        .filter-select:focus, .filter-input:focus {
             outline: none;
             border-color: #ffd700;
             box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
         }
+
+        .filter-input::placeholder { color: #aeaeb2; }
+
+        .filter-actions {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+
+        .btn-reset {
+            padding: 0.55rem 1rem;
+            border-radius: 10px;
+            border: 1px solid #d2d2d7;
+            background: #fff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6e6e73;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s;
+        }
+        .btn-reset:hover { background: #e5e5ea; }
 
         .empty-state {
             padding: 3rem 1rem;
@@ -133,23 +179,50 @@
 
         .empty-state p { color: #aeaeb2; font-size: 0.9rem; }
 
-        .table-action {
-            font-size: 0.825rem;
-            font-weight: 600;
-            color: #1d1d1f;
-            text-decoration: underline;
-            text-underline-offset: 2px;
-            cursor: pointer;
-            background: none;
-            border: none;
-            padding: 0;
-            transition: color 0.2s ease;
+        /* ── Stats Bar ── */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        .table-action:hover { color: #b45309; }
+        .stat-box {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
 
-        @media (max-width: 640px) {
-            .modal-form-row { grid-template-columns: 1fr; }
+        .stat-box-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #aeaeb2;
+        }
+
+        .stat-box-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1d1d1f;
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+
+        .stat-box-value.accent { color: #b45309; }
+        .stat-box-value.blue   { color: #0369a1; }
+        .stat-box-value.green  { color: #166534; }
+
+        @media (max-width: 900px) {
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 480px) {
+            .stats-bar { grid-template-columns: 1fr 1fr; }
         }
 
         /* ── Referral Cards ── */
@@ -254,6 +327,10 @@
         .referral-card-date { font-size: 0.75rem; color: #aeaeb2; }
 
         .referral-card-actions { display: flex; gap: 0.375rem; }
+
+        @media (max-width: 640px) {
+            .modal-form-row { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -262,6 +339,7 @@
     <div id="sidebarAvatar" style="width:30px;height:30px;border-radius:50%;background:#ffd700;display:grid;place-items:center;font-weight:800;font-size:0.7rem;color:#111;flex-shrink:0;overflow:hidden;">?</div>
     <span id="sidebarName" style="font-size:0.78rem;font-weight:600;color:#f5f5f7;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
 </div>
+
     <div class="app-shell">
         <aside class="app-sidebar">
             <div class="sidebar-brand">
@@ -297,7 +375,7 @@
                     </svg>
                     <span>New Referral</span>
                 </a>
-                <a href="my-referrals.html" class="active">
+                <a href="my-referrals.html">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M16 4h.01"/><path d="M16 20h.01"/><path d="M8 4h.01"/><path d="M8 20h.01"/>
@@ -305,6 +383,13 @@
                         <path d="M4 16h.01"/><path d="M20 8h.01"/><path d="M20 12h.01"/><path d="M20 16h.01"/>
                     </svg>
                     <span>My Referrals</span>
+                </a>
+                <a href="all-referrals.html" class="active">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                        <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                    <span>All Referrals</span>
                 </a>
                 <a href="messages.html">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
@@ -322,7 +407,7 @@
                     </svg>
                     <span>Community</span>
                 </a>
-                <a href="all-referrals.html" id="allReferralsLink" style="display:none;">
+                <a href="all-referrals.html" id="allReferralsLink" class="active" style="display:none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
                         <line x1="8" y1="18" x2="21" y2="18"/>
@@ -348,37 +433,15 @@
                     <span>Sign Out</span>
                 </a>
             </nav>
-
         </aside>
 
         <main class="app-main">
             <section class="dashboard-header">
                 <div>
-                    <h1>My Referrals</h1>
-                    <p>Referrals assigned to you for follow-up and management.</p>
+                    <h1>All Referrals</h1>
+                    <p>Complete referral history across all programs and staff.</p>
                 </div>
-                <div class="quick-actions" style="flex-wrap:wrap;gap:0.5rem;">
-                    <div class="filter-bar">
-                        <label for="statusFilter">Status:</label>
-                        <select class="filter-select" id="statusFilter">
-                            <option value="">All</option>
-                            <option value="pending">Pending</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="completed">Completed</option>
-                            <option value="closed">Closed</option>
-                        </select>
-                    </div>
-                    <!-- Admin-only filters -->
-                    <div id="adminFilters" style="display:none;align-items:center;gap:.75rem;flex-wrap:wrap;">
-                        <label class="filter-bar" style="font-size:0.875rem;font-weight:600;color:#6e6e73;">Program:</label>
-                        <select class="filter-select" id="programFilter">
-                            <option value="">All Programs</option>
-                        </select>
-                        <label style="font-size:0.875rem;font-weight:600;color:#6e6e73;">Staff:</label>
-                        <select class="filter-select" id="staffFilter">
-                            <option value="">All Staff</option>
-                        </select>
-                    </div>
+                <div>
                     <a class="btn btn-primary" href="referral.html">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
                              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -389,13 +452,109 @@
                 </div>
             </section>
 
+            <!-- Filter panel -->
+            <div class="filter-panel">
+                <div class="filter-row">
+                    <div class="filter-group" style="min-width:200px;flex:1;">
+                        <label for="searchFilter">Search Client</label>
+                        <input class="filter-input" type="text" id="searchFilter" placeholder="Name or HMIS ID…">
+                    </div>
+                    <div class="filter-group">
+                        <label for="statusFilter">Status</label>
+                        <select class="filter-select" id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="urgencyFilter">Urgency</label>
+                        <select class="filter-select" id="urgencyFilter">
+                            <option value="">All Urgencies</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="categoryFilter">Category</label>
+                        <select class="filter-select" id="categoryFilter">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="fromProgramFilter">From Program</label>
+                        <select class="filter-select" id="fromProgramFilter">
+                            <option value="">All Programs</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="toProgramFilter">To Program</label>
+                        <select class="filter-select" id="toProgramFilter">
+                            <option value="">All Programs</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="staffFilter">Submitted By</label>
+                        <select class="filter-select" id="staffFilter">
+                            <option value="">All Staff</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="dateFromFilter">Date From</label>
+                        <input class="filter-input" type="date" id="dateFromFilter">
+                    </div>
+                    <div class="filter-group">
+                        <label for="dateToFilter">Date To</label>
+                        <input class="filter-input" type="date" id="dateToFilter">
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn-reset" onclick="resetFilters()">Reset Filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats bar -->
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-box">
+                    <div class="stat-box-label">Total</div>
+                    <div class="stat-box-value" id="statTotal">—</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Pending</div>
+                    <div class="stat-box-value accent" id="statPending">—</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">In Progress</div>
+                    <div class="stat-box-value blue" id="statInProgress">—</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Completed</div>
+                    <div class="stat-box-value green" id="statCompleted">—</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-label">Closed</div>
+                    <div class="stat-box-value" id="statClosed" style="color:#6e6e73;">—</div>
+                </div>
+            </div>
+
             <section class="card">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;flex-wrap:wrap;gap:.5rem;">
-                    <div class="card-title">Assigned Referrals</div>
+                    <div class="card-title">All Referrals</div>
                     <div style="display:flex;align-items:center;gap:.625rem;">
                         <span id="referralCount" style="font-size:0.825rem;color:#aeaeb2;"></span>
                         <button class="btn btn-secondary" onclick="exportReferrals()" style="font-size:0.8rem;padding:0.4rem 0.875rem;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:.35rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:.35rem;">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Export CSV
                         </button>
                     </div>
                 </div>
@@ -417,7 +576,7 @@
                 </button>
             </div>
 
-            <form id="editForm" action="https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec" method="POST">
+            <form id="editForm">
                 <input type="hidden" id="editId" name="id">
 
                 <div class="modal-form-row">
@@ -427,14 +586,14 @@
                     </div>
                     <div class="input-group">
                         <label class="input-label" for="editClientDOB">Date of Birth</label>
-                        <input class="input-field" type="date" id="editClientDOB" name="clientDOB" required>
+                        <input class="input-field" type="date" id="editClientDOB" name="clientDOB">
                     </div>
                 </div>
 
                 <div class="modal-form-row">
                     <div class="input-group">
                         <label class="input-label" for="editReferralSource">Referral Source</label>
-                        <select class="input-field" id="editReferralSource" name="referralSource" required>
+                        <select class="input-field" id="editReferralSource" name="referralSource">
                             <option value="street">Street Outreach</option>
                             <option value="shelter">Shelter</option>
                             <option value="hospital">Hospital</option>
@@ -444,7 +603,7 @@
                     </div>
                     <div class="input-group">
                         <label class="input-label" for="editServiceCategory">Service Category</label>
-                        <select class="input-field" id="editServiceCategory" name="serviceCategory" required>
+                        <select class="input-field" id="editServiceCategory" name="serviceCategory">
                             <option value="housing">Housing</option>
                             <option value="medical">Medical</option>
                             <option value="mental-health">Mental Health</option>
@@ -511,7 +670,6 @@
                 <h3 style="color:#f5f5f7;font-size:1.1rem;font-weight:700;margin:0;">My Profile</h3>
                 <button onclick="closeProfileModal()" style="background:none;border:none;color:#6e6e73;cursor:pointer;font-size:1.2rem;">✕</button>
             </div>
-            <!-- Avatar + identity -->
             <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:1.25rem;gap:0.5rem;">
                 <div id="profileAvatar" style="width:80px;height:80px;border-radius:50%;background:#ffd700;display:grid;place-items:center;font-weight:800;font-size:1.6rem;color:#111;overflow:hidden;margin-bottom:0.25rem;"></div>
                 <div id="profileName" style="color:#f5f5f7;font-size:1.15rem;font-weight:700;"></div>
@@ -528,6 +686,7 @@
     </div>
 
     <script>
+    /* ── Profile widget ── */
     (function initProfileWidget() {
         const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
         if (!sess.email) return;
@@ -545,10 +704,8 @@
 
         const sidebarAv = document.getElementById('sidebarAvatar');
         const sidebarNm = document.getElementById('sidebarName');
-        const sidebarRl = document.getElementById('sidebarRole');
         if (sidebarAv) { sidebarAv.innerHTML = avatarContent; if (savedPhoto) sidebarAv.style.background = 'transparent'; }
         if (sidebarNm) sidebarNm.textContent = sess.name || sess.email;
-        if (sidebarRl) sidebarRl.textContent = (sess.role || '').replace(/_/g, ' ');
     })();
 
     function openProfileModal() {
@@ -564,9 +721,9 @@
             avEl.innerHTML = savedPhoto ? `<img src="${savedPhoto}" style="width:100%;height:100%;object-fit:cover;">` : getInitials(sess.name || sess.email);
             avEl.style.background = savedPhoto ? 'transparent' : '#ffd700';
         }
-        const nm = document.getElementById('profileName');   if (nm) nm.textContent  = sess.name  || '—';
-        const em = document.getElementById('profileEmail');  if (em) em.textContent  = sess.email || '—';
-        const rl = document.getElementById('profileRole');   if (rl) rl.textContent  = (sess.role || '').replace(/_/g, ' ');
+        const nm = document.getElementById('profileName');  if (nm) nm.textContent = sess.name  || '—';
+        const em = document.getElementById('profileEmail'); if (em) em.textContent = sess.email || '—';
+        const rl = document.getElementById('profileRole');  if (rl) rl.textContent = (sess.role || '').replace(/_/g, ' ');
         document.getElementById('profileModal').style.display = 'block';
     }
 
@@ -582,7 +739,6 @@
             const dataUrl = e.target.result;
             const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
             localStorage.setItem('hopics_profile_photo_' + sess.email, dataUrl);
-            // Update avatar everywhere
             const img = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
             const avEl = document.getElementById('profileAvatar');
             if (avEl) { avEl.innerHTML = img; avEl.style.background = 'transparent'; }
@@ -599,14 +755,24 @@
     </script>
 
     <script>
+        /* ── Auth guard: admin/supervisor only ── */
+        (function() {
+            const sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
+            if (!sess.email) { window.location.replace('login.html'); return; }
+            const role = (sess.role || '').toLowerCase();
+            if (role !== 'admin' && role !== 'supervisor') {
+                window.location.replace('dashboard.html');
+            }
+        })();
+
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+
         let referralsData = [];
 
         const _sess = JSON.parse(sessionStorage.getItem('hopics_user') || '{}');
-        const currentUserEmail = _sess.email   || '';
-        const currentUserName  = _sess.name    || '';
-        const currentUserRole  = _sess.role    || '';
-        const currentProgram   = _sess.program || '';
+        const currentUserEmail = _sess.email || '';
+        const currentUserName  = _sess.name  || '';
+        const currentUserRole  = _sess.role  || '';
         const isAdmin = currentUserRole === 'admin' || currentUserRole === 'supervisor';
 
         const urgencyStyles = {
@@ -630,11 +796,10 @@
             'closed':      'Closed',
         };
 
-        // Normalize status from GAS — handles date bleed, title case, etc.
+        /* ── Helpers ── */
         function normalizeStatus(val) {
             if (!val) return 'pending';
             var s = String(val).toLowerCase().trim();
-            // If it looks like a date string, it's a column mismatch — default to pending
             if (s.includes('gmt') || s.includes(' apr ') || s.includes(' jan ') ||
                 s.includes(' feb ') || s.includes(' mar ') || s.includes(' may ') ||
                 s.includes(' jun ') || s.includes(' jul ') || s.includes(' aug ') ||
@@ -653,7 +818,7 @@
         }
 
         function toTitle(s) {
-            return s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            return String(s || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         }
 
         function getInitials(name) {
@@ -667,12 +832,26 @@
             return palettes[(name || '?').charCodeAt(0) % palettes.length];
         }
 
+        /* ── Stats bar ── */
+        function updateStats(list) {
+            const total      = list.length;
+            const pending    = list.filter(r => normalizeStatus(r.status) === 'pending').length;
+            const inProgress = list.filter(r => normalizeStatus(r.status) === 'in-progress').length;
+            const completed  = list.filter(r => normalizeStatus(r.status) === 'completed').length;
+            const closed     = list.filter(r => normalizeStatus(r.status) === 'closed').length;
+            document.getElementById('statTotal').textContent      = total;
+            document.getElementById('statPending').textContent    = pending;
+            document.getElementById('statInProgress').textContent = inProgress;
+            document.getElementById('statCompleted').textContent  = completed;
+            const closedEl = document.getElementById('statClosed');
+            if (closedEl) closedEl.textContent = closed;
+        }
+
+        /* ── Loading / empty states ── */
         function showLoading() {
             const grid = document.getElementById('referralsGrid');
             grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>Loading referrals…</p></div>`;
         }
-
-        function hideLoading() { /* handled by renderReferralCards */ }
 
         function showEmpty(msg) {
             const grid = document.getElementById('referralsGrid');
@@ -680,30 +859,53 @@
             document.getElementById('referralCount').textContent = '0 referrals';
         }
 
+        /* ── Render ── */
         function renderReferralCards() {
             const grid  = document.getElementById('referralsGrid');
             const count = document.getElementById('referralCount');
-            const selectedStatus  = document.getElementById('statusFilter')?.value  || '';
-            const selectedProgram = document.getElementById('programFilter')?.value || '';
-            const selectedStaff   = document.getElementById('staffFilter')?.value   || '';
+
+            const selectedStatus      = document.getElementById('statusFilter')?.value      || '';
+            const selectedUrgency     = document.getElementById('urgencyFilter')?.value     || '';
+            const selectedCategory    = document.getElementById('categoryFilter')?.value    || '';
+            const selectedFromProgram = document.getElementById('fromProgramFilter')?.value || '';
+            const selectedToProgram   = document.getElementById('toProgramFilter')?.value   || '';
+            const selectedStaff       = document.getElementById('staffFilter')?.value       || '';
+            const searchVal           = (document.getElementById('searchFilter')?.value     || '').toLowerCase().trim();
+            const dateFrom            = document.getElementById('dateFromFilter')?.value    || '';
+            const dateTo              = document.getElementById('dateToFilter')?.value      || '';
 
             const list = referralsData.filter(r => {
                 const ns = normalizeStatus(r.status);
-                if (selectedStatus  && ns !== selectedStatus) return false;
-                if (selectedProgram && (r.fromProgram || '') !== selectedProgram && (r.toProgram || '') !== selectedProgram) return false;
-                if (selectedStaff   && (r.submittedBy || r.staffEmail || '') !== selectedStaff) return false;
+                if (selectedStatus      && ns !== selectedStatus) return false;
+                if (selectedUrgency     && (r.urgency || '').toLowerCase() !== selectedUrgency) return false;
+                if (selectedCategory    && (r.serviceCategory || '').toLowerCase() !== selectedCategory.toLowerCase()) return false;
+                if (selectedFromProgram && (r.fromProgram || '') !== selectedFromProgram) return false;
+                if (selectedToProgram   && (r.toProgram || '') !== selectedToProgram) return false;
+                if (selectedStaff       && (r.staffEmail || r.submittedBy || '') !== selectedStaff) return false;
+                if (searchVal) {
+                    const nameMatch  = (r.clientName || '').toLowerCase().includes(searchVal);
+                    const hmisMatch  = (r.hmisId || '').toLowerCase().includes(searchVal);
+                    if (!nameMatch && !hmisMatch) return false;
+                }
+                if (dateFrom || dateTo) {
+                    const ts = new Date(r.timestamp || r.created || 0);
+                    if (dateFrom && ts < new Date(dateFrom)) return false;
+                    if (dateTo   && ts > new Date(dateTo + 'T23:59:59')) return false;
+                }
                 return true;
             });
+
             count.textContent = `${list.length} referral${list.length !== 1 ? 's' : ''}`;
+            updateStats(list);
 
             if (list.length === 0) {
-                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>No referrals found.</p></div>`;
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><p>No referrals match the selected filters.</p></div>`;
                 return;
             }
 
             grid.innerHTML = list.map(r => {
                 r.status = normalizeStatus(r.status);
-                const urg = urgencyStyles[r.urgency] || urgencyStyles.medium;
+                const urg = urgencyStyles[(r.urgency || '').toLowerCase()] || urgencyStyles.medium;
                 const source    = r.fromProgram || r.referralSource || '—';
                 const toProgram = r.toProgram   || '—';
                 const profileUrl = r.hmisId
@@ -714,9 +916,8 @@
                 const submitted = r.submittedBy || r.staffName || '';
                 const safeId    = (r.id || '').replace(/'/g, "\\'");
                 const safeName  = (r.clientName || '').replace(/'/g, "\\'");
-                const deleteBtn = isAdmin
-                    ? `<button class="btn btn-secondary" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5;font-size:0.75rem;padding:0.3rem 0.7rem;" onclick="deleteReferral('${safeId}','${safeName}')">Delete</button>`
-                    : '';
+                // Admin always gets delete on this page
+                const deleteBtn = `<button class="btn btn-secondary" style="background:#fee2e2;color:#991b1b;border-color:#fca5a5;font-size:0.75rem;padding:0.3rem 0.7rem;" onclick="deleteReferral('${safeId}','${safeName}')">Delete</button>`;
                 return `<div class="referral-card">
                     <div class="referral-card-top">
                         <div class="referral-avatar" style="background:${avatarBg};">${initials}</div>
@@ -746,63 +947,56 @@
             }).join('');
         }
 
-        // Keep old name as alias for any remaining internal references
-        function renderReferralTable() { renderReferralCards(); }
-
-        function renderReferrals(data) {
-            if (Array.isArray(data)) {
-                referralsData = data;
-            } else if (data && data.success && Array.isArray(data.referrals)) {
-                referralsData = data.referrals;
-            } else {
-                referralsData = [];
-                console.warn('Failed to load referrals from sheet:', data);
-            }
-            renderReferralTable();
-        }
-
-        let _refCbSeq = 0, _refLoadTimer = null;
+        /* ── Load all referrals (no server-side filter) ── */
+        let _refCbSeq = 0, _refLoadTimer = null, _refHardTimer = null;
 
         function loadReferrals() {
             showLoading();
-            if (_refLoadTimer) { clearTimeout(_refLoadTimer); _refLoadTimer = null; }
+            if (_refLoadTimer)  { clearTimeout(_refLoadTimer);  _refLoadTimer  = null; }
+            if (_refHardTimer)  { clearTimeout(_refHardTimer);  _refHardTimer  = null; }
 
             const cbName = '_refCb' + (++_refCbSeq);
             window[cbName] = function(data) {
                 try { delete window[cbName]; } catch(e) {}
                 if (_refLoadTimer) { clearTimeout(_refLoadTimer); _refLoadTimer = null; }
-                renderReferrals(data);
+                if (_refHardTimer) { clearTimeout(_refHardTimer); _refHardTimer = null; }
+                if (Array.isArray(data)) {
+                    referralsData = data;
+                } else if (data && data.success && Array.isArray(data.referrals)) {
+                    referralsData = data.referrals;
+                } else {
+                    referralsData = [];
+                    console.warn('Unexpected response from GAS:', data);
+                }
+                updateStats(referralsData);
+                populateCategoryFilter(referralsData);
+                renderReferralCards();
             };
 
-            // Everyone (including admin) sees only their own submitted referrals
-            // All Referrals page is where admin views agency-wide referrals
-            const filterParam = '&staffEmail=' + encodeURIComponent(currentUserEmail);
-
             const script = document.createElement('script');
-            script.src = GOOGLE_SCRIPT_URL +
-                '?action=listReferrals' +
-                filterParam +
-                '&callback=' + cbName;
+            // No staffEmail/program filter — load all referrals
+            script.src = GOOGLE_SCRIPT_URL + '?action=listReferrals&callback=' + cbName;
             script.onerror = function() {
                 try { delete window[cbName]; } catch(e) {}
                 if (_refLoadTimer) { clearTimeout(_refLoadTimer); _refLoadTimer = null; }
-                hideLoading();
+                if (_refHardTimer) { clearTimeout(_refHardTimer); _refHardTimer = null; }
                 showEmpty('<p style="margin:0 0 0.75rem;">Could not reach the server.</p><button onclick="loadReferrals()" style="padding:0.5rem 1.25rem;background:#ffd700;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Retry</button>');
             };
-            // Auto-retry once at 20s, hard fail at 45s
+
+            // Auto-retry silently at 20s
             _refLoadTimer = setTimeout(function() {
                 _refLoadTimer = null;
                 if (window[cbName]) {
-                    // first timeout — auto-retry silently
                     try { delete window[cbName]; } catch(e) {}
                     loadReferrals();
                 }
             }, 20000);
-            setTimeout(function() {
-                if (_refLoadTimer) { clearTimeout(_refLoadTimer); _refLoadTimer = null; }
+
+            // Hard fail at 50s
+            _refHardTimer = setTimeout(function() {
+                _refHardTimer = null;
                 if (window[cbName]) {
                     try { delete window[cbName]; } catch(e) {}
-                    hideLoading();
                     showEmpty('<p style="margin:0 0 0.75rem;">Server is taking too long. Please try again.</p><button onclick="loadReferrals()" style="padding:0.5rem 1.25rem;background:#ffd700;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Retry</button>');
                 }
             }, 50000);
@@ -810,36 +1004,40 @@
             document.head.appendChild(script);
         }
 
+        /* ── Delete ── */
         function deleteReferral(id, clientName) {
             if (!confirm('Delete referral for ' + clientName + '? This cannot be undone.')) return;
             fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST', mode: 'no-cors',
+                method: 'POST',
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ action: 'deleteReferral', id, deletedBy: currentUserName, staffEmail: currentUserEmail }).toString()
-            }).catch(() => {});
+            }).catch(function() {});
             referralsData = referralsData.filter(r => r.id !== id);
-            renderReferralTable();
+            renderReferralCards();
+            showToast('Referral deleted', 'success');
         }
+
+        /* ── Edit modal ── */
+        let _pendingEditPrograms = null;
 
         function openEdit(id) {
             const r = referralsData.find(x => x.id === id);
             if (!r) return;
-            document.getElementById('editId').value              = r.id || '';
-            document.getElementById('editClientName').value      = r.clientName || '';
-            document.getElementById('editClientDOB').value       = r.clientDOB || '';
-            document.getElementById('editReferralSource').value  = r.referralSource || 'other';
+            document.getElementById('editId').value              = r.id              || '';
+            document.getElementById('editClientName').value      = r.clientName      || '';
+            document.getElementById('editClientDOB').value       = r.clientDOB       || '';
+            document.getElementById('editReferralSource').value  = r.referralSource  || 'other';
             document.getElementById('editServiceCategory').value = r.serviceCategory || 'housing';
-            document.getElementById('editUrgency').value         = r.urgency || 'medium';
+            document.getElementById('editUrgency').value         = (r.urgency || 'medium').toLowerCase();
             document.getElementById('editStatus').value          = normalizeStatus(r.status);
             document.getElementById('editAssessmentNotes').value = r.assessmentNotes || '';
-            // Set from/to program after dropdowns are populated
             _pendingEditPrograms = { from: r.fromProgram || '', to: r.toProgram || '' };
             setEditProgramValues();
             document.getElementById('editModal').classList.add('open');
             document.body.style.overflow = 'hidden';
         }
 
-        let _pendingEditPrograms = null;
         function setEditProgramValues() {
             if (!_pendingEditPrograms) return;
             const fp = document.getElementById('editFromProgram');
@@ -851,13 +1049,38 @@
             }
         }
 
-        // Load programs into edit modal dropdowns
-        (function loadProgramsForEdit() {
-            const cb = '_progEditCb' + Date.now();
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function handleOverlayClick(e) {
+            if (e.target === document.getElementById('editModal')) closeModal();
+        }
+
+        /* ── Load programs into edit modal and filter dropdowns ── */
+        (function loadProgramsForFiltersAndEdit() {
+            const cb = '_progCb' + Date.now();
             window[cb] = function(data) {
                 try { delete window[cb]; } catch(e) {}
                 if (!data || !data.success || !Array.isArray(data.programs)) return;
+
                 const active = data.programs.filter(p => !p.status || p.status.toLowerCase() !== 'inactive');
+
+                // Populate From Program and To Program filter dropdowns
+                ['fromProgramFilter', 'toProgramFilter'].forEach(function(filterId) {
+                    const filterSel = document.getElementById(filterId);
+                    if (!filterSel) return;
+                    active.forEach(function(p) {
+                        const name = p.programName || p.name || '';
+                        if (!name) return;
+                        const opt = document.createElement('option');
+                        opt.value = name; opt.textContent = name;
+                        filterSel.appendChild(opt);
+                    });
+                });
+
+                // Populate edit modal from/to dropdowns
                 ['editFromProgram', 'editToProgram'].forEach(function(selId) {
                     const sel = document.getElementById(selId);
                     if (!sel) return;
@@ -870,6 +1093,7 @@
                         sel.appendChild(opt);
                     });
                 });
+
                 setEditProgramValues();
             };
             const s = document.createElement('script');
@@ -878,91 +1102,90 @@
             document.head.appendChild(s);
         })();
 
-        function closeModal() {
-            document.getElementById('editModal').classList.remove('open');
-            document.body.style.overflow = '';
+        /* ── Load staff/users into filter dropdown ── */
+        (function loadUsersForFilter() {
+            const cb = '_usersCb' + Date.now();
+            window[cb] = function(data) {
+                try { delete window[cb]; } catch(e) {}
+                if (!data || !data.success || !Array.isArray(data.users)) return;
+                const sel = document.getElementById('staffFilter');
+                if (!sel) return;
+                data.users.forEach(function(u) {
+                    const email = u.email || '';
+                    const name  = u.name  || email;
+                    if (!email) return;
+                    const opt = document.createElement('option');
+                    opt.value = email; opt.textContent = name;
+                    sel.appendChild(opt);
+                });
+            };
+            const s = document.createElement('script');
+            s.src = GOOGLE_SCRIPT_URL + '?action=listUsers&callback=' + cb;
+            s.onerror = function() { try { delete window[cb]; } catch(e) {} };
+            document.head.appendChild(s);
+        })();
+
+        /* ── Filter change listeners ── */
+        ['statusFilter', 'urgencyFilter', 'categoryFilter', 'fromProgramFilter', 'toProgramFilter', 'staffFilter', 'dateFromFilter', 'dateToFilter'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', renderReferralCards);
+        });
+        const searchEl = document.getElementById('searchFilter');
+        if (searchEl) {
+            let _searchTimer;
+            searchEl.addEventListener('input', function() {
+                clearTimeout(_searchTimer);
+                _searchTimer = setTimeout(renderReferralCards, 200);
+            });
         }
 
-        function handleOverlayClick(e) {
-            if (e.target === document.getElementById('editModal')) closeModal();
+        function resetFilters() {
+            ['statusFilter','urgencyFilter','categoryFilter','fromProgramFilter','toProgramFilter','staffFilter'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            ['dateFromFilter','dateToFilter','searchFilter'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            renderReferralCards();
         }
 
-        const statusFilterEl = document.getElementById('statusFilter');
-        if (statusFilterEl) statusFilterEl.addEventListener('change', renderReferralCards);
-
-        // Show admin filters and populate them
-        if (isAdmin) {
-            const af = document.getElementById('adminFilters');
-            if (af) af.style.display = 'flex';
-
-            document.getElementById('programFilter').addEventListener('change', renderReferralCards);
-            document.getElementById('staffFilter').addEventListener('change', renderReferralCards);
-
-            // Load programs for filter
-            (function() {
-                const cb = '_progFiltCb' + Date.now();
-                window[cb] = function(data) {
-                    try { delete window[cb]; } catch(e) {}
-                    if (!data || !data.success || !Array.isArray(data.programs)) return;
-                    const sel = document.getElementById('programFilter');
-                    if (!sel) return;
-                    data.programs.forEach(function(p) {
-                        const name = p.programName || p.name || '';
-                        if (!name) return;
-                        const opt = document.createElement('option');
-                        opt.value = name; opt.textContent = name;
-                        sel.appendChild(opt);
-                    });
-                };
-                const s = document.createElement('script');
-                s.src = GOOGLE_SCRIPT_URL + '?action=listPrograms&callback=' + cb;
-                s.onerror = function() { try { delete window[cb]; } catch(e) {} };
-                document.head.appendChild(s);
-            })();
-
-            // Load staff list for filter
-            (function() {
-                const cb = '_staffFiltCb' + Date.now();
-                window[cb] = function(data) {
-                    try { delete window[cb]; } catch(e) {}
-                    if (!data || !data.success || !Array.isArray(data.users)) return;
-                    const sel = document.getElementById('staffFilter');
-                    if (!sel) return;
-                    data.users.forEach(function(u) {
-                        const email = u.email || '';
-                        const name  = u.name  || email;
-                        if (!email) return;
-                        const opt = document.createElement('option');
-                        opt.value = email; opt.textContent = name;
-                        sel.appendChild(opt);
-                    });
-                };
-                const s = document.createElement('script');
-                s.src = GOOGLE_SCRIPT_URL + '?action=listUsers&callback=' + cb;
-                s.onerror = function() { try { delete window[cb]; } catch(e) {} };
-                document.head.appendChild(s);
-            })();
+        /* ── Populate category filter from loaded data ── */
+        function populateCategoryFilter(referrals) {
+            const cats = [...new Set(referrals.map(r => r.serviceCategory).filter(Boolean))].sort();
+            const sel = document.getElementById('categoryFilter');
+            if (!sel) return;
+            const current = sel.value;
+            sel.innerHTML = '<option value="">All Categories</option>' +
+                cats.map(c => `<option value="${c}"${c === current ? ' selected' : ''}>${c}</option>`).join('');
         }
 
+        /* ── Edit form submit ── */
         document.getElementById('editForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const btn = document.getElementById('editSaveBtn');
             btn.textContent = 'Saving...';
             btn.disabled = true;
 
-            const referralId = document.getElementById('editId').value;
-            const newStatus  = document.getElementById('editStatus').value;
             const params = {
-                id:               referralId,
-                status:           newStatus,
-                clientName:       document.getElementById('editClientName').value,
-                clientDOB:        document.getElementById('editClientDOB').value,
-                referralSource:   document.getElementById('editReferralSource').value,
-                serviceCategory:  document.getElementById('editServiceCategory').value,
-                urgency:          document.getElementById('editUrgency').value,
-                assignedTo:       document.getElementById('editAssignedTo').value,
-                assessmentNotes:  document.getElementById('editAssessmentNotes').value,
+                id:              document.getElementById('editId').value,
+                clientName:      document.getElementById('editClientName').value,
+                clientDOB:       document.getElementById('editClientDOB').value,
+                referralSource:  document.getElementById('editReferralSource').value,
+                serviceCategory: document.getElementById('editServiceCategory').value,
+                urgency:         document.getElementById('editUrgency').value,
+                status:          document.getElementById('editStatus').value,
+                fromProgram:     document.getElementById('editFromProgram').value,
+                toProgram:       document.getElementById('editToProgram').value,
+                assessmentNotes: document.getElementById('editAssessmentNotes').value,
             };
+
+            // Optimistic local update
+            const idx = referralsData.findIndex(r => r.id === params.id);
+            if (idx !== -1) {
+                referralsData[idx] = Object.assign({}, referralsData[idx], params);
+            }
 
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
@@ -971,33 +1194,39 @@
                 body: new URLSearchParams(params).toString()
             }).catch(function() {}).finally(function() {
                 closeModal();
-                loadReferrals();
+                renderReferralCards();
                 btn.textContent = 'Save Changes';
                 btn.disabled = false;
+                showToast('Referral updated', 'success');
             });
         });
 
-        loadReferrals();
-
-        // Show admin link if user is admin/supervisor
-        if (isAdmin) {
-            const al = document.getElementById('adminLink');
-            if (al) al.style.display = 'flex';
-            const arl = document.getElementById('allReferralsLink');
-            if (arl) arl.style.display = 'flex';
-        }
-
+        /* ── Export CSV ── */
         function exportReferrals() {
             if (!referralsData || !referralsData.length) { showToast('No data to export', 'error'); return; }
-            const headers = ['Client', 'HMIS ID', 'Category', 'From Program', 'To Program', 'Urgency', 'Status', 'Submitted By', 'Date'];
+            const headers = ['Client', 'HMIS ID', 'Category', 'Urgency', 'From Program', 'To Program', 'Status', 'Submitted By', 'Staff Email', 'Date'];
             const rows = referralsData.map(r => [
-                r.clientName || '', r.hmisId || '', r.serviceCategory || '',
-                r.fromProgram || '', r.toProgram || '', r.urgency || '',
-                r.status || '', r.submittedBy || '',
+                r.clientName      || '',
+                r.hmisId          || '',
+                r.serviceCategory || '',
+                r.urgency         || '',
+                r.fromProgram     || '',
+                r.toProgram       || '',
+                r.status          || '',
+                r.submittedBy     || '',
+                r.staffEmail      || '',
                 r.timestamp ? new Date(r.timestamp).toLocaleDateString() : ''
             ]);
-            exportArrayToCSV(headers, rows, 'referrals-' + new Date().toISOString().slice(0,10) + '.csv');
+            exportArrayToCSV(headers, rows, 'all-referrals-' + new Date().toISOString().slice(0,10) + '.csv');
         }
+
+        /* ── Show admin link and boot ── */
+        const adminLinkEl = document.getElementById('adminLink');
+        if (adminLinkEl) adminLinkEl.style.display = 'flex';
+        const allReferralsLinkEl = document.getElementById('allReferralsLink');
+        if (allReferralsLinkEl) allReferralsLinkEl.style.display = 'flex';
+
+        loadReferrals();
     </script>
 </body>
 </html>

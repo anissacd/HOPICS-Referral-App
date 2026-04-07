@@ -778,6 +778,11 @@
     </style>
 </head>
 <body>
+<!-- Fixed profile button top-right -->
+<div id="profileBtn" onclick="window.location.href='staff-profile.html'">
+    <div id="sidebarAvatar" style="width:30px;height:30px;border-radius:50%;background:#ffd700;display:grid;place-items:center;font-weight:800;font-size:0.7rem;color:#111;flex-shrink:0;overflow:hidden;">?</div>
+    <span id="sidebarName" style="font-size:0.78rem;font-weight:600;color:#f5f5f7;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+</div>
     <div class="app-shell">
         <!-- ── Sidebar ── -->
         <aside class="app-sidebar">
@@ -839,6 +844,15 @@
                     </svg>
                     <span>Community</span>
                 </a>
+                <a href="all-referrals.html" id="allReferralsLink" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                        <line x1="8" y1="18" x2="21" y2="18"/>
+                        <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                    <span>All Referrals</span>
+                </a>
                 <a href="admin.html" id="adminLink" style="display:none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -899,17 +913,31 @@
                                        placeholder="Tags (comma-separated): housing, shelter, mental-health…">
                             </div>
 
-                            <!-- Image URL row (collapsible) -->
-                            <div class="compose-field-row compose-image-row" id="composeImageRow">
-                                <svg class="compose-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                     stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                                    <polyline points="21 15 16 10 5 21"/>
-                                </svg>
-                                <input class="compose-input" id="composeImageUrl" type="url"
-                                       placeholder="Image URL (optional)">
+                            <!-- Image attach row (collapsible) -->
+                            <div class="compose-field-row compose-image-row" id="composeImageRow" style="flex-direction:column;align-items:stretch;gap:0.5rem;">
+                                <div style="display:flex;align-items:center;gap:0.75rem;">
+                                    <svg class="compose-field-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21 15 16 10 5 21"/>
+                                    </svg>
+                                    <label style="display:flex;align-items:center;gap:0.5rem;background:#f5f5f7;border:1px solid #d2d2d7;border-radius:8px;padding:0.4rem 0.875rem;cursor:pointer;font-size:0.82rem;font-weight:600;color:#1d1d1f;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                        Upload Image
+                                        <input type="file" id="composeImageFile" accept="image/*" style="display:none;" onchange="handleImageFile(this)">
+                                    </label>
+                                    <span style="color:#aeaeb2;font-size:0.8rem;">or</span>
+                                    <input class="compose-input" id="composeImageUrl" type="url"
+                                           placeholder="Paste image URL…" style="flex:1;">
+                                </div>
+                                <div id="imagePreviewWrap" style="display:none;">
+                                    <div style="position:relative;display:inline-block;">
+                                        <img id="imagePreview" src="" alt="preview" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #d2d2d7;display:block;">
+                                        <button onclick="clearImageAttachment()" style="position:absolute;top:4px;right:4px;background:#1c1c1e;color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">&times;</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -922,7 +950,7 @@
                                     <circle cx="8.5" cy="8.5" r="1.5"/>
                                     <polyline points="21 15 16 10 5 21"/>
                                 </svg>
-                                Add Image URL
+                                Add Image
                             </button>
                             <button class="post-btn" id="postBtn" type="button" onclick="submitPost()">Post</button>
                         </div>
@@ -994,6 +1022,8 @@
         if (_isAdmin) {
             var al = document.getElementById('adminLink');
             if (al) al.style.display = 'flex';
+            var arl = document.getElementById('allReferralsLink');
+            if (arl) arl.style.display = 'flex';
         }
 
         // Top bar
@@ -1010,6 +1040,18 @@
         }
         tbInitials.textContent = initials(_sess.name || _sess.email || '?');
         tbName.textContent = _sess.name || '';
+
+        // Populate fixed profile pill (top-right)
+        var sbAv = document.getElementById('sidebarAvatar');
+        var sbNm = document.getElementById('sidebarName');
+        if (sbAv) {
+            if (_sess.picture) {
+                sbAv.innerHTML = '<img src="' + _sess.picture + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentNode.textContent=\'' + initials(_sess.name||'?') + '\'">';
+            } else {
+                sbAv.textContent = initials(_sess.name || _sess.email || '?');
+            }
+        }
+        if (sbNm) sbNm.textContent = _sess.name || '';
 
         // Compose avatar
         var caImg  = document.getElementById('composeAvatarImg');
@@ -1103,6 +1145,39 @@
     }
 
     // ── Load Posts ─────────────────────────────────────────────
+    // ── Own-post notifications ─────────────────────────────────
+    function checkOwnPostNotifications(posts) {
+        var myEmail = (_sess && _sess.email) ? _sess.email.toLowerCase() : '';
+        if (!myEmail) return;
+
+        var storageKey = 'hopics_post_seen_' + myEmail;
+        var seen = {};
+        try { seen = JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch(e) {}
+
+        var msgs = [];
+        posts.forEach(function(p) {
+            var author = (p.authorEmail || '').toLowerCase();
+            if (author !== myEmail) return;
+            var id     = p.id || p.postId || '';
+            var likes  = parseInt(p.likes || 0);
+            var comms  = parseInt(p.commentCount || p.comments || 0);
+            var prev   = seen[id] || { likes: 0, comments: 0 };
+            var newLikes = likes - (prev.likes || 0);
+            var newComms = comms - (prev.comments || 0);
+            if (newLikes > 0) msgs.push((newLikes === 1 ? '1 new like' : newLikes + ' new likes') + ' on your post');
+            if (newComms > 0) msgs.push((newComms === 1 ? '1 new comment' : newComms + ' new comments') + ' on your post');
+            seen[id] = { likes: likes, comments: comms };
+        });
+
+        try { localStorage.setItem(storageKey, JSON.stringify(seen)); } catch(e) {}
+
+        if (msgs.length) {
+            setTimeout(function() {
+                msgs.forEach(function(m) { showToast(m, 'info'); });
+            }, 800);
+        }
+    }
+
     function loadPosts(isRetry) {
         jsonpGet({ action: 'listPosts' }, TIMEOUT_MS)
             .then(function(data) {
@@ -1149,6 +1224,7 @@
         }
 
         fc.innerHTML = '';
+        checkOwnPostNotifications(posts);
         posts.sort(function(a, b) {
             var ta = new Date(a.lastActivity || a.timestamp).getTime();
             var tb = new Date(b.lastActivity || b.timestamp).getTime();
@@ -1268,8 +1344,44 @@
         var isOpen = row.classList.toggle('open');
         btn.style.color = isOpen ? '#ffd700' : '';
         if (!isOpen) {
-            document.getElementById('composeImageUrl').value = '';
+            clearImageAttachment();
         }
+    }
+
+    // ── Image file handling ────────────────────────────────────
+    var _imageDataUrl = null;
+
+    function handleImageFile(input) {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                var MAX = 600;
+                var w = img.width, h = img.height;
+                if (w > MAX || h > MAX) {
+                    if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                    else       { w = Math.round(w * MAX / h); h = MAX; }
+                }
+                var canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                _imageDataUrl = canvas.toDataURL('image/jpeg', 0.55);
+                document.getElementById('imagePreview').src = _imageDataUrl;
+                document.getElementById('imagePreviewWrap').style.display = 'block';
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearImageAttachment() {
+        _imageDataUrl = null;
+        document.getElementById('composeImageUrl').value = '';
+        document.getElementById('composeImageFile').value = '';
+        document.getElementById('imagePreview').src = '';
+        document.getElementById('imagePreviewWrap').style.display = 'none';
     }
 
     // ── Auto-grow textarea ─────────────────────────────────────
@@ -1283,7 +1395,7 @@
         var content = document.getElementById('composeText').value.trim();
         if (!content) { showToast('Please write something before posting.', 'info'); return; }
 
-        var imageUrl = document.getElementById('composeImageUrl').value.trim();
+        var imageUrl = _imageDataUrl || document.getElementById('composeImageUrl').value.trim();
         var tags     = document.getElementById('composeTags').value.trim();
 
         var btn = document.getElementById('postBtn');
@@ -1319,7 +1431,7 @@
         // Reset compose
         document.getElementById('composeText').value = '';
         document.getElementById('composeTags').value = '';
-        document.getElementById('composeImageUrl').value = '';
+        clearImageAttachment();
         document.getElementById('composeImageRow').classList.remove('open');
         document.getElementById('toggleImageBtn').style.color = '';
 

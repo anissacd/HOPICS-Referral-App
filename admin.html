@@ -260,6 +260,15 @@
                     </svg>
                     <span>Community</span>
                 </a>
+                <a href="all-referrals.html" id="allReferralsLink">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                        <line x1="8" y1="18" x2="21" y2="18"/>
+                        <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                    <span>All Referrals</span>
+                </a>
                 <a href="admin.html" id="adminLink" class="active">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -476,11 +485,11 @@
         </div>
     </div>
 
-    <!-- Edit Role Modal -->
+    <!-- Edit User Modal -->
     <div class="modal-overlay" id="editRoleModal" onclick="onOverlayClick(event,'editRoleModal')">
         <div class="modal-box">
             <div class="modal-header">
-                <span class="modal-title">Edit User Role</span>
+                <span class="modal-title">Edit User</span>
                 <button class="modal-close" onclick="closeModal('editRoleModal')" aria-label="Close">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -489,10 +498,14 @@
                 </button>
             </div>
             <p style="font-size:0.875rem;color:#6e6e73;margin-bottom:1.25rem;">
-                Changing the role for <strong id="editRoleUserName" style="color:#1d1d1f;"></strong>.
+                Editing profile for <strong id="editRoleUserName" style="color:#1d1d1f;"></strong>.
             </p>
             <div class="modal-form-group">
-                <label class="modal-label" for="editRoleSelect">New Role</label>
+                <label class="modal-label" for="editUserNameInput">Display Name</label>
+                <input class="modal-input" type="text" id="editUserNameInput" placeholder="Full name">
+            </div>
+            <div class="modal-form-group">
+                <label class="modal-label" for="editRoleSelect">Role</label>
                 <select class="modal-input" id="editRoleSelect">
                     <option value="admin">Admin</option>
                     <option value="supervisor">Supervisor</option>
@@ -504,7 +517,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('editRoleModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="saveRole()">Save Role</button>
+                <button class="btn btn-primary" onclick="saveRole()">Save</button>
             </div>
         </div>
     </div>
@@ -565,6 +578,8 @@
         if (_sess.role === 'admin') {
             const al = document.getElementById('adminLink');
             if (al) al.style.display = 'flex';
+            const arl = document.getElementById('allReferralsLink');
+            if (arl) arl.style.display = 'flex';
         }
 
         // ── Mock Data ────────────────────────────────────────────────
@@ -625,7 +640,7 @@
                     <td>
                         <div style="display:flex;align-items:center;gap:0.75rem;">
                             <div class="admin-table-avatar ${AVATAR_CSS[u.role]}">${initials(u.name)}</div>
-                            <span style="font-weight:600;font-size:0.9rem;">${u.name}</span>
+                            <span style="font-weight:600;font-size:0.9rem;cursor:pointer;color:#1d1d1f;" onclick="openEditRole(${u.id})" title="Edit user profile">${u.name}</span>
                         </div>
                     </td>
                     <td style="color:#6e6e73;font-size:0.875rem;">${u.email}</td>
@@ -814,7 +829,8 @@
             const u = users.find(u => u.id === id);
             if (!u) return;
             _editRoleId = id;
-            document.getElementById('editRoleUserName').textContent = u.name;
+            document.getElementById('editRoleUserName').textContent = u.email;
+            document.getElementById('editUserNameInput').value = u.name || '';
             document.getElementById('editRoleSelect').value = u.role;
             openModal('editRoleModal');
         }
@@ -824,6 +840,8 @@
             if (!u) return;
 
             const newRole = document.getElementById('editRoleSelect').value;
+            const newName = document.getElementById('editUserNameInput').value.trim();
+            if (newName) u.name = newName;
             u.role = newRole;
             renderUsers(users);
             updateAdminStats();
@@ -836,7 +854,8 @@
                 body: new URLSearchParams({
                     action: 'updateUserRole',
                     email:  u.email,
-                    role:   newRole
+                    role:   newRole,
+                    name:   newName
                 }).toString()
             }).catch(() => {});
         }

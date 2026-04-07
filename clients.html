@@ -270,6 +270,15 @@
                     </svg>
                     <span>Community</span>
                 </a>
+                <a href="all-referrals.html" id="allReferralsLink" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                        <line x1="8" y1="18" x2="21" y2="18"/>
+                        <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                    <span>All Referrals</span>
+                </a>
                 <a href="admin.html" id="adminLink" style="display:none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -351,9 +360,6 @@
                     <option value="Transitional">Transitional</option>
                     <option value="Housed">Housed</option>
                 </select>
-                <select class="filter-select" id="caseManagerFilter" onchange="filterClients()">
-                    <option value="">All Case Managers</option>
-                </select>
             </div>
 
             <!-- Client Table -->
@@ -368,9 +374,8 @@
                             <tr>
                                 <th>HMIS ID</th>
                                 <th>Client Name</th>
-                                <th>DOB</th>
+                                <th>Age</th>
                                 <th>Housing Status</th>
-                                <th>Case Manager</th>
                                 <th>Referrals</th>
                                 <th>Last Activity</th>
                                 <th></th>
@@ -403,6 +408,14 @@
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
 
+        function calcAge(dob) {
+            if (!dob) return '—';
+            const b = new Date(dob + (String(dob).length === 10 ? 'T00:00:00' : ''));
+            if (isNaN(b)) return '—';
+            const age = Math.floor((Date.now() - b) / (365.25 * 24 * 60 * 60 * 1000));
+            return age >= 0 ? age + ' yrs' : '—';
+        }
+
         function initials(name) {
             const p = name.trim().split(' ');
             return p.length >= 2 ? (p[0][0] + p[p.length - 1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
@@ -430,7 +443,7 @@
             if (clients.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8">
+                        <td colspan="7">
                             <div class="empty-state">
                                 <div class="empty-state-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -451,16 +464,15 @@
 
             tbody.innerHTML = clients.map(c => {
                 const hClass = housingClass[c.status] || 'housing-inactive';
-                const cmLabel = c.caseManager || '—';
                 const profileUrl = 'client-profile.html?hmisId=' + encodeURIComponent(c.hmisId) + '&name=' + encodeURIComponent(c.name);
+                const age = calcAge(c.dob);
                 return `<tr>
                     <td><span class="hmis-badge">${c.hmisId}</span></td>
                     <td>
                         <a class="client-name-link" href="${profileUrl}">${c.name}</a>
                     </td>
-                    <td style="color:#6e6e73;font-size:0.875rem;">${fmtDate(c.dob)}</td>
+                    <td style="color:#6e6e73;font-size:0.875rem;">${age}</td>
                     <td><span class="housing-pill ${hClass}">${c.status}</span></td>
-                    <td style="font-size:0.875rem;">${cmLabel}</td>
                     <td><span class="ref-badge">${c.totalReferrals || 0}</span></td>
                     <td style="color:#6e6e73;font-size:0.875rem;">${fmtDate(c.lastActivity)}</td>
                     <td>
@@ -474,17 +486,13 @@
         function filterClients() {
             const query  = document.getElementById('clientSearch').value.toLowerCase().trim();
             const status = document.getElementById('statusFilter').value;
-            const cm     = document.getElementById('caseManagerFilter').value;
-
             const filtered = allClients.filter(c => {
                 const matchSearch = !query ||
                     c.name.toLowerCase().includes(query) ||
                     c.hmisId.toLowerCase().includes(query);
                 const matchStatus = !status || c.status === status;
-                const matchCm     = !cm     || c.caseManager === cm;
-                return matchSearch && matchStatus && matchCm;
+                return matchSearch && matchStatus;
             });
-
             renderClients(filtered);
         }
 
@@ -501,17 +509,6 @@
                 allClients = [];
             }
             computeStats(allClients);
-            // Populate case manager filter from real data
-            const cmSel = document.getElementById('caseManagerFilter');
-            if (cmSel) {
-                const cms = [...new Set(allClients.map(c => c.caseManager).filter(Boolean))].sort();
-                while (cmSel.options.length > 1) cmSel.remove(1);
-                cms.forEach(function(cm) {
-                    const opt = document.createElement('option');
-                    opt.value = cm; opt.textContent = cm;
-                    cmSel.appendChild(opt);
-                });
-            }
             renderClients(allClients);
         }
 
@@ -534,6 +531,8 @@
         if (_sess.role === 'admin') {
             const al = document.getElementById('adminLink');
             if (al) al.style.display = 'flex';
+            const arl = document.getElementById('allReferralsLink');
+            if (arl) arl.style.display = 'flex';
         }
     </script>
 

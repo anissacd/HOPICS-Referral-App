@@ -317,6 +317,15 @@
                     </svg>
                     <span>Community</span>
                 </a>
+                <a href="all-referrals.html" id="allReferralsLink" style="display:none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                        <line x1="8" y1="18" x2="21" y2="18"/>
+                        <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                    <span>All Referrals</span>
+                </a>
                 <a href="admin.html" id="adminLink" style="display:none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -744,10 +753,63 @@
             document.getElementById('staffEmailField').value    = _sess.email || '';
         }
 
+        // ── Pre-fill from client-profile URL params ──
+        (function prefillFromUrl() {
+            var p = new URLSearchParams(window.location.search);
+            var hmisId      = p.get('hmisId')      || '';
+            var prefillName = p.get('prefillName') || p.get('name') || '';
+            var prefillDob  = p.get('prefillDob')  || '';
+            var isExisting  = p.get('isExisting')  === 'true';
+            if (!prefillName && !hmisId) return;
+
+            // Fill client fields
+            if (prefillName) {
+                document.getElementById('clientName').value = prefillName;
+                document.getElementById('clientName').setAttribute('readonly', true);
+            }
+            if (prefillDob) {
+                document.getElementById('clientDOB').value = prefillDob.slice(0, 10);
+                document.getElementById('clientDOB').setAttribute('readonly', true);
+            }
+            if (hmisId) {
+                document.getElementById('manualHmisId').value = hmisId;
+                document.getElementById('manualHmisId').setAttribute('readonly', true);
+                document.getElementById('existingHmisId').value = hmisId;
+            }
+            if (isExisting) {
+                document.getElementById('isExistingClient').value = 'true';
+            }
+
+            // Fill the search box display
+            if (prefillName) {
+                var search = document.getElementById('clientSearch');
+                if (search) {
+                    search.value = prefillName + (hmisId ? '  ·  ' + hmisId : '');
+                    var clearBtn = document.getElementById('searchClear');
+                    if (clearBtn) clearBtn.classList.add('visible');
+                }
+                // Show selected card
+                var card = document.getElementById('selectedClientCard');
+                if (card) {
+                    var p1 = prefillName.trim().split(' ');
+                    var init = p1.length >= 2 ? (p1[0][0] + p1[p1.length-1][0]).toUpperCase() : prefillName.slice(0,2).toUpperCase();
+                    var avEl = document.getElementById('selectedAvatar');
+                    var nmEl = document.getElementById('selectedName');
+                    var mtEl = document.getElementById('selectedMeta');
+                    if (avEl) avEl.textContent = init;
+                    if (nmEl) nmEl.textContent = prefillName;
+                    if (mtEl) mtEl.textContent = hmisId + (prefillDob ? '  ·  DOB ' + prefillDob.slice(0,10) : '');
+                    card.classList.add('visible');
+                }
+            }
+        })();
+
         // Show admin link
         if (_sess.role === 'admin') {
             const al = document.getElementById('adminLink');
             if (al) al.style.display = 'flex';
+            const arl = document.getElementById('allReferralsLink');
+            if (arl) arl.style.display = 'flex';
         }
 
         /* ── Form Submit ── */

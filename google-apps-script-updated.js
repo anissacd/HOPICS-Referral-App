@@ -374,6 +374,11 @@ function doGetInner(params, action) {
     };
   }
 
+  // ping — used by login page to warm up GAS before OAuth
+  if (action === 'ping') {
+    return { pong: true };
+  }
+
   return { success: true, message: 'HOPICS Google Apps Script is running.' };
 }  // end doGetInner
 

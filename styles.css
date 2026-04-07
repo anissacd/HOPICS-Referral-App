@@ -1357,26 +1357,31 @@ h1, h2, h3 {
     .sidebar-toggle-btn,
     .sidebar-label { display: none !important; }
 
-    /* Nav becomes the full bottom bar */
+    /* Nav becomes the full bottom bar — scrollable so overflow items don't clip */
     .sidebar-nav {
         flex-direction: row !important;
         flex: 1;
-        justify-content: space-around;
+        justify-content: flex-start;
         gap: 0 !important;
         padding: 0.3rem 0.25rem env(safe-area-inset-bottom, 0.3rem);
-        overflow: visible;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
     }
+
+    .sidebar-nav::-webkit-scrollbar { display: none; }
 
     .sidebar-nav a {
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 0.2rem;
-        padding: 0.4rem 0.25rem !important;
+        padding: 0.4rem 0.5rem !important;
         border-radius: 10px;
         font-size: 0.6rem;
-        flex: 1;
-        min-width: 0;
+        flex: 0 0 auto;
+        min-width: 56px;
         white-space: nowrap;
     }
 
@@ -1498,9 +1503,9 @@ h1, h2, h3 {
 
     .chat-panel {
         position: fixed;
-        inset: 50px 0 calc(64px + env(safe-area-inset-bottom, 0px)) 0;
+        inset: 50px 0 0 0;
         background: #fff;
-        z-index: 150;
+        z-index: 250;
         transform: translateX(100%);
         transition: transform 0.3s cubic-bezier(.22,1,.36,1);
         display: flex;
@@ -1509,6 +1514,16 @@ h1, h2, h3 {
 
     .chat-panel.mobile-open {
         transform: translateX(0);
+    }
+
+    /* Composer needs safe-area padding so it's above the iPhone home bar */
+    .chat-panel.mobile-open .composer {
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Hide tab bar when chat is open */
+    body.mobile-chat-open .app-sidebar {
+        display: none !important;
     }
 
     /* Back button in chat header on mobile */

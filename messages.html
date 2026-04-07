@@ -1037,10 +1037,12 @@
         function openMobileChat() {
             if (window.innerWidth <= 640) {
                 document.getElementById('conversationPanel').classList.add('mobile-open');
+                document.body.classList.add('mobile-chat-open');
             }
         }
         function closeMobileChat() {
             document.getElementById('conversationPanel').classList.remove('mobile-open');
+            document.body.classList.remove('mobile-chat-open');
         }
 
         // ── Select Thread ──────────────────────────────────────

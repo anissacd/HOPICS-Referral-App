@@ -640,7 +640,7 @@
                     <td>
                         <div style="display:flex;align-items:center;gap:0.75rem;">
                             <div class="admin-table-avatar ${AVATAR_CSS[u.role]}">${initials(u.name)}</div>
-                            <span style="font-weight:600;font-size:0.9rem;cursor:pointer;color:#1d1d1f;" onclick="openEditRole(${u.id})" title="Edit user profile">${u.name}</span>
+                            <a href="staff-profile.html?email=${encodeURIComponent(u.email)}" style="font-weight:600;font-size:0.9rem;color:#1d1d1f;text-decoration:none;border-bottom:1px dashed #d2d2d7;" title="View profile">${u.name}</a>
                         </div>
                     </td>
                     <td style="color:#6e6e73;font-size:0.875rem;">${u.email}</td>
@@ -654,8 +654,6 @@
                     <td style="color:#6e6e73;font-size:0.85rem;">${u.lastLogin}</td>
                     <td>
                         <div style="display:flex;align-items:center;gap:0.625rem;">
-                            <button class="btn-xs btn-xs-secondary" onclick="openEditRole(${u.id})">Edit Role</button>
-                            <button class="btn-xs btn-xs-secondary" onclick="openEditProgram('${u.email}', ${JSON.stringify(u.program || '')})">Edit Program</button>
                             <label class="toggle" title="${u.status ? 'Deactivate' : 'Activate'} user">
                                 <input type="checkbox" ${u.status ? 'checked' : ''} onchange="toggleUser(${u.id}, this.checked)">
                                 <div class="toggle-track"></div>

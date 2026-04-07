@@ -508,6 +508,23 @@
             'closed':      'Closed',
         };
 
+        // Normalize status from GAS — handles date bleed, title case, etc.
+        function normalizeStatus(val) {
+            if (!val) return 'pending';
+            var s = String(val).toLowerCase().trim();
+            // If it looks like a date string, it's a column mismatch — default to pending
+            if (s.includes('gmt') || s.includes(' apr ') || s.includes(' jan ') ||
+                s.includes(' feb ') || s.includes(' mar ') || s.includes(' may ') ||
+                s.includes(' jun ') || s.includes(' jul ') || s.includes(' aug ') ||
+                s.includes(' sep ') || s.includes(' oct ') || s.includes(' nov ') ||
+                s.includes(' dec ') || /^\d{4}-\d{2}-\d{2}/.test(s)) return 'pending';
+            if (s === 'in progress' || s === 'in-progress') return 'in-progress';
+            if (s === 'completed' || s === 'complete') return 'completed';
+            if (s === 'cancelled' || s === 'canceled') return 'cancelled';
+            if (s === 'closed') return 'closed';
+            return 'pending';
+        }
+
         function fmtDate(d) {
             if (!d) return '';
             return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -536,7 +553,8 @@
             const statusFilter = document.getElementById('statusFilter');
             const selectedStatus = statusFilter ? statusFilter.value : '';
             const list = referralsData.filter(r => {
-                if (selectedStatus && r.status !== selectedStatus) return false;
+                const ns = normalizeStatus(r.status);
+                if (selectedStatus && ns !== selectedStatus) return false;
                 return true;
             });
             count.textContent = `${list.length} referral${list.length !== 1 ? 's' : ''}`;
@@ -547,6 +565,7 @@
             }
 
             tbody.innerHTML = list.map(r => {
+                r.status = normalizeStatus(r.status);
                 const urg = urgencyStyles[r.urgency] || urgencyStyles.medium;
                 const source = r.fromProgram || r.referralSource || '—';
                 const deleteBtn = isAdmin

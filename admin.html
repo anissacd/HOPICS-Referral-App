@@ -971,16 +971,35 @@
 
         // ── Edit program assignment for a user ────────────────────────
         function openEditProgram(email, currentProgram) {
-            const prog = prompt('Assign program for ' + email + ':\n(Leave blank to remove)', currentProgram || '');
-            if (prog === null) return; // cancelled
+            document.getElementById('assignProgEmail').value = email;
+            document.getElementById('assignProgUserLabel').textContent = 'Staff: ' + email;
+            // Populate dropdown with loaded programs
+            const sel = document.getElementById('assignProgSelect');
+            while (sel.options.length > 1) sel.remove(1);
+            programs.forEach(function(p) {
+                const name = p.programName || p.name || '';
+                if (!name) return;
+                const opt = document.createElement('option');
+                opt.value = name; opt.textContent = name;
+                if (name === currentProgram) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            if (!currentProgram) sel.value = '';
+            document.getElementById('assignProgModal').style.display = 'flex';
+        }
+
+        function saveAssignProgram() {
+            const email = document.getElementById('assignProgEmail').value;
+            const prog  = document.getElementById('assignProgSelect').value;
+            document.getElementById('assignProgModal').style.display = 'none';
             fetch(GAS_URL, {
                 method: 'POST', mode: 'no-cors',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ action: 'updateUserProgram', email, program: prog, changedBy: _sess.email || '' }).toString()
             }).catch(() => {});
-            // Update local display immediately
             const user = users.find(u => u.email === email);
             if (user) { user.program = prog; renderUsers(users); }
+            showToast('Program updated', 'success');
         }
 
         // ── Edit program modal ────────────────────────────────────────
@@ -1053,6 +1072,26 @@
             <div style="height:1px;background:rgba(255,255,255,0.08);margin-bottom:1.25rem;"></div>
             <button onclick="signOut()" style="margin-top:1.5rem;width:100%;padding:0.75rem;border-radius:10px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);color:#fca5a5;font-size:0.875rem;font-weight:600;cursor:pointer;">Sign Out</button>
         </div>
+    </div>
+
+    <!-- Assign User Program Modal -->
+    <div id="assignProgModal" style="display:none;position:fixed;inset:0;z-index:700;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+      <div style="background:#fff;border-radius:20px;padding:2rem;width:100%;max-width:400px;margin:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <h3 style="margin:0;font-size:1rem;font-weight:700;">Assign Program</h3>
+          <button onclick="document.getElementById('assignProgModal').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#6e6e73;">✕</button>
+        </div>
+        <p id="assignProgUserLabel" style="font-size:0.875rem;color:#6e6e73;margin:0 0 1rem;"></p>
+        <input type="hidden" id="assignProgEmail">
+        <label style="font-size:0.8rem;font-weight:600;color:#6e6e73;display:block;margin-bottom:0.4rem;">Program</label>
+        <select id="assignProgSelect" class="form-input" style="width:100%;box-sizing:border-box;">
+          <option value="">— No Program —</option>
+        </select>
+        <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+          <button onclick="document.getElementById('assignProgModal').style.display='none'" class="btn btn-secondary" style="flex:1;">Cancel</button>
+          <button onclick="saveAssignProgram()" class="btn btn-primary" style="flex:1;">Save</button>
+        </div>
+      </div>
     </div>
 
     <!-- Edit Program Modal -->

@@ -60,12 +60,12 @@ var CASE_NOTE_HEADERS = [
   'Created By', 'Staff Email', 'Date Created'
 ];
 
-// Programs (9 cols):
+// Programs (10 cols):
 //   Program ID | Program Name | Category | Description |
-//   Address | Phone | Contact Name | Status | Date Added
+//   Address | Phone | Contact Name | Email | Status | Date Added
 var PROGRAM_HEADERS = [
   'Program ID', 'Program Name', 'Category', 'Description',
-  'Address', 'Phone', 'Contact Name', 'Status', 'Date Added'
+  'Address', 'Phone', 'Contact Name', 'Email', 'Status', 'Date Added'
 ];
 
 // Activity Log (8 cols) — system-wide events (users, roles, messages, goals, etc.):
@@ -92,6 +92,20 @@ var OUTCOME_HEADERS = [
   'Housing Type', 'Date Achieved', 'Notes', 'Recorded By', 'Staff Email'
 ];
 
+// Community Posts (10 cols):
+//   Post ID | Timestamp | Author Name | Author Email | Author Photo |
+//   Content | Image URL | Tags | Likes | Last Activity
+var COMMUNITY_POST_HEADERS = [
+  'Post ID', 'Timestamp', 'Author Name', 'Author Email', 'Author Photo',
+  'Content', 'Image URL', 'Tags', 'Likes', 'Last Activity'
+];
+
+// Community Comments (7 cols):
+//   Comment ID | Post ID | Timestamp | Author Name | Author Email | Author Photo | Content
+var COMMUNITY_COMMENT_HEADERS = [
+  'Comment ID', 'Post ID', 'Timestamp', 'Author Name', 'Author Email', 'Author Photo', 'Content'
+];
+
 // ── Sheet Initialisation ─────────────────────────────────────
 function initializeSheets() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -105,8 +119,10 @@ function initializeSheets() {
     { name: 'Case Notes',   headers: CASE_NOTE_HEADERS   },
     { name: 'Programs',     headers: PROGRAM_HEADERS     },
     { name: 'Activity Log',     headers: ACTIVITY_LOG_HEADERS    },
-    { name: 'Referral Updates', headers: REFERRAL_UPDATE_HEADERS },
-    { name: 'Outcomes',         headers: OUTCOME_HEADERS         }
+    { name: 'Referral Updates',     headers: REFERRAL_UPDATE_HEADERS    },
+    { name: 'Outcomes',             headers: OUTCOME_HEADERS             },
+    { name: 'Community Posts',      headers: COMMUNITY_POST_HEADERS      },
+    { name: 'Community Comments',   headers: COMMUNITY_COMMENT_HEADERS   }
   ];
 
   sheetsConfig.forEach(function(cfg) {
@@ -202,7 +218,13 @@ function doPost(e) {
     if (data.action === 'deleteProgram')      return handleDeleteProgram(data);
     if (data.action === 'updateUserProgram')  return handleUpdateUserProgram(data);
     if (data.action === 'deleteThread')       return handleDeleteThread(data);
+    if (data.action === 'archiveThread')      return handleArchiveThread(data);
+    if (data.action === 'unarchiveThread')    return handleUnarchiveThread(data);
     if (data.action === 'updateClient')       return handleUpdateClient(data);
+    if (data.action === 'addPost')            return handleAddPost(data);
+    if (data.action === 'addComment')         return handleAddComment(data);
+    if (data.action === 'likePost')           return handleLikePost(data);
+    if (data.action === 'deletePost')         return handleDeletePost(data);
     if (data.id)                              return handleEdit(data);
 
     return handleNewReferral(data);
@@ -275,7 +297,7 @@ function doGet(e) {
   }
 
   if (action === 'getThreads') {
-    return createJsonOutput({ success: true, threads: getThreadsFromSheet(params.user || '') }, callback);
+    return createJsonOutput({ success: true, threads: getThreadsFromSheet(params.user || '', params.archived === 'true') }, callback);
   }
 
   if (action === 'listGoals') {
@@ -300,6 +322,14 @@ function doGet(e) {
 
   if (action === 'listReferralUpdates') {
     return createJsonOutput({ success: true, updates: getReferralUpdatesFromSheet(params.referralId || '', params.limit || 200) }, callback);
+  }
+
+  if (action === 'listPosts') {
+    return createJsonOutput({ success: true, posts: getCommunityPostsFromSheet() }, callback);
+  }
+
+  if (action === 'listComments') {
+    return createJsonOutput({ success: true, comments: getCommunityCommentsFromSheet(params.postId || '') }, callback);
   }
 
   if (action === 'landingStats') {
@@ -638,6 +668,7 @@ function handleAddProgram(data) {
     data.address       || '',
     data.phone         || '',
     data.contactName   || '',
+    data.email         || '',
     data.status        || 'Active',
     new Date()
   ]);
@@ -722,8 +753,9 @@ function handleUpdateProgram(data) {
         data.address      !== undefined ? data.address      : values[i][4],
         data.phone        !== undefined ? data.phone        : values[i][5],
         data.contactName  !== undefined ? data.contactName  : values[i][6],
-        data.status       || values[i][7],
-        values[i][8]
+        data.email        !== undefined ? data.email        : values[i][7],
+        data.status       || values[i][8],
+        values[i][9] || values[i][8]  // dateAdded
       ];
       sheet.getRange(i + 1, 1, 1, row.length).setValues([row]);
       logActivity(data.updatedBy || '', '', 'Updated Program', 'Program', data.programId, data.programName || '');
@@ -781,6 +813,45 @@ function handleDeleteThread(data) {
   }
   logActivity(data.deletedBy || '', '', 'Deleted Thread', 'Message', threadId, deleted + ' messages removed');
   return createJsonOutput({ success: true, deleted: deleted });
+}
+
+// ── handleArchiveThread ───────────────────────────────────────
+// Marks all messages in a thread as archived for a user by prepending 'ARCHIVED:user@email|' to threadType
+function handleArchiveThread(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Messages');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Messages sheet not found.' });
+  var threadId = data.threadId || '';
+  var user     = data.user     || '';
+  if (!threadId || !user) return createJsonOutput({ success: false, message: 'threadId and user required.' });
+  var values = sheet.getDataRange().getValues();
+  var updated = 0;
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][1]) === String(threadId)) {
+      var tt = String(values[i][2] || '');
+      var tag = 'ARCHIVED:' + user;
+      if (tt.indexOf(tag) === -1) {
+        sheet.getRange(i + 1, 3).setValue(tt ? tt + '|' + tag : tag);
+        updated++;
+      }
+    }
+  }
+  return createJsonOutput({ success: true, updated: updated });
+}
+
+function handleUnarchiveThread(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Messages');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Messages sheet not found.' });
+  var threadId = data.threadId || '';
+  var user     = data.user     || '';
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][1]) === String(threadId)) {
+      var tt = String(values[i][2] || '');
+      var tag = 'ARCHIVED:' + user;
+      sheet.getRange(i + 1, 3).setValue(tt.replace('|' + tag, '').replace(tag + '|', '').replace(tag, ''));
+    }
+  }
+  return createJsonOutput({ success: true });
 }
 
 // ── handleUpdateClient ────────────────────────────────────────
@@ -955,7 +1026,7 @@ function getMessagesFromSheet(threadId) {
   });
 }
 
-function getThreadsFromSheet(user) {
+function getThreadsFromSheet(user, archivedOnly) {
   var messages = getMessagesFromSheet('');
   var threadMap = {};
 
@@ -963,6 +1034,8 @@ function getThreadsFromSheet(user) {
     if (user && msg.from !== user && msg.to !== user) return;
 
     var tid = msg.threadId;
+    var isArchived = msg.threadType && msg.threadType.indexOf('ARCHIVED:' + user) !== -1;
+
     if (!threadMap[tid] || new Date(msg.timestamp) > new Date(threadMap[tid].lastTimestamp)) {
       threadMap[tid] = {
         threadId:      tid,
@@ -971,15 +1044,19 @@ function getThreadsFromSheet(user) {
         lastMessage:   msg.message,
         from:          msg.from,
         to:            msg.to,
-        unreadCount:   0
+        unreadCount:   0,
+        archived:      isArchived
       };
     }
+    if (isArchived) threadMap[tid].archived = true;
     if (msg.to === user && msg.isRead === 'false') {
       threadMap[tid].unreadCount = (threadMap[tid].unreadCount || 0) + 1;
     }
   });
 
-  return Object.values(threadMap).sort(function(a, b) {
+  return Object.values(threadMap).filter(function(t) {
+    return archivedOnly ? t.archived : !t.archived;
+  }).sort(function(a, b) {
     return new Date(b.lastTimestamp) - new Date(a.lastTimestamp);
   });
 }
@@ -1041,6 +1118,8 @@ function getProgramsFromSheet() {
   if (values.length < 2) return [];
 
   return values.slice(1).filter(function(row) { return row[0]; }).map(function(row) {
+    // Support both old (9-col, no email) and new (10-col, with email) schema
+    var hasEmail = row[7] && String(row[7]).indexOf('@') !== -1;
     return {
       programId:   row[0] || '',
       programName: row[1] || '',
@@ -1049,8 +1128,11 @@ function getProgramsFromSheet() {
       address:     row[4] || '',
       phone:       row[5] || '',
       contactName: row[6] || '',
-      status:      row[7] || '',
-      dateAdded:   row[8] instanceof Date ? row[8].toISOString().slice(0,10) : row[8] || ''
+      email:       hasEmail ? (row[7] || '') : '',
+      status:      hasEmail ? (row[8] || '') : (row[7] || ''),
+      dateAdded:   hasEmail
+        ? (row[9] instanceof Date ? row[9].toISOString().slice(0,10) : row[9] || '')
+        : (row[8] instanceof Date ? row[8].toISOString().slice(0,10) : row[8] || '')
     };
   });
 }
@@ -1377,6 +1459,133 @@ function sendWelcomeEmail(recipient, info) {
   } catch (e) {
     Logger.log('Failed to send welcome email: ' + e.toString());
   }
+}
+
+// ── Community Posts ───────────────────────────────────────────
+function handleAddPost(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Community Posts');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Community Posts sheet not found.' });
+  var postId = 'POST_' + new Date().getTime();
+  var now    = new Date();
+  sheet.appendRow([
+    postId,
+    now,
+    data.authorName  || '',
+    data.authorEmail || '',
+    data.authorPhoto || '',
+    data.content     || '',
+    data.imageUrl    || '',
+    data.tags        || '',
+    0,
+    now
+  ]);
+  logActivity(data.authorEmail, data.authorName, 'Posted', 'Community', postId, (data.content || '').substring(0, 80));
+  return createJsonOutput({ success: true, postId: postId });
+}
+
+function handleAddComment(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Community Comments');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Community Comments sheet not found.' });
+  var commentId = 'CMT_' + new Date().getTime();
+  sheet.appendRow([
+    commentId,
+    data.postId      || '',
+    new Date(),
+    data.authorName  || '',
+    data.authorEmail || '',
+    data.authorPhoto || '',
+    data.content     || ''
+  ]);
+  // Update post Last Activity
+  var postsSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Community Posts');
+  if (postsSheet && data.postId) {
+    var vals = postsSheet.getDataRange().getValues();
+    for (var i = 1; i < vals.length; i++) {
+      if (String(vals[i][0]) === String(data.postId)) {
+        postsSheet.getRange(i + 1, 10).setValue(new Date());
+        break;
+      }
+    }
+  }
+  return createJsonOutput({ success: true, commentId: commentId });
+}
+
+function handleLikePost(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Community Posts');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Community Posts sheet not found.' });
+  var vals = sheet.getDataRange().getValues();
+  for (var i = 1; i < vals.length; i++) {
+    if (String(vals[i][0]) === String(data.postId)) {
+      var likes = parseInt(vals[i][8]) || 0;
+      sheet.getRange(i + 1, 9).setValue(likes + 1);
+      return createJsonOutput({ success: true, likes: likes + 1 });
+    }
+  }
+  return createJsonOutput({ success: false, message: 'Post not found.' });
+}
+
+function handleDeletePost(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Community Posts');
+  if (!sheet) return createJsonOutput({ success: false, message: 'Community Posts sheet not found.' });
+  var vals = sheet.getDataRange().getValues();
+  for (var i = 1; i < vals.length; i++) {
+    if (String(vals[i][0]) === String(data.postId)) {
+      sheet.deleteRow(i + 1);
+      // Also delete comments
+      var cmtSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Community Comments');
+      if (cmtSheet) {
+        var cmts = cmtSheet.getDataRange().getValues();
+        for (var j = cmts.length - 1; j >= 1; j--) {
+          if (String(cmts[j][1]) === String(data.postId)) cmtSheet.deleteRow(j + 1);
+        }
+      }
+      return createJsonOutput({ success: true });
+    }
+  }
+  return createJsonOutput({ success: false, message: 'Post not found.' });
+}
+
+function getCommunityPostsFromSheet() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Community Posts');
+  if (!sheet) return [];
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) return [];
+  var rows = values.slice(1).filter(function(r) { return r[0]; }).map(function(row) {
+    return {
+      postId:      row[0] || '',
+      timestamp:   row[1] instanceof Date ? row[1].toISOString() : row[1] || '',
+      authorName:  row[2] || '',
+      authorEmail: row[3] || '',
+      authorPhoto: row[4] || '',
+      content:     row[5] || '',
+      imageUrl:    row[6] || '',
+      tags:        row[7] || '',
+      likes:       parseInt(row[8]) || 0,
+      lastActivity:row[9] instanceof Date ? row[9].toISOString() : row[9] || ''
+    };
+  });
+  rows.reverse(); // newest first
+  return rows;
+}
+
+function getCommunityCommentsFromSheet(postId) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Community Comments');
+  if (!sheet) return [];
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) return [];
+  return values.slice(1).filter(function(row) {
+    return row[0] && (!postId || String(row[1]) === String(postId));
+  }).map(function(row) {
+    return {
+      commentId:   row[0] || '',
+      postId:      row[1] || '',
+      timestamp:   row[2] instanceof Date ? row[2].toISOString() : row[2] || '',
+      authorName:  row[3] || '',
+      authorEmail: row[4] || '',
+      authorPhoto: row[5] || '',
+      content:     row[6] || ''
+    };
+  });
 }
 
 // ── Utility ───────────────────────────────────────────────────

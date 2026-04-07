@@ -661,6 +661,9 @@
             text-overflow: ellipsis;
         }
 
+        .msg-tab { background:none;border:none;padding:0.5rem 1rem;font-size:0.85rem;font-weight:600;color:#aeaeb2;cursor:pointer;border-bottom:2px solid transparent; }
+        .msg-tab.active { color:#1d1d1f;border-bottom-color:#ffd700; }
+
         @media (max-width: 768px) {
             .thread-panel { width: 260px; }
         }
@@ -755,6 +758,10 @@
             <div class="thread-panel">
                 <div class="thread-panel-header">
                     <h2>Messages</h2>
+                    <div class="msg-tabs" style="display:flex;gap:0;border-bottom:1px solid #f5f5f7;margin-bottom:0.75rem;">
+                        <button id="tabInbox" class="msg-tab active" onclick="switchMsgTab('inbox')">Inbox</button>
+                        <button id="tabArchived" class="msg-tab" onclick="switchMsgTab('archived')">Archived</button>
+                    </div>
                     <div class="thread-search">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -809,6 +816,7 @@
                             <p id="convSubEmail" style="color:#aeaeb2;font-weight:400;font-size:0.75rem;"></p>
                         </div>
                         <div class="conversation-header-actions">
+                            <button class="btn btn-secondary" style="font-size:0.775rem;padding:0.4rem 0.875rem;" onclick="archiveActiveThread()">Archive</button>
                             <button class="btn btn-secondary" style="font-size:0.775rem;padding:0.4rem 0.875rem;background:#fee2e2;color:#991b1b;border-color:#fca5a5;" onclick="deleteActiveThread()">
                                 Delete
                             </button>
@@ -946,7 +954,7 @@
             list.innerHTML = '<div style="padding:2rem;text-align:center;color:#aeaeb2;font-size:0.875rem;">Loading…</div>';
 
             jsonpLoad(
-                GOOGLE_SCRIPT_URL + '?action=getThreads&user=' + encodeURIComponent(CURRENT_EMAIL),
+                GOOGLE_SCRIPT_URL + '?action=getThreads&user=' + encodeURIComponent(CURRENT_EMAIL) + '&archived=' + (_currentMsgTab === 'archived'),
                 function(data) {
                     if (data && data.success && Array.isArray(data.threads)) {
                         allThreads = data.threads;
@@ -1392,6 +1400,31 @@
             if (sbAv) { sbAv.innerHTML = img; sbAv.style.background = 'transparent'; }
         };
         reader.readAsDataURL(file);
+    }
+
+    let _currentMsgTab = 'inbox';
+
+    function switchMsgTab(tab) {
+        _currentMsgTab = tab;
+        document.getElementById('tabInbox').classList.toggle('active', tab === 'inbox');
+        document.getElementById('tabArchived').classList.toggle('active', tab === 'archived');
+        loadThreads();
+    }
+
+    function archiveActiveThread() {
+        if (!activeThreadId) return;
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({action:'archiveThread', threadId:activeThreadId, user:CURRENT_EMAIL}).toString()
+        }).catch(()=>{});
+        // Remove from current view
+        const el = document.querySelector(`.thread-item[data-id="${activeThreadId}"]`);
+        if (el) el.remove();
+        document.getElementById('conversationView').style.display = 'none';
+        document.getElementById('conversationEmpty').style.display = 'flex';
+        activeThreadId = null;
+        showToast('Thread archived', 'success');
     }
 
     function signOut() {

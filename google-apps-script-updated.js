@@ -302,6 +302,16 @@ function doGet(e) {
     return createJsonOutput({ success: true, updates: getReferralUpdatesFromSheet(params.referralId || '', params.limit || 200) }, callback);
   }
 
+  if (action === 'landingStats') {
+    return createJsonOutput({
+      status: 'ok',
+      referrals: getReferralsFromSheet(),
+      clients:   getClientsFromSheet(),
+      programs:  getProgramsFromSheet(),
+      users:     getUsersFromSheet()
+    }, callback);
+  }
+
   return createJsonOutput({ success: true, message: 'HOPICS Google Apps Script is running.' }, callback);
 }
 
@@ -878,7 +888,7 @@ function getReferralsFromSheet() {
       submittedBy:     row[11] || '',
       staffEmail:      row[12] || '',
       assessmentNotes: row[13] || '',
-      status:          row[14] || '',
+      status:          normalizeStatus(row[14]),
       lastUpdated:     row[15] instanceof Date ? row[15].toISOString() : row[15] || ''
     };
   });
@@ -1356,4 +1366,14 @@ function sendWelcomeEmail(recipient, info) {
 function toTitleCase(str) {
   if (!str) return '';
   return String(str).replace(/_/g, ' ').replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+}
+
+function normalizeStatus(val) {
+  if (!val) return 'pending';
+  var s = String(val).toLowerCase().trim();
+  if (s === 'in progress' || s === 'in-progress' || s === 'inprogress') return 'in-progress';
+  if (s === 'completed' || s === 'complete') return 'completed';
+  if (s === 'cancelled' || s === 'canceled') return 'cancelled';
+  if (s === 'pending') return 'pending';
+  return s;
 }

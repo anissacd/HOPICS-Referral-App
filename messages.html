@@ -434,11 +434,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0.75rem;
+            gap: 1rem;
             color: #aeaeb2;
         }
-
-        .conversation-empty svg { opacity: 0.35; }
 
         .conversation-empty h3 {
             font-size: 1rem;
@@ -447,6 +445,57 @@
         }
 
         .conversation-empty p { font-size: 0.875rem; }
+
+        /* ── Animated message icon ── */
+        .msg-icon-wrap {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            background: #fff;
+            border-radius: 32px;
+            box-shadow: 0 6px 32px rgba(30,136,229,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .msg-icon-wrap svg {
+            height: 72px;
+            width: 72px;
+            fill: #1e88e5;
+        }
+        .msg-icon-dots {
+            display: flex;
+            position: absolute;
+            left: 50%;
+            top: 52%;
+            transform: translate(-50%, -50%);
+            gap: 5px;
+        }
+        .msg-icon-dot {
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+        }
+        .msg-icon-bubble {
+            width: 100px;
+            height: 28px;
+            background: #f5c842;
+            overflow: hidden;
+            position: absolute;
+            right: -8px;
+            top: -8px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(245,200,66,0.45);
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            white-space: nowrap;
+            padding: 0 10px;
+        }
 
         /* ── New message button in panel ── */
         .new-msg-btn {
@@ -728,10 +777,23 @@
             <!-- Conversation Panel -->
             <div class="conversation-panel" id="conversationPanel">
                 <div class="conversation-empty" id="conversationEmpty">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24"
-                         fill="none" stroke="#aeaeb2" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
+                    <div class="msg-icon-wrap">
+                        <svg viewBox="0 0 374 374" xmlns="http://www.w3.org/2000/svg">
+                            <g clip-path="url(#msgClip)">
+                                <path d="M318.084 132.622C311.339 101.37 287.642 82 256.652 82C238.423 82 217.459 89.3248 197.954 102.509C191.574 106.904 182.642 106.904 176.079 102.672C155.298 88.9992 135.246 82 116.652 82C85.6626 82 61.9647 101.533 55.2199 133.111C44.2824 183.896 80.923 252.26 187.017 291C292.746 251.446 329.204 183.082 318.084 132.622Z"/>
+                                <path d="M187.466 0C187.366 0 187.166 0 186.866 0C85.666 0 3.36603 82.3 3.36603 183.5C3.36603 224.8 17.466 264.9 43.266 297.2L16.566 359.3C14.366 364.4 16.766 370.3 21.766 372.4C23.566 373.2 25.566 373.4 27.466 373.1L125.366 355.9C144.966 363 165.566 366.6 186.366 366.5C287.566 366.5 369.866 284.2 369.866 183C370.066 82.1 288.366 0.1 187.466 0ZM192.966 269.8C188.966 271.3 184.666 271.3 180.666 269.8C149.066 257.1 124.466 238.3 109.466 215.4C95.966 194.7 90.766 171.4 94.866 149.9C100.466 121.4 121.866 102.3 148.266 102.3C160.966 102.3 173.866 106.5 186.766 114.7C199.366 106.5 212.466 102.3 225.066 102.3C251.866 102.3 272.866 120.9 278.466 149.6C286.066 188.8 262.666 241.3 192.966 269.8Z"/>
+                            </g>
+                            <defs>
+                                <clipPath id="msgClip"><rect width="373.232" height="373.232" fill="white"/></clipPath>
+                            </defs>
+                        </svg>
+                        <div class="msg-icon-dots">
+                            <div class="msg-icon-dot"></div>
+                            <div class="msg-icon-dot"></div>
+                            <div class="msg-icon-dot"></div>
+                        </div>
+                        <div class="msg-icon-bubble">New message</div>
+                    </div>
                     <h3>Select a conversation</h3>
                     <p>Choose a thread from the left to view messages.</p>
                 </div>
@@ -1336,6 +1398,34 @@
         sessionStorage.removeItem('hopics_user');
         window.location.href = 'login.html';
     }
+    </script>
+
+    <!-- Animated message icon dots (GSAP) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script>
+    (function() {
+        function animateMsgDots() {
+            var dots = document.querySelectorAll('.msg-icon-dot');
+            if (!dots.length || typeof gsap === 'undefined') return;
+            var delay = 0.15;
+            dots.forEach(function(dot) {
+                gsap.to(dot, {
+                    translateY: -8,
+                    yoyo: true,
+                    repeat: -1,
+                    duration: 0.45,
+                    delay: delay,
+                    ease: 'power1.inOut'
+                });
+                delay += 0.15;
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', animateMsgDots);
+        } else {
+            animateMsgDots();
+        }
+    })();
     </script>
 </body>
 </html>

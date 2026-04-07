@@ -2,10 +2,686 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=login.html">
-    <title>HOPICS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPICS Referral Platform</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --gold: #f5c842;
+            --gold-dim: rgba(245,200,66,0.15);
+            --gold-glow: rgba(245,200,66,0.4);
+            --bg: #080810;
+            --bg2: #0e0e1a;
+            --card: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.08);
+            --text: #f0f0f5;
+            --muted: rgba(240,240,245,0.5);
+            --radius: 16px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.3s, backdrop-filter 0.3s;
+        }
+        nav.scrolled {
+            background: rgba(8,8,16,0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+        }
+        .nav-logo .logo-mark {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--gold), #e07a00);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; font-weight: 900; color: #000;
+        }
+        .nav-cta {
+            background: var(--gold);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1.25rem;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--gold-glow); }
+
+        /* ── HERO ── */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+            overflow: hidden;
+        }
+
+        /* Ambient orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+        }
+        .orb-1 {
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(245,200,66,0.12), transparent 70%);
+            top: -150px; left: -100px;
+            animation: orbDrift1 18s ease-in-out infinite alternate;
+        }
+        .orb-2 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(100,60,200,0.1), transparent 70%);
+            bottom: -100px; right: -80px;
+            animation: orbDrift2 22s ease-in-out infinite alternate;
+        }
+        .orb-3 {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(245,200,66,0.08), transparent 70%);
+            top: 50%; left: 60%;
+            animation: orbDrift3 15s ease-in-out infinite alternate;
+        }
+
+        /* Grid texture */
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+            pointer-events: none;
+        }
+
+        /* Canvas placeholder for user's graphics */
+        #hero-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .hero-content { position: relative; z-index: 2; max-width: 780px; }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(245,200,66,0.1);
+            border: 1px solid rgba(245,200,66,0.3);
+            border-radius: 100px;
+            padding: 0.35rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gold);
+            margin-bottom: 1.75rem;
+            letter-spacing: 0.05em;
+        }
+        .badge-dot {
+            width: 7px; height: 7px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: pulse 2s ease infinite;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.4rem, 6vw, 4.2rem);
+            font-weight: 800;
+            line-height: 1.12;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.25rem;
+        }
+        .hero h1 .accent {
+            background: linear-gradient(135deg, var(--gold) 0%, #ff9f43 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            color: var(--muted);
+            line-height: 1.65;
+            max-width: 580px;
+            margin: 0 auto 2.5rem;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: #fff;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 12px;
+            padding: 0.85rem 1.75rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            text-decoration: none;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(255,255,255,0.18); }
+        .btn-primary .g-icon {
+            width: 22px; height: 22px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23FFC107' d='M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z'/%3E%3Cpath fill='%23FF3D00' d='M6.306 14.691l6.571 4.819C14.655 15.108 19.001 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z'/%3E%3Cpath fill='%234CAF50' d='M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z'/%3E%3Cpath fill='%231976D2' d='M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z'/%3E%3C/svg%3E") center/contain no-repeat;
+            flex-shrink: 0;
+        }
+
+        .btn-secondary {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.85rem 1.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            text-decoration: none;
+        }
+        .btn-secondary:hover { border-color: rgba(245,200,66,0.4); background: var(--gold-dim); }
+
+        /* ── LIVE STATS ── */
+        .stats-bar {
+            position: relative; z-index: 2;
+            display: flex;
+            gap: 0;
+            margin-top: 3.5rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        .stat-item {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+        .stat-item:last-child { border-right: none; }
+        .stat-num {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--gold);
+            display: block;
+            line-height: 1;
+            margin-bottom: 0.35rem;
+        }
+        .stat-lbl {
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* ── FEATURES ── */
+        .section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 5rem 2rem;
+        }
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--gold);
+            margin-bottom: 0.75rem;
+        }
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+        .section-sub {
+            color: var(--muted);
+            font-size: 1.05rem;
+            line-height: 1.65;
+            max-width: 560px;
+            margin-bottom: 3rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.25rem;
+        }
+        .feature-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.75rem;
+            transition: border-color 0.25s, transform 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold-glow), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .feature-card:hover { border-color: rgba(245,200,66,0.3); transform: translateY(-3px); }
+        .feature-card:hover::before { opacity: 1; }
+        .feat-icon {
+            width: 44px; height: 44px;
+            background: var(--gold-dim);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+        .feature-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .feature-card p {
+            font-size: 0.9rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* ── HOW IT WORKS ── */
+        .how-bg {
+            background: var(--bg2);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 2rem;
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.85rem;
+        }
+        .step-num {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--gold);
+            flex-shrink: 0;
+        }
+        .step h3 {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        .step p {
+            font-size: 0.88rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* ── CTA ── */
+        .cta-section {
+            text-align: center;
+            padding: 6rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            width: 600px; height: 400px;
+            background: radial-gradient(ellipse, rgba(245,200,66,0.08), transparent 70%);
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .cta-section h2 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+        .cta-section p {
+            color: var(--muted);
+            font-size: 1.05rem;
+            margin-bottom: 2rem;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+        footer .hipaa-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.3rem 0.7rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--muted);
+            margin-top: 0.75rem;
+        }
+
+        /* ── ANIMATIONS ── */
+        @keyframes orbDrift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(80px,50px) scale(1.15); } }
+        @keyframes orbDrift2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-60px,-40px) scale(1.1); } }
+        @keyframes orbDrift3 { from { transform: translate(0,0); } to { transform: translate(-40px,30px); } }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+        .reveal.visible { opacity: 1; transform: none; }
+
+        @media (max-width: 640px) {
+            .stats-bar { flex-direction: column; }
+            .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+            .stat-item:last-child { border-bottom: none; }
+        }
+    </style>
 </head>
 <body>
-    <script>window.location.replace('login.html');</script>
+
+    <!-- NAV -->
+    <nav id="mainNav">
+        <a class="nav-logo" href="#">
+            <div class="logo-mark">H</div>
+            HOPICS
+        </a>
+        <button class="nav-cta" onclick="goToSignIn()">Sign In</button>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+
+        <!-- Canvas for user's dynamic graphics -->
+        <canvas id="hero-canvas"></canvas>
+
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                Helping People In Our Communities
+            </div>
+
+            <h1>
+                Unified Referral<br>
+                Management for <span class="accent">HOPICS</span>
+            </h1>
+
+            <p class="hero-sub">
+                Streamline client referrals, track outcomes, and coordinate services
+                across programs — all in one secure platform built for your team.
+            </p>
+
+            <div class="hero-actions">
+                <button class="btn-primary" onclick="goToSignIn()">
+                    <span class="g-icon"></span>
+                    Sign in with Google
+                </button>
+                <a class="btn-secondary" href="#features">
+                    Learn more ↓
+                </a>
+            </div>
+
+            <!-- Live Stats -->
+            <div class="stats-bar reveal" id="statsBar">
+                <div class="stat-item">
+                    <span class="stat-num" id="sTotal">—</span>
+                    <span class="stat-lbl">Total Referrals</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-num" id="sClients">—</span>
+                    <span class="stat-lbl">Clients Served</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-num" id="sPrograms">—</span>
+                    <span class="stat-lbl">Active Programs</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-num" id="sStaff">—</span>
+                    <span class="stat-lbl">Staff Members</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="section" id="features">
+        <div class="section-label">Features</div>
+        <h2 class="section-title reveal">Everything your team needs,<br>in one place</h2>
+        <p class="section-sub reveal">Purpose-built for homeless services providers — from intake to referral to outcome tracking.</p>
+
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="feat-icon">📋</div>
+                <h3>Smart Referral Routing</h3>
+                <p>Submit and track client referrals across programs with real-time status updates and automated notifications.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feat-icon">👤</div>
+                <h3>Client Profiles</h3>
+                <p>Centralized client records with HMIS ID linking, goals tracking, case notes, and full referral history.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feat-icon">📊</div>
+                <h3>Live Dashboard</h3>
+                <p>Animated metrics, program flow charts, and referral activity at a glance — updated in real time from Google Sheets.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feat-icon">💬</div>
+                <h3>Internal Messaging</h3>
+                <p>Secure staff-to-staff messaging with threaded conversations, attachments, and archive management.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feat-icon">🔐</div>
+                <h3>Role-Based Access</h3>
+                <p>Admins, supervisors, and staff each see exactly what they need — with Google SSO for zero-friction login.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feat-icon">📤</div>
+                <h3>Data Export</h3>
+                <p>Export referrals, client lists, and reports to CSV with one click for compliance and grant reporting.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <div class="how-bg">
+        <section class="section">
+            <div class="section-label">How it works</div>
+            <h2 class="section-title reveal">Up and running in minutes</h2>
+            <div class="steps">
+                <div class="step reveal">
+                    <div class="step-num">1</div>
+                    <div>
+                        <h3>Sign in with Google</h3>
+                        <p>Use your existing HOPICS Google account — no new passwords to manage. Access is granted by your administrator.</p>
+                    </div>
+                </div>
+                <div class="step reveal">
+                    <div class="step-num">2</div>
+                    <div>
+                        <h3>Submit a referral</h3>
+                        <p>Search for a client by HMIS ID, fill in service category and urgency, and route to the appropriate program with one form.</p>
+                    </div>
+                </div>
+                <div class="step reveal">
+                    <div class="step-num">3</div>
+                    <div>
+                        <h3>Track &amp; close the loop</h3>
+                        <p>Follow status updates, add case notes, log goals, and mark referrals complete — all synced back to Google Sheets.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <h2 class="reveal">Ready to get started?</h2>
+        <p class="reveal">Sign in with your HOPICS Google account to access the platform.</p>
+        <button class="btn-primary reveal" onclick="goToSignIn()" style="margin: 0 auto; display:inline-flex;">
+            <span class="g-icon"></span>
+            Sign in with Google
+        </button>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div>© 2025 HOPICS — Homeless Outreach Program Integrated Care System</div>
+        <div class="hipaa-badge">🔒 HIPAA-Compliant Data Handling</div>
+    </footer>
+
+    <script>
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
+
+        // ── Nav scroll effect ──
+        window.addEventListener('scroll', function() {
+            document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 40);
+        });
+
+        // ── Sign In ──
+        function goToSignIn() {
+            window.location.href = 'login.html';
+        }
+
+        // ── Scroll reveal ──
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(e) {
+                if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+            });
+        }, { threshold: 0.12 });
+        document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
+
+        // ── Animated counter ──
+        function animateCount(el, target) {
+            var start = 0;
+            var duration = 1600;
+            var startTime = null;
+            function step(ts) {
+                if (!startTime) startTime = ts;
+                var progress = Math.min((ts - startTime) / duration, 1);
+                var ease = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.round(start + ease * (target - start)).toLocaleString();
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        // ── Load live stats ──
+        function loadStats() {
+            var cb = 'stats_' + Date.now();
+            window[cb] = function(data) {
+                delete window[cb];
+                if (!data || data.status !== 'ok') return;
+                var r = data.referrals || [];
+                var c = data.clients || [];
+                var p = data.programs || [];
+                var u = data.users || [];
+
+                // Trigger counter animations once stats bar is visible
+                var sBar = document.getElementById('statsBar');
+                var statsLoaded = false;
+                var io = new IntersectionObserver(function(entries) {
+                    if (entries[0].isIntersecting && !statsLoaded) {
+                        statsLoaded = true;
+                        animateCount(document.getElementById('sTotal'), r.length);
+                        animateCount(document.getElementById('sClients'), c.length);
+                        animateCount(document.getElementById('sPrograms'), p.filter(function(x){ return x.status !== 'inactive'; }).length || p.length);
+                        animateCount(document.getElementById('sStaff'), u.length);
+                        io.disconnect();
+                    }
+                }, { threshold: 0.3 });
+                io.observe(sBar);
+
+                // If already visible
+                var rect = sBar.getBoundingClientRect();
+                if (rect.top < window.innerHeight && !statsLoaded) {
+                    statsLoaded = true;
+                    animateCount(document.getElementById('sTotal'), r.length);
+                    animateCount(document.getElementById('sClients'), c.length);
+                    animateCount(document.getElementById('sPrograms'), p.filter(function(x){ return x.status !== 'inactive'; }).length || p.length);
+                    animateCount(document.getElementById('sStaff'), u.length);
+                }
+            };
+
+            var s = document.createElement('script');
+            s.src = GAS_URL + '?action=landingStats&callback=' + cb;
+            s.onerror = function() { delete window[cb]; };
+            document.head.appendChild(s);
+            setTimeout(function() { if (window[cb]) { delete window[cb]; } }, 15000);
+        }
+
+        loadStats();
+
+        // ── Redirect if already signed in ──
+        try {
+            var sess = JSON.parse(sessionStorage.getItem('hopics_user') || 'null');
+            if (sess && sess.email) window.location.replace('dashboard.html');
+        } catch(e) {}
+    </script>
 </body>
 </html>

@@ -145,9 +145,11 @@ function createJsonOutput(data, callback) {
       .createTextOutput(callback + '(' + JSON.stringify(data) + ')')
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+  // Use HtmlService for POST responses to enable CORS
+  var output = HtmlService.createHtmlOutput(JSON.stringify(data));
+  output.setContentType('application/json');
+  output.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  return output;
 }
 
 // ── Activity Logger ───────────────────────────────────────────

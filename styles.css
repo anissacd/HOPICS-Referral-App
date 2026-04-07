@@ -29,6 +29,7 @@ body {
     color: #1d1d1f;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    padding-top: 50px;
 }
 
 a { text-decoration: none; color: inherit; }
@@ -43,7 +44,7 @@ button, input, select, textarea { font: inherit; }
 
 /* ── App Shell ── */
 .app-shell {
-    height: 100vh;
+    height: calc(100vh - 50px);
     display: flex;
     flex-direction: row;
     overflow: hidden;
@@ -1196,28 +1197,29 @@ h1, h2, h3 {
 .action-deactivated { background: #fee2e2; color: #991b1b; }
 
 
-/* ── Fixed profile button (top-right, all pages) ── */
+/* ── Fixed top bar (all pages) ── */
 #profileBtn {
     position: fixed !important;
-    top: 1rem !important;
-    right: 1.25rem !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
     z-index: 9999 !important;
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 0.5rem;
     background: #1c1c1e !important;
-    border: 1px solid rgba(255,255,255,0.15) !important;
-    border-radius: 40px;
-    padding: 0.35rem 0.75rem 0.35rem 0.35rem;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-    transition: background 0.2s, box-shadow 0.2s;
+    border-bottom: 1px solid rgba(255,255,255,0.15) !important;
+    padding: 0.5rem 1.25rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     text-decoration: none;
+    height: 50px;
+    box-sizing: border-box;
 }
 
 #profileBtn:hover {
     background: #2c2c2e !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
 }
 
 #sidebarName {

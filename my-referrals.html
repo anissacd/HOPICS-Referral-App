@@ -813,10 +813,18 @@
         function deleteReferral(id, clientName) {
             if (!confirm('Delete referral for ' + clientName + '? This cannot be undone.')) return;
             fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST', mode: 'no-cors',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ action: 'deleteReferral', id, deletedBy: currentUserName, staffEmail: currentUserEmail }).toString()
-            }).catch(() => {});
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    showToast('Referral deleted', 'success');
+                } else {
+                    showToast('Failed to delete referral: ' + (data.message || 'Unknown error'), 'error');
+                }
+            }).catch(error => {
+                showToast('Error deleting referral', 'error');
+            });
             referralsData = referralsData.filter(r => r.id !== id);
             renderReferralTable();
         }
@@ -966,10 +974,17 @@
 
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams(params).toString()
-            }).catch(function() {}).finally(function() {
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    showToast('Referral updated', 'success');
+                } else {
+                    showToast('Failed to update referral: ' + (data.message || 'Unknown error'), 'error');
+                }
+            }).catch(error => {
+                showToast('Error updating referral', 'error');
+            }).finally(function() {
                 closeModal();
                 loadReferrals();
                 btn.textContent = 'Save Changes';

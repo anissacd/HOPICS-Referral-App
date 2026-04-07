@@ -852,10 +852,18 @@
 
             fetch(GAS_URL, {
                 method:  'POST',
-                mode:    'no-cors',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body:    payload.toString()
-            }).catch(() => {}).finally(() => {
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    showToast('Referral submitted successfully!', 'success');
+                    playChime('success');
+                } else {
+                    showToast('Failed to submit referral: ' + (data.message || 'Unknown error'), 'error');
+                }
+            }).catch(error => {
+                showToast('Error submitting referral', 'error');
+            }).finally(() => {
                 window.location.href = 'client-profile.html?' + new URLSearchParams({
                     submitted:   'true',
                     name:        name,

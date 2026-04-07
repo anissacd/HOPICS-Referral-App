@@ -761,7 +761,6 @@
 
             fetch(GAS_URL, {
                 method: 'POST',
-                mode:   'no-cors',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
                     action:   'newUser',
@@ -771,7 +770,15 @@
                     program:  program,
                     addedBy:  _sess.email || ''
                 }).toString()
-            }).catch(() => {});
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    showToast('User added successfully', 'success');
+                } else {
+                    showToast('Failed to add user: ' + (data.message || 'Unknown error'), 'error');
+                }
+            }).catch(error => {
+                showToast('Error adding user', 'error');
+            });
 
             // Update local list
             users.push({ id: Date.now(), name, email, role, program, status: true, lastLogin: 'Never' });
@@ -796,7 +803,6 @@
 
             fetch(GAS_URL, {
                 method: 'POST',
-                mode:   'no-cors',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
                     action:      'addProgram',
@@ -809,7 +815,15 @@
                     status:      status,
                     addedBy:     _sess.email || ''
                 }).toString()
-            }).catch(() => {});
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    showToast('Program added successfully', 'success');
+                } else {
+                    showToast('Failed to add program: ' + (data.message || 'Unknown error'), 'error');
+                }
+            }).catch(error => {
+                showToast('Error adding program', 'error');
+            });
 
             closeModal('addProgramModal');
             // Clear fields

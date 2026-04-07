@@ -1207,10 +1207,17 @@
                 assessmentNotes: document.getElementById('editRefNotes').value,
                 staffEmail:      _sess.email || ''
             });
-            fetch(GAS_URL, { method:'POST', mode:'no-cors', body });
+            fetch(GAS_URL, { method:'POST', body }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    showToast('Referral updated', 'success');
+                    playChime('success');
+                } else {
+                    showToast('Failed to update referral: ' + (data.message || 'Unknown error'), 'error');
+                }
+            }).catch(error => {
+                showToast('Error updating referral', 'error');
+            });
             closeEditRefModal();
-            showToast('Referral updated', 'success');
-            playChime('success');
             setTimeout(loadReferrals, 1500);
         }
 
@@ -1281,10 +1288,17 @@
                 createdBy:       _sess.name || _sess.email || '',
                 staffEmail:      _sess.email || ''
             });
-            fetch(GAS_URL, { method:'POST', mode:'no-cors', body });
+            fetch(GAS_URL, { method:'POST', body }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    showToast('Goal added', 'success');
+                    playChime('success');
+                } else {
+                    showToast('Failed to add goal: ' + (data.message || 'Unknown error'), 'error');
+                }
+            }).catch(error => {
+                showToast('Error adding goal', 'error');
+            });
             closeAddGoalModal();
-            showToast('Goal added', 'success');
-            playChime('success');
             document.getElementById('goalDesc').value = '';
             document.getElementById('goalTarget').value = '';
             setTimeout(loadGoals, 1500);
@@ -1338,12 +1352,33 @@
                 createdBy:  _sess.name || _sess.email || '',
                 staffEmail: _sess.email || ''
             });
-            fetch(GAS_URL, { method:'POST', mode:'no-cors', body });
-
-            // Optimistic UI
-            const initials = (_sess.name || '??').split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
-            const today = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-            const container = document.getElementById('notesContainer');
+            fetch(GAS_URL, { method:'POST', body }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    // Optimistic UI
+                    const initials = (_sess.name || '??').split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+                    const today = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+                    const container = document.getElementById('notesContainer');
+                    container.insertAdjacentHTML('afterbegin', `
+                        <div class="note-item">
+                            <div class="note-header">
+                                <div class="note-avatar">${initials}</div>
+                                <div class="note-meta">
+                                    <span class="note-author">${_sess.name || _sess.email || 'Unknown'}</span>
+                                    <span class="note-date">${today}</span>
+                                </div>
+                            </div>
+                            <p class="note-text">${text.replace(/</g,'&lt;')}</p>
+                        </div>
+                    `);
+                    document.getElementById('newNoteText').value = '';
+                    showToast('Note added', 'success');
+                    playChime('success');
+                } else {
+                    showToast('Failed to add note: ' + (data.message || 'Unknown error'), 'error');
+                }
+            }).catch(error => {
+                showToast('Error adding note', 'error');
+            });
             const noteHTML = `<div class="note-item" style="animation:slideDown .3s ease;">
                 <div class="note-avatar" style="background:#fff8e1;color:#b45309;">${initials}</div>
                 <div class="note-content">
@@ -1397,10 +1432,17 @@
                 staffEmail: _sess.email || '',
                 updatedBy:  _sess.name || _sess.email || ''
             });
-            fetch(GAS_URL, { method:'POST', mode:'no-cors', body });
+            fetch(GAS_URL, { method:'POST', body }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    showToast('Profile saved', 'success');
+                    playChime('success');
+                } else {
+                    showToast('Failed to save profile: ' + (data.message || 'Unknown error'), 'error');
+                }
+            }).catch(error => {
+                showToast('Error saving profile', 'error');
+            });
             cancelEdit();
-            showToast('Profile saved', 'success');
-            playChime('success');
         }
 
         // ── Export / Print ──────────────────────────────────────

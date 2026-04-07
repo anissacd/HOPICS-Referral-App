@@ -891,17 +891,36 @@
             document.head.appendChild(script);
         }
 
+        // Detect if a value looks like a date/timestamp (column shift from old schema)
+        function looksLikeDate(val) {
+            if (!val) return false;
+            var s = String(val);
+            return /^\d{4}-\d{2}-\d{2}/.test(s) || s.includes('T') && s.includes(':') && s.includes('Z');
+        }
+
         function onUsersLoaded(data) {
             if (data && data.success && Array.isArray(data.users)) {
                 users = data.users.map(function(u, i) {
+                    // Old schema had no Program column — detect by checking if program field is a date
+                    var prog      = u.program   || '';
+                    var lastLogin = u.lastLogin || 'Never';
+                    if (looksLikeDate(prog)) {
+                        // Columns shifted: program slot has dateAdded, lastLogin slot has addedBy
+                        prog      = '';
+                        lastLogin = u.dateAdded || 'Never';
+                    }
+                    // Clean up raw ISO timestamps for display
+                    if (looksLikeDate(lastLogin)) {
+                        try { lastLogin = new Date(lastLogin).toLocaleDateString(); } catch(e) {}
+                    }
                     return {
                         id:        i + 1,
-                        name:      u.name      || '',
-                        email:     u.email     || '',
-                        role:      u.role      || 'case_manager',
+                        name:      u.name  || '',
+                        email:     u.email || '',
+                        role:      u.role  || 'case_manager',
                         status:    String(u.status).toLowerCase() === 'active',
-                        program:   u.program   || '',
-                        lastLogin: u.lastLogin || 'Never'
+                        program:   prog,
+                        lastLogin: lastLogin
                     };
                 });
                 renderUsers(users);

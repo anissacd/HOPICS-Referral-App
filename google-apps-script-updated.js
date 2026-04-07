@@ -848,15 +848,32 @@ function getUsersFromSheet() {
   var values = sheet.getDataRange().getValues();
   if (values.length < 2) return [];
   return values.slice(1).filter(function(row) { return row[0]; }).map(function(row) {
+    // Detect old schema (no Program column): row[4] = Date Added, row[5] = Last Login, row[6] = Added By
+    // New schema: row[4] = Program, row[5] = Date Added, row[6] = Last Login, row[7] = Added By
+    var hasProgram = row[4] && !(row[4] instanceof Date) && String(row[4]).indexOf('T') === -1 && String(row[4]).indexOf('/') === -1 && String(row[4]).trim() !== '';
+    var program, dateAdded, lastLogin, addedBy;
+    if (hasProgram) {
+      // New schema
+      program   = row[4] || '';
+      dateAdded = row[5] instanceof Date ? row[5].toISOString().slice(0,10) : row[5] || '';
+      lastLogin = row[6] instanceof Date ? row[6].toISOString() : row[6] || '';
+      addedBy   = row[7] || '';
+    } else {
+      // Old schema — no program column
+      program   = '';
+      dateAdded = row[4] instanceof Date ? row[4].toISOString().slice(0,10) : row[4] || '';
+      lastLogin = row[5] instanceof Date ? row[5].toISOString() : row[5] || '';
+      addedBy   = row[6] || '';
+    }
     return {
       email:     row[0] || '',
       name:      row[1] || '',
       role:      row[2] || '',
       status:    row[3] || '',
-      program:   row[4] || '',
-      dateAdded: row[5] instanceof Date ? row[5].toISOString().slice(0,10) : row[5] || '',
-      lastLogin: row[6] instanceof Date ? row[6].toISOString() : row[6] || '',
-      addedBy:   row[7] || ''
+      program:   program,
+      dateAdded: dateAdded,
+      lastLogin: lastLogin,
+      addedBy:   addedBy
     };
   });
 }

@@ -454,7 +454,7 @@
             tbody.innerHTML = clients.map(c => {
                 const hClass = housingClass[c.status] || 'housing-inactive';
                 const cmLabel = caseManagerLabel[c.caseManager] || c.caseManager || '—';
-                const profileUrl = 'client-profile.html?name=' + encodeURIComponent(c.name) + '&hmis=' + encodeURIComponent(c.hmisId);
+                const profileUrl = 'client-profile.html?hmisId=' + encodeURIComponent(c.hmisId) + '&name=' + encodeURIComponent(c.name);
                 return `<tr>
                     <td><span class="hmis-badge">${c.hmisId}</span></td>
                     <td>

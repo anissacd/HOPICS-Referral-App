@@ -260,29 +260,38 @@
             <section class="stats-grid">
                 <div class="stat-card">
                     <h3>Total Referrals</h3>
-                    <p class="card-value" id="statTotal">—</p>
+                    <div class="blur-counter" id="statTotal"><span class="bc-val">—</span></div>
                 </div>
                 <div class="stat-card">
                     <h3>Pending</h3>
-                    <p class="card-value" id="statPending">—</p>
+                    <div class="blur-counter" id="statPending"><span class="bc-val">—</span></div>
                 </div>
                 <div class="stat-card">
                     <h3>In Progress</h3>
-                    <p class="card-value" id="statProgress">—</p>
+                    <div class="blur-counter" id="statProgress"><span class="bc-val">—</span></div>
                 </div>
                 <div class="stat-card">
                     <h3>Completed</h3>
-                    <p class="card-value" id="statCompleted">—</p>
+                    <div class="blur-counter" id="statCompleted"><span class="bc-val">—</span></div>
                 </div>
                 <div class="stat-card">
                     <h3>Clients Served</h3>
-                    <p class="card-value" id="statClients">—</p>
+                    <div class="blur-counter" id="statClients"><span class="bc-val">—</span></div>
                 </div>
                 <div class="stat-card">
                     <h3>Avg. Pending Time</h3>
-                    <p class="card-value" id="statAvgDays">—</p>
+                    <div class="blur-counter" id="statAvgDays"><span class="bc-val">—</span></div>
                 </div>
             </section>
+
+            <!-- Hidden SVG blur filter -->
+            <svg style="position:absolute;width:0;height:0;overflow:hidden;" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <filter id="blurFilter">
+                        <feGaussianBlur id="blurFilterItem" in="SourceGraphic" stdDeviation="12,0"/>
+                    </filter>
+                </defs>
+            </svg>
 
             <!-- Program Flow Summary -->
             <div class="flow-summary">
@@ -485,6 +494,122 @@
     <script>
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxivCGau_AAvXVPa20svMiZKRmm2IXqk6vT7KL_nmnCcIR8pz2wwUHekONomebDaM0L2w/exec';
 
+        /* ── Blur-motion counter ─────────────────────────────── */
+        function blurCount(elId, target, suffix) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            target = parseInt(target) || 0;
+
+            // Build DOM structure
+            el.innerHTML = '';
+            const thousands = Math.floor(target / 1000);
+            const remainder = target % 1000;
+            const hasSplit   = thousands > 0;
+
+            if (hasSplit) {
+                const leftEl = document.createElement('span');
+                leftEl.className = 'bc-left';
+                leftEl.textContent = thousands;
+
+                const sepEl = document.createElement('span');
+                sepEl.className = 'bc-sep';
+                sepEl.textContent = ',';
+
+                const rightEl = document.createElement('span');
+                rightEl.className = 'bc-right';
+                rightEl.textContent = String(remainder).padStart(3, '0');
+
+                el.appendChild(leftEl);
+                el.appendChild(sepEl);
+                el.appendChild(rightEl);
+
+                if (suffix) {
+                    const sfx = document.createElement('span');
+                    sfx.className = 'bc-suffix';
+                    sfx.textContent = suffix;
+                    el.appendChild(sfx);
+                }
+
+                animateBlurSplit(leftEl, sepEl, rightEl, thousands, remainder);
+            } else {
+                const valEl = document.createElement('span');
+                valEl.className = 'bc-val';
+                valEl.textContent = '0';
+                el.appendChild(valEl);
+
+                if (suffix) {
+                    const sfx = document.createElement('span');
+                    sfx.className = 'bc-suffix';
+                    sfx.textContent = suffix;
+                    el.appendChild(sfx);
+                }
+
+                animateBlurSingle(valEl, target);
+            }
+        }
+
+        function animateBlurSingle(el, target) {
+            if (target === 0) { el.textContent = '0'; return; }
+            const duration  = 900;
+            const start     = performance.now();
+            const blurItem  = document.getElementById('blurFilterItem');
+
+            function tick(now) {
+                const t        = Math.min((now - start) / duration, 1);
+                const eased    = 1 - Math.pow(1 - t, 3);
+                const current  = Math.round(eased * target);
+                const blurAmt  = (1 - eased) * 14;
+
+                el.textContent = current;
+                el.style.filter = blurAmt > 0.5
+                    ? 'url(#blurFilter)'
+                    : 'none';
+
+                if (blurItem) blurItem.setAttribute('stdDeviation', blurAmt.toFixed(1) + ',0');
+
+                if (t < 1) requestAnimationFrame(tick);
+                else { el.textContent = target; el.style.filter = 'none'; }
+            }
+            requestAnimationFrame(tick);
+        }
+
+        function animateBlurSplit(leftEl, sepEl, rightEl, thousands, remainder) {
+            const duration = 900;
+            const start    = performance.now();
+            const blurItem = document.getElementById('blurFilterItem');
+            const totalTarget = thousands * 1000 + remainder;
+
+            function tick(now) {
+                const t       = Math.min((now - start) / duration, 1);
+                const eased   = 1 - Math.pow(1 - t, 3);
+                const current = Math.round(eased * totalTarget);
+                const blurAmt = (1 - eased) * 14;
+                const curThousands = Math.floor(current / 1000);
+                const curRemainder = current % 1000;
+
+                leftEl.textContent  = curThousands > 0 ? curThousands : '';
+                rightEl.textContent = curThousands > 0
+                    ? String(curRemainder).padStart(3, '0')
+                    : String(current);
+                sepEl.classList.toggle('visible', curThousands > 0);
+
+                const filterVal = blurAmt > 0.5 ? 'url(#blurFilter)' : 'none';
+                leftEl.style.filter  = filterVal;
+                rightEl.style.filter = filterVal;
+                if (blurItem) blurItem.setAttribute('stdDeviation', blurAmt.toFixed(1) + ',0');
+
+                if (t < 1) requestAnimationFrame(tick);
+                else {
+                    leftEl.textContent  = thousands;
+                    rightEl.textContent = String(remainder).padStart(3, '0');
+                    sepEl.classList.add('visible');
+                    leftEl.style.filter  = 'none';
+                    rightEl.style.filter = 'none';
+                }
+            }
+            requestAnimationFrame(tick);
+        }
+
         function loadDashboardData() {
             const script = document.createElement('script');
             script.src = GOOGLE_SCRIPT_URL + '?action=listReferrals&callback=onDashboardLoaded';
@@ -513,13 +638,12 @@
                   }, 0) / pendingRefs.length)
                 : 0;
 
-            const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-            setVal('statTotal',     total);
-            setVal('statPending',   pending);
-            setVal('statProgress',  progress);
-            setVal('statCompleted', completed);
-            setVal('statClients',   uniqueClients);
-            setVal('statAvgDays',   avgDays + 'd');
+            blurCount('statTotal',     total);
+            blurCount('statPending',   pending);
+            blurCount('statProgress',  progress);
+            blurCount('statCompleted', completed);
+            blurCount('statClients',   uniqueClients);
+            blurCount('statAvgDays',   avgDays, 'd');
 
             // Recent referrals (last 5)
             const recent = referrals.slice(-5).reverse();
@@ -528,9 +652,12 @@
                 tbody.innerHTML = recent.map(r => {
                     const statusClass = { pending: 'status-pending', 'in-progress': 'status-progress', completed: 'status-completed', closed: 'status-closed' }[r.status] || 'status-pending';
                     const date = r.timestamp ? new Date(r.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+                    const profileUrl = r.hmisId
+                        ? `client-profile.html?hmisId=${encodeURIComponent(r.hmisId)}&name=${encodeURIComponent(r.clientName || '')}`
+                        : `client-profile.html?name=${encodeURIComponent(r.clientName || '')}`;
                     return `<tr>
-                        <td><strong>${r.clientName || '—'}</strong></td>
-                        <td>${r.hmisId || '—'}</td>
+                        <td><a href="${profileUrl}" style="color:#1d1d1f;font-weight:600;text-decoration:none;border-bottom:1px solid #d2d2d7;">${r.clientName || '—'}</a></td>
+                        <td><a href="${profileUrl}" style="color:#1d1d1f;text-decoration:none;border-bottom:1px dashed #d2d2d7;font-size:0.85rem;">${r.hmisId || '—'}</a></td>
                         <td><span class="program-tag from-tag">${r.fromProgram || '—'}</span> → <span class="program-tag to-tag">${r.toProgram || '—'}</span></td>
                         <td><span class="status-pill ${statusClass}">${r.status || 'pending'}</span></td>
                         <td>${date}</td>

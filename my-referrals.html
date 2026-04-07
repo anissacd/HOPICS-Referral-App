@@ -547,8 +547,11 @@
                 const deleteBtn = isAdmin
                     ? `<button class="table-action" style="background:#fee2e2;color:#991b1b;margin-left:0.35rem;" onclick="deleteReferral('${r.id}','${(r.clientName||'').replace(/'/g,"\\'")}')">Delete</button>`
                     : '';
+                const profileUrl = r.hmisId
+                    ? `client-profile.html?hmisId=${encodeURIComponent(r.hmisId)}&name=${encodeURIComponent(r.clientName || '')}`
+                    : `client-profile.html?name=${encodeURIComponent(r.clientName || '')}`;
                 return `<tr>
-                    <td><strong>${r.clientName || '—'}</strong></td>
+                    <td><a href="${profileUrl}" style="color:#1d1d1f;font-weight:600;text-decoration:none;border-bottom:1px solid #d2d2d7;">${r.clientName || '—'}</a></td>
                     <td>${toTitle(r.serviceCategory || '')}</td>
                     <td>${source}</td>
                     <td><span class="status-pill" style="background:${urg.bg};color:${urg.color};">${toTitle(r.urgency || 'medium')}</span></td>
@@ -608,12 +611,23 @@
                 hideLoading();
                 showEmpty('<p style="margin:0 0 0.75rem;">Could not reach the server.</p><button onclick="loadReferrals()" style="padding:0.5rem 1.25rem;background:#ffd700;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Retry</button>');
             };
-            // Timeout fallback for cold GAS starts
+            // Auto-retry once at 20s, hard fail at 45s
             _refLoadTimer = setTimeout(function() {
                 _refLoadTimer = null;
-                hideLoading();
-                showEmpty('<p style="margin:0 0 0.75rem;">Server is taking too long. Try again.</p><button onclick="loadReferrals()" style="padding:0.5rem 1.25rem;background:#ffd700;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Retry</button>');
+                if (window[cbName]) {
+                    // first timeout — auto-retry silently
+                    try { delete window[cbName]; } catch(e) {}
+                    loadReferrals();
+                }
             }, 20000);
+            setTimeout(function() {
+                if (_refLoadTimer) { clearTimeout(_refLoadTimer); _refLoadTimer = null; }
+                if (window[cbName]) {
+                    try { delete window[cbName]; } catch(e) {}
+                    hideLoading();
+                    showEmpty('<p style="margin:0 0 0.75rem;">Server is taking too long. Please try again.</p><button onclick="loadReferrals()" style="padding:0.5rem 1.25rem;background:#ffd700;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Retry</button>');
+                }
+            }, 50000);
 
             document.head.appendChild(script);
         }

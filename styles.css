@@ -585,6 +585,59 @@ select.input-field {
     line-height: 1;
 }
 
+/* ── Blur-motion counter ── */
+.blur-counter {
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+    line-height: 1;
+    overflow: hidden;
+}
+
+.blur-counter .bc-left {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1d1d1f;
+    letter-spacing: -0.025em;
+    will-change: filter;
+}
+
+.blur-counter .bc-sep {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1d1d1f;
+    letter-spacing: -0.025em;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.blur-counter .bc-sep.visible { opacity: 1; }
+
+.blur-counter .bc-right {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1d1d1f;
+    letter-spacing: -0.025em;
+    will-change: filter;
+}
+
+.blur-counter .bc-val {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1d1d1f;
+    letter-spacing: -0.025em;
+}
+
+/* suffix (e.g. "d" for days) */
+.blur-counter .bc-suffix {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #aeaeb2;
+    margin-left: 3px;
+    align-self: flex-end;
+    padding-bottom: 3px;
+}
+
 /* ── Cards ── */
 .card {
     background: #ffffff;

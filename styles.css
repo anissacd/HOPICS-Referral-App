@@ -1323,3 +1323,214 @@ h1, h2, h3 {
 #_hopics_toast.toast-success { background: #166534; }
 #_hopics_toast.toast-error   { background: #991b1b; }
 #_hopics_toast.toast-info    { background: #1c1c1e; }
+
+/* ════════════════════════════════════════════════════════
+   MOBILE — Bottom Tab Bar + Responsive Overrides
+   ════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+    /* ── App shell: full width, no sidebar column ── */
+    .app-shell {
+        flex-direction: column;
+    }
+
+    /* ── Sidebar becomes a fixed bottom tab bar ── */
+    .app-sidebar {
+        position: fixed !important;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto !important;
+        width: 100% !important;
+        height: auto !important;
+        flex-direction: row !important;
+        padding: 0 !important;
+        z-index: 200;
+        border-top: 1px solid rgba(255,255,255,0.12);
+        overflow: visible !important;
+        align-items: stretch;
+    }
+
+    /* Hide desktop-only sidebar elements */
+    .sidebar-brand,
+    .sidebar-section,
+    .sidebar-toggle-btn,
+    .sidebar-label { display: none !important; }
+
+    /* Nav becomes the full bottom bar */
+    .sidebar-nav {
+        flex-direction: row !important;
+        flex: 1;
+        justify-content: space-around;
+        gap: 0 !important;
+        padding: 0.3rem 0.25rem env(safe-area-inset-bottom, 0.3rem);
+        overflow: visible;
+    }
+
+    .sidebar-nav a {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.2rem;
+        padding: 0.4rem 0.25rem !important;
+        border-radius: 10px;
+        font-size: 0.6rem;
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    /* Show short labels in bottom tab */
+    .sidebar-nav a span {
+        display: block !important;
+        font-size: 0.6rem;
+        line-height: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .sidebar-nav a svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .sidebar-nav a.active::before { display: none; }
+
+    /* Unread badge position in bottom tab */
+    .nav-unread-badge {
+        position: absolute;
+        top: 0.1rem;
+        right: 0.1rem;
+        margin-left: 0 !important;
+    }
+
+    .sidebar-nav a { position: relative; }
+
+    /* ── Top bar: full width on mobile ── */
+    .top-bar {
+        left: 0 !important;
+    }
+
+    /* ── Main content: add bottom padding for tab bar ── */
+    .app-main {
+        padding: 1rem !important;
+        padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 0.5rem) !important;
+        height: 100vh;
+    }
+
+    .app-main.has-top-bar {
+        padding-top: calc(56px + 0.75rem) !important;
+    }
+
+    .app-main.messages-main {
+        padding: 0 !important;
+        padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* ── profileBtn (global top bar) full width ── */
+    #profileBtn { left: 0 !important; }
+
+    /* ── Dashboard header: stack on mobile ── */
+    .dashboard-header,
+    .referral-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .quick-actions {
+        width: 100%;
+    }
+
+    .quick-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* ── Cards: single column ── */
+    .stats-grid,
+    .card-grid { grid-template-columns: 1fr !important; }
+
+    /* ── Tables: smaller text, no padding ── */
+    .table th,
+    .table td {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    /* ── Notification popup: full width at bottom ── */
+    #_msgNotifCard {
+        top: auto !important;
+        bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+        left: 0.75rem !important;
+        right: 0.75rem !important;
+        max-width: none !important;
+    }
+
+    /* ── Modal: full width ── */
+    .modal-card {
+        margin: 0.75rem;
+        max-width: 100% !important;
+        width: calc(100% - 1.5rem);
+    }
+
+    /* ── Forms ── */
+    .form-row { grid-template-columns: 1fr !important; }
+
+    /* ── Profile card ── */
+    .profile-card { padding: 1.25rem !important; }
+}
+
+/* ── Messages page: single-panel on mobile ── */
+@media (max-width: 640px) {
+    .app-main.messages-main {
+        flex-direction: column;
+        height: calc(100vh - 50px - 64px);
+        overflow: hidden;
+    }
+
+    .thread-panel {
+        width: 100% !important;
+        height: 100%;
+        border-right: none !important;
+        flex-shrink: 0;
+    }
+
+    .chat-panel {
+        position: fixed;
+        inset: 50px 0 calc(64px + env(safe-area-inset-bottom, 0px)) 0;
+        background: #fff;
+        z-index: 150;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(.22,1,.36,1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-panel.mobile-open {
+        transform: translateX(0);
+    }
+
+    /* Back button in chat header on mobile */
+    .mobile-back-btn {
+        display: flex !important;
+    }
+}
+
+/* Back button hidden on desktop */
+.mobile-back-btn {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #1d1d1f;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    margin-right: 0.5rem;
+    border-radius: 8px;
+}
+
+.mobile-back-btn:hover { background: #f5f5f7; }
